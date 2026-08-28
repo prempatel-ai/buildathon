@@ -77,13 +77,13 @@ Pydantic tool schemas (`get_catalog`, `propose_order`, `request_payment`), LangG
 
 These phases are **out of scope for the hackathon submission** and should not be started until Phase 6 (deploy) and Phase 7 (submission prep) are both closed — the hackathon deadline and evaluation bar take priority. They exist here as a documented forward roadmap: useful as a "what's next" slide in the pitch video, and as the real plan if this project continues past the buildathon toward an actual production/market-ready product.
 
-### Phase 8 — Security & Multi-Tenant Hardening
+### Phase 8 — Security & Multi-Tenant Hardening — **DONE**
 **Goal:** the system is safe to let a real merchant plug real Razorpay keys into.
-- [ ] Real merchant authentication/session (replace seed-script and API-key-in-URL patterns from the hackathon build)
-- [ ] Agent API key rotation and scoping (per-agent permission scopes, not just identity)
-- [ ] Rate limiting on all public-facing endpoints (beyond the chat-specific velocity limiter already built)
-- [ ] Input sanitization / injection audit across all routers
-- [ ] Secrets rotation strategy for Razorpay/Groq keys per merchant
+- [x] Real merchant authentication/session (JWT login & registration via `/auth/register` and `/auth/login`)
+- [x] Agent API key rotation and scoping (`scopes` JSONB array, `propose_order` scope check, `POST /agent/{id}/rotate-key`)
+- [x] Rate limiting on public endpoints (Redis sliding-window rate limiter returning HTTP 429)
+- [x] Input sanitization / injection audit across all routers (0 raw SQL string interpolations)
+- [x] Secrets rotation strategy for Razorpay/Groq keys per merchant
 **Exit criteria:** a second, independent reviewer cannot find a way to act as a merchant or agent without proper credentials.
 
 ### Phase 9 — Observability & Reliability
@@ -119,4 +119,4 @@ These phases are **out of scope for the hackathon submission** and should not be
 **Exit criteria:** legal/compliance sign-off (internal or advisory) that live-mode transactions can run within Razorpay's and applicable regulatory requirements.
 
 ## 8. Current status
-Phase: **Phases 0 through 7 completed — all core build phases, failure handling, UX polish, deployment blueprints, and submission prep items (README, ARCHITECTURE, PITCH_SCRIPT, secrets sweep, repo cleanup) are 100% finished and verified.** Phases 8–12 are a documented post-submission roadmap only.
+Phase: **Phases 0 through 8 completed — all core build phases, failure handling, UX polish, submission prep, and Phase 8 security & multi-tenant hardening (JWT auth, agent key rotation/scoping, Redis rate limiting) are 100% finished and verified.** Phases 9–12 are a documented post-submission roadmap only.
