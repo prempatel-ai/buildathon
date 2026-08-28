@@ -245,3 +245,77 @@ export async function fetchAuditEvents(params?: {
   if (!res.ok) throw new Error('Failed to fetch audit events');
   return res.json();
 }
+
+export interface MerchantSettingsPayload {
+  name?: string;
+  razorpay_key_id?: string;
+  max_amount?: number;
+  daily_limit?: number;
+  allowed_categories?: string[];
+  blocked_categories?: string[];
+  velocity_limit?: number;
+}
+
+export interface MerchantUsageData {
+  merchant_id: string;
+  merchant_name: string;
+  total_transactions: number;
+  settled_transactions: number;
+  failed_transactions: number;
+  total_settled_volume: number;
+  period: string;
+}
+
+export interface MerchantAgentItem {
+  id: string;
+  name: string;
+  scopes: string[];
+  status: string;
+  created_at?: string;
+  last_used_at?: string;
+}
+
+export async function getMerchantMe(): Promise<Merchant> {
+  const res = await fetch(`${API_BASE_URL}/merchants/me`, { headers: getAuthHeaders(), cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch merchant profile');
+  return res.json();
+}
+
+export async function updateMerchantSettings(payload: MerchantSettingsPayload): Promise<Merchant> {
+  const res = await fetch(`${API_BASE_URL}/merchants/settings`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to update settings' }));
+    throw new Error(err.detail || 'Failed to update settings');
+  }
+  return res.json();
+}
+
+export async function getMerchantAgents(): Promise<MerchantAgentItem[]> {
+  const res = await fetch(`${API_BASE_URL}/merchants/agents`, { headers: getAuthHeaders(), cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch merchant agents');
+  return res.json();
+}
+
+export async function createMerchantAgent(name: string, scopes: string[]): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/merchants/agents`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ name, scopes }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to create agent' }));
+    throw new Error(err.detail || 'Failed to create agent');
+  }
+  return res.json();
+}
+
+export async function getMerchantUsage(): Promise<MerchantUsageData> {
+  const res = await fetch(`${API_BASE_URL}/merchants/usage`, { headers: getAuthHeaders(), cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch merchant usage');
+  return res.json();
+}
+
