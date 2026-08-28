@@ -309,9 +309,28 @@ class PaymentService:
                 detail="Razorpay payment signature verification failed. Invalid or tampered signature."
             )
 
-        # Step 2 (SUBTICKET 4.3 Mandatory Check): Fetch payment directly from Razorpay API and confirm status is captured & captured == True
+        # Step 2 (SUBTICKET 4.3 Mandatory Check): Fetch payment directly from Razorpay API with retry-backoff
+        from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
+        import requests
+
+        def _is_transient_error(exc: Exception) -> bool:
+            if isinstance(exc, (requests.exceptions.RequestException, ConnectionError, TimeoutError)):
+                return True
+            if hasattr(exc, "status_code") and getattr(exc, "status_code", 0) >= 500:
+                return True
+            return False
+
+        @retry(
+            stop=stop_after_attempt(3),
+            wait=wait_exponential(multiplier=0.5, min=0.5, max=2.0),
+            retry=retry_if_exception(_is_transient_error),
+            reraise=True
+        )
+        def _fetch_payment_with_retry(pid: str):
+            return client.payment.fetch(pid)
+
         try:
-            rzp_payment = client.payment.fetch(verify_in.razorpay_payment_id)
+            rzp_payment = _fetch_payment_with_retry(verify_in.razorpay_payment_id)
             rzp_status = rzp_payment.get("status")
             is_captured = rzp_payment.get("captured", False)
 
@@ -320,7 +339,7 @@ class PaymentService:
                 try:
                     amount_paise = int(tx.amount * 100)
                     client.payment.capture(verify_in.razorpay_payment_id, amount_paise)
-                    rzp_payment = client.payment.fetch(verify_in.razorpay_payment_id)
+                    rzp_payment = _fetch_payment_with_retry(verify_in.razorpay_payment_id)
                     rzp_status = rzp_payment.get("status")
                     is_captured = rzp_payment.get("captured", False)
                 except Exception:

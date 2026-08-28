@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     RAZORPAY_KEY_ID: str = "rzp_test_placeholder_key_id"
     RAZORPAY_KEY_SECRET: str = "placeholder_key_secret"
 
+    # Observability & Monitoring
+    SENTRY_DSN: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

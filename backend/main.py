@@ -28,6 +28,40 @@ app.include_router(payment.router)
 app.include_router(audit.router)
 app.include_router(agent.router)
 
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.starlette import StarletteIntegration
+from fastapi import Request, HTTPException, status
+from fastapi.responses import JSONResponse
+import logging
+
+logger = logging.getLogger("agentpay")
+
+if settings.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.ENVIRONMENT,
+        traces_sample_rate=1.0,
+        integrations=[
+            StarletteIntegration(transaction_style="endpoint"),
+            FastApiIntegration(transaction_style="endpoint"),
+        ],
+    )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    if isinstance(exc, HTTPException):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    
+    logger.error(f"Unhandled Application Exception: {str(exc)}", exc_info=True)
+    if settings.SENTRY_DSN:
+        sentry_sdk.capture_exception(exc)
+    
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "Internal Application Error - Exception captured by Observability Engine"}
+    )
+
 @app.get("/")
 def root():
     return {
@@ -35,6 +69,22 @@ def root():
         "docs": "/docs",
         "health": "/health"
     }
+
+@app.get("/debug-sentry")
+def trigger_sentry_error():
+    """Explicit endpoint to trigger and verify real Sentry error tracking."""
+    try:
+        raise ValueError("Triggered simulated application error for Sentry observability audit")
+    except Exception as exc:
+        sentry_sdk.capture_exception(exc)
+        logger.error(f"Sentry Exception Captured: {str(exc)}")
+        return {
+            "status": "error_captured",
+            "error_type": type(exc).__name__,
+            "message": str(exc),
+            "sentry_captured": True
+        }
+
 
 if __name__ == "__main__":
     import uvicorn
