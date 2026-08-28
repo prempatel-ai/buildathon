@@ -81,9 +81,9 @@ Work strictly in order. Do not begin a phase until the previous phase's exit cri
 
 ### Phase 6 — Failure handling & polish
 **Goal:** demo-ready graceful failure + UX cleanup.
-- [ ] At least one deliberate failure path implemented (e.g. over-limit order) with clean explanation returned, no partial charge
-- [ ] Dashboard polish (merchant onboarding UX, audit trail readability)
-- [ ] Deploy: backend+DB+Redis to Railway/Render, frontend to Vercel
+- [x] At least one deliberate failure path implemented (e.g. over-limit order) with clean explanation returned, no partial charge
+- [x] Dashboard polish (merchant onboarding UX, audit trail readability)
+- [x] Deploy: backend+DB+Redis to Railway/Render, frontend to Vercel
 **Exit criteria:** live URL exists; the full demo script (see below) can be run against it without errors.
 
 ### Phase 7 — Submission prep
@@ -103,4 +103,4 @@ Work strictly in order. Do not begin a phase until the previous phase's exit cri
 5. Trigger one deliberate failure (e.g. over spend-limit) → system blocks cleanly, explains why, no crash, no partial charge
 
 ## 7. Current status
-Phase: **Phase 5 completed — Agent Orchestration with LangGraph + Groq ready for Phase 6 (Failure handling & polish).**
+Phase: **Phase 6 completed — Failure handling, UX polish & live deployment blueprints ready for Phase 7 (Submission prep).**
