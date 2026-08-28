@@ -9,6 +9,8 @@ class Merchant(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False)
+    email = Column(String(255), unique=True, nullable=True)
+    password_hash = Column(String(255), nullable=True)
     razorpay_key_id = Column(String(255), nullable=True)
     limits_config = Column(JSONB, nullable=False, server_default='{}')
 

@@ -11,6 +11,7 @@ class Agent(Base):
     merchant_id = Column(UUID(as_uuid=True), ForeignKey("merchants.id", ondelete="CASCADE"), nullable=False)
     api_key_hash = Column(String(255), nullable=False)
     name = Column(String(255), nullable=False)
+    scopes = Column(JSONB, nullable=False, server_default='["read_catalog", "propose_order"]')
 
     # Relationships
     merchant = relationship("Merchant", back_populates="agents")
