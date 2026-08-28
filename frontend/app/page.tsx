@@ -15,6 +15,12 @@ export default function Home() {
           </div>
           <div className="flex items-center space-x-3">
             <Link
+              href="/audit"
+              className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
+            >
+              Audit Trail
+            </Link>
+            <Link
               href="/onboarding"
               className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
             >

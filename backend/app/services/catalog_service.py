@@ -5,6 +5,7 @@ from fastapi import HTTPException, status
 from app.models.catalog import CatalogItem
 from app.models.merchant import Merchant
 from app.schemas.catalog import CatalogItemCreate, CatalogItemUpdate
+from app.services.audit_service import AuditService
 
 class CatalogService:
     @staticmethod
@@ -27,6 +28,26 @@ class CatalogService:
         db.add(item)
         db.commit()
         db.refresh(item)
+
+        # Wire Audit Event
+        AuditService.log_event(
+            db=db,
+            actor_type="merchant",
+            actor_id=str(item.merchant_id),
+            action="catalog_item_created",
+            input={
+                "item_id": str(item.id),
+                "merchant_id": str(item.merchant_id),
+                "name": item.name,
+                "price": str(item.price),
+                "stock": item.stock,
+                "category": item.category
+            },
+            decision="N/A",
+            reasoning=f"Created catalog item '{item.name}' priced at ₹{item.price} with stock {item.stock} under category '{item.category}'.",
+            merchant_id=item.merchant_id
+        )
+
         return item
 
     @staticmethod
@@ -57,6 +78,23 @@ class CatalogService:
             setattr(item, field, value)
         db.commit()
         db.refresh(item)
+
+        # Wire Audit Event
+        AuditService.log_event(
+            db=db,
+            actor_type="merchant",
+            actor_id=str(item.merchant_id),
+            action="catalog_item_updated",
+            input={
+                "item_id": str(item.id),
+                "merchant_id": str(item.merchant_id),
+                "updates": {k: str(v) if isinstance(v, Decimal) else v for k, v in update_data.items()}
+            },
+            decision="N/A",
+            reasoning=f"Updated catalog item '{item.name}' (ID: {item.id}) fields: {list(update_data.keys())}.",
+            merchant_id=item.merchant_id
+        )
+
         return item
 
     @staticmethod
@@ -67,8 +105,29 @@ class CatalogService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Catalog item with ID {item_id} does not exist"
             )
+        merchant_id = item.merchant_id
+        item_name = item.name
+        item_uuid = item.id
+
         db.delete(item)
         db.commit()
+
+        # Wire Audit Event
+        AuditService.log_event(
+            db=db,
+            actor_type="merchant",
+            actor_id=str(merchant_id),
+            action="catalog_item_deleted",
+            input={
+                "item_id": str(item_uuid),
+                "merchant_id": str(merchant_id),
+                "name": item_name
+            },
+            decision="N/A",
+            reasoning=f"Deleted catalog item '{item_name}' (ID: {item_uuid}) from merchant catalog.",
+            merchant_id=merchant_id
+        )
+
         return True
 
     @staticmethod

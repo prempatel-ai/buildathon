@@ -49,26 +49,26 @@ Work strictly in order. Do not begin a phase until the previous phase's exit cri
 
 ### Phase 2 — Policy/Limits Engine (the "bounded" layer)
 **Goal:** a standalone rule evaluator, testable independent of any LLM.
-- [ ] `policies` table + config schema (max amount, category allow-list, velocity limits)
-- [ ] Redis-backed sliding-window velocity counters
-- [ ] `evaluate(proposed_action, merchant_limits, agent_history) -> allow | deny | needs_approval + reason` function
-- [ ] Unit tests covering: within limit, over limit, category blocked, velocity exceeded
+- [x] `policies` table + config schema (max amount, category allow-list, velocity limits)
+- [x] Redis-backed sliding-window velocity counters
+- [x] `evaluate(proposed_action, merchant_limits, agent_history) -> allow | deny | needs_approval + reason` function
+- [x] Unit tests covering: within limit, over limit, category blocked, velocity exceeded
 **Exit criteria:** policy engine can be called directly (no agent involved) with a fake proposed action and returns correct decision + reasoning for all test cases.
 
 ### Phase 3 — Payment Service (Razorpay integration)
 **Goal:** real Razorpay test-mode payments, safely wrapped.
-- [ ] Razorpay Orders API integration (test mode)
-- [ ] Razorpay Payments API integration
-- [ ] Idempotency key handling — no double charges
-- [ ] Transaction state machine: `proposed → approved → executing → settled/failed`
-- [ ] `transactions` table fully wired
+- [x] Razorpay Orders API integration (test mode)
+- [x] Razorpay Payments API integration
+- [x] Idempotency key handling — no double charges
+- [x] Transaction state machine: `proposed → approved → executing → settled/failed`
+- [x] `transactions` table fully wired
 **Exit criteria:** a payment can be created and completed end-to-end via Razorpay test mode, called directly (no agent yet), with correct state transitions logged.
 
 ### Phase 4 — Audit/Event Store
 **Goal:** every action from Phases 1–3 is now logged to a single append-only trail.
-- [ ] `audit_events` table finalized
-- [ ] Logging hooks added to catalog, policy, and payment services
-- [ ] Audit trail viewer page in dashboard (read-only, chronological)
+- [x] `audit_events` table finalized
+- [x] Logging hooks added to catalog, policy, and payment services
+- [x] Audit trail viewer page in dashboard (read-only, chronological)
 **Exit criteria:** performing a catalog change, a policy decision, and a payment all produce visible, correctly-ordered rows in the audit dashboard.
 
 ### Phase 5 — Agent Orchestration (LangGraph + Groq)
@@ -103,4 +103,4 @@ Work strictly in order. Do not begin a phase until the previous phase's exit cri
 5. Trigger one deliberate failure (e.g. over spend-limit) → system blocks cleanly, explains why, no crash, no partial charge
 
 ## 7. Current status
-Phase: **Phase 1 completed — catalog service & agent-readable JSON-LD schema ready for Phase 2.**
+Phase: **Phase 4 completed — audit/event store ready for Phase 5 (LangGraph Agent Orchestration).**
