@@ -26,6 +26,7 @@ class PendingApprovalActionRequest(BaseModel):
 class AgentChatResponse(BaseModel):
     merchant_id: str
     agent_id: str
+    thread_id: Optional[str] = None
     prompt: str
     proposed_tool: Optional[str] = None
     tool_args: Optional[Dict[str, Any]] = None
@@ -44,6 +45,14 @@ def agent_chat_endpoint(req: AgentChatRequest, db: Session = Depends(get_db)):
     Executes the LangGraph Agent Orchestration flow for a prompt.
     LLM tool proposals strictly route through the Phase 2 policy gate before Phase 3 payment execution.
     """
+    from app.models.merchant import Merchant
+    merchant = db.query(Merchant).filter(Merchant.id == req.merchant_id).first()
+    if not merchant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Merchant with ID {req.merchant_id} does not exist."
+        )
+
     result = run_agent_workflow(
         merchant_id=str(req.merchant_id),
         agent_id=req.agent_id or "buyer_agent_01",
@@ -52,6 +61,7 @@ def agent_chat_endpoint(req: AgentChatRequest, db: Session = Depends(get_db)):
     return AgentChatResponse(
         merchant_id=str(req.merchant_id),
         agent_id=req.agent_id or "buyer_agent_01",
+        thread_id=result.get("thread_id"),
         prompt=req.prompt,
         proposed_tool=result.get("proposed_tool"),
         tool_args=result.get("tool_args"),
@@ -117,6 +127,7 @@ def approve_pending_action(pending_id: UUID, req: PendingApprovalActionRequest, 
 
         tx_create = PaymentOrderCreate(
             merchant_id=req.merchant_id,
+            agent_id=pending.agent_id,
             amount=amount,
             idempotency_key=idempotency_key,
             receipt=f"rcpt_appr_{pending.id.hex[:4]}"

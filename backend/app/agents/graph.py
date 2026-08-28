@@ -1,10 +1,13 @@
+import uuid
 from typing import Dict, Any, Optional, List, TypedDict
 from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.memory import MemorySaver
 from app.agents.nodes import llm_node, policy_node, execute_node
 
 class AgentGraphState(TypedDict, total=False):
     merchant_id: str
     agent_id: str
+    thread_id: Optional[str]
     prompt: str
     proposed_tool: Optional[str]
     tool_args: Optional[Dict[str, Any]]
@@ -17,9 +20,12 @@ class AgentGraphState(TypedDict, total=False):
     status: str
     response_message: Optional[str]
 
+# Global LangGraph MemorySaver Checkpointer
+checkpointer = MemorySaver()
+
 def build_agent_graph():
     """
-    Builds the Agent Orchestration LangGraph:
+    Builds the Agent Orchestration LangGraph compiled with MemorySaver checkpointer:
     LLM Node (Groq) -> Policy Engine Node (Real evaluate()) -> Execute Node (Real PaymentService / CatalogService).
     """
     builder = StateGraph(AgentGraphState)
@@ -35,19 +41,23 @@ def build_agent_graph():
     builder.add_edge("policy_node", "execute_node")
     builder.add_edge("execute_node", END)
 
-    return builder.compile()
+    return builder.compile(checkpointer=checkpointer)
 
-# Global Compiled Graph
+# Global Compiled Graph with MemorySaver Checkpointer
 agent_app = build_agent_graph()
 
-def run_agent_workflow(merchant_id: str, agent_id: str, prompt: str) -> Dict[str, Any]:
+def run_agent_workflow(merchant_id: str, agent_id: str, prompt: str, thread_id: Optional[str] = None) -> Dict[str, Any]:
     """
-    Executes the full agent graph workflow for a user/agent prompt.
-    Returns final state including policy decision, reasoning, and payment outcome.
+    Executes the full agent graph workflow for a user/agent prompt with state checkpointing.
+    Returns final state including policy decision, reasoning, payment outcome, and thread_id.
     """
+    if not thread_id:
+        thread_id = f"thread_{uuid.uuid4().hex[:12]}"
+
     initial_state: AgentGraphState = {
         "merchant_id": merchant_id,
         "agent_id": agent_id,
+        "thread_id": thread_id,
         "prompt": prompt,
         "proposed_tool": None,
         "tool_args": {},
@@ -56,5 +66,7 @@ def run_agent_workflow(merchant_id: str, agent_id: str, prompt: str) -> Dict[str
         "status": "INITIALIZED"
     }
 
-    final_state = agent_app.invoke(initial_state)
+    config = {"configurable": {"thread_id": thread_id}}
+    final_state = agent_app.invoke(initial_state, config=config)
+    final_state["thread_id"] = thread_id
     return final_state

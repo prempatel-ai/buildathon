@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Navigation from '@/components/Navigation';
 import { fetchMerchants, Merchant } from '@/lib/api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -78,30 +79,31 @@ export default function AgentPage() {
   };
 
   const runAgentPrompt = async (text: string) => {
-    if (!selectedMerchantId || !text.trim()) return;
+    if (!text.trim() || !selectedMerchantId) return;
     setLoading(true);
     setError(null);
+
     try {
       const res = await fetch(`${API_BASE_URL}/agent/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           merchant_id: selectedMerchantId,
-          agent_id: 'buyer_agent_demo_01',
+          agent_id: 'buyer_agent_01',
           prompt: text,
         }),
       });
+
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.detail || 'Agent execution failed');
       }
+
       const data: AgentResponse = await res.json();
       setHistory((prev) => [data, ...prev]);
-      if (data.status === 'PAUSED_FOR_HUMAN_APPROVAL') {
-        loadPendingApprovals(selectedMerchantId);
-      }
+      loadPendingApprovals(selectedMerchantId);
     } catch (err: any) {
-      setError(err.message || 'Failed to execute agent prompt');
+      setError(err.message || 'Agent query failed');
     } finally {
       setLoading(false);
     }
@@ -121,8 +123,24 @@ export default function AgentPage() {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.detail || `Failed to ${action} action`);
       }
+      const outcome = await res.json();
       loadPendingApprovals(selectedMerchantId);
-      runAgentPrompt('Refresh status after human approval');
+
+      // Append outcome card to chat history
+      setHistory((prev) => [
+        {
+          merchant_id: selectedMerchantId,
+          agent_id: 'buyer_agent_01',
+          prompt: `Human Merchant ${action === 'approve' ? 'Approved' : 'Rejected'} Action`,
+          policy_decision: action === 'approve' ? 'APPROVED' : 'REJECTED',
+          reasoning: outcome.message || `Merchant explicitly ${action}d pending request ${pendingId}.`,
+          razorpay_order_id: outcome.razorpay_order_id,
+          transaction_id: outcome.transaction_id,
+          status: action === 'approve' ? 'PAYMENT_EXECUTED' : 'REJECTED_BY_MERCHANT',
+          response_message: outcome.message || `Action ${action}d cleanly.`
+        },
+        ...prev
+      ]);
     } catch (err: any) {
       alert(err.message);
     }
@@ -131,7 +149,7 @@ export default function AgentPage() {
   const getDecisionBadge = (decision?: string) => {
     if (!decision) return null;
     const d = decision.toUpperCase();
-    if (d === 'ALLOW') {
+    if (d === 'ALLOW' || d === 'APPROVED') {
       return (
         <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-mono text-xs font-semibold">
           ALLOW (GATE PASSED)
@@ -152,6 +170,13 @@ export default function AgentPage() {
         </span>
       );
     }
+    if (d === 'REJECTED') {
+      return (
+        <span className="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full font-mono text-xs font-semibold">
+          REJECTED (HUMAN DENIED)
+        </span>
+      );
+    }
     return (
       <span className="px-3 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded-full font-mono text-xs font-medium">
         {d}
@@ -161,34 +186,7 @@ export default function AgentPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Header Navigation */}
-      <header className="border-b border-slate-200 bg-white sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center font-semibold text-white text-sm">
-              AP
-            </div>
-            <span className="font-semibold text-slate-900 tracking-tight">Agentpay</span>
-            <span className="text-slate-300">/</span>
-            <span className="text-xs font-medium text-slate-600">AI Buyer Agent Orchestration</span>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <Link
-              href="/audit"
-              className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
-            >
-              Audit Trail
-            </Link>
-            <Link
-              href="/dashboard"
-              className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
-            >
-              Merchant Dashboard
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Navigation />
 
       {/* Main Content */}
       <main className="max-w-6xl w-full mx-auto px-6 py-8 flex-1 grid grid-cols-1 lg:grid-cols-3 gap-8">

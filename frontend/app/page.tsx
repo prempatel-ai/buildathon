@@ -1,46 +1,11 @@
 import React from 'react';
 import Link from 'next/link';
+import Navigation from '@/components/Navigation';
 
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="border-b border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center font-semibold text-white text-sm">
-              AP
-            </div>
-            <span className="font-semibold text-slate-900 tracking-tight">Agentpay</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Link
-              href="/agent"
-              className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
-            >
-              AI Buyer Agent
-            </Link>
-            <Link
-              href="/audit"
-              className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
-            >
-              Audit Trail
-            </Link>
-            <Link
-              href="/onboarding"
-              className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
-            >
-              Onboarding
-            </Link>
-            <Link
-              href="/dashboard"
-              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition-colors"
-            >
-              Merchant Dashboard &rarr;
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Navigation />
 
       {/* Main Content */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-12 flex flex-col items-center justify-center">

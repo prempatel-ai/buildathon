@@ -267,6 +267,7 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
             
             tx_create = PaymentOrderCreate(
                 merchant_id=merchant_id,
+                agent_id=agent_id,
                 amount=amount,
                 idempotency_key=idempotency_key,
                 receipt=f"rcpt_agent_{uuid.uuid4().hex[:4]}"
