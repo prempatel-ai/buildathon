@@ -49,10 +49,10 @@ Work strictly in order. Do not begin a phase until the previous phase's exit cri
 
 ### Phase 2 — Policy/Limits Engine (the "bounded" layer)
 **Goal:** a standalone rule evaluator, testable independent of any LLM.
-- [ ] `policies` table + config schema (max amount, category allow-list, velocity limits)
-- [ ] Redis-backed sliding-window velocity counters
-- [ ] `evaluate(proposed_action, merchant_limits, agent_history) -> allow | deny | needs_approval + reason` function
-- [ ] Unit tests covering: within limit, over limit, category blocked, velocity exceeded
+- [x] `policies` table + config schema (max amount, category allow-list, velocity limits)
+- [x] Redis-backed sliding-window velocity counters
+- [x] `evaluate(proposed_action, merchant_limits, agent_history) -> allow | deny | needs_approval + reason` function
+- [x] Unit tests covering: within limit, over limit, category blocked, velocity exceeded
 **Exit criteria:** policy engine can be called directly (no agent involved) with a fake proposed action and returns correct decision + reasoning for all test cases.
 
 ### Phase 3 — Payment Service (Razorpay integration)
@@ -103,4 +103,4 @@ Work strictly in order. Do not begin a phase until the previous phase's exit cri
 5. Trigger one deliberate failure (e.g. over spend-limit) → system blocks cleanly, explains why, no crash, no partial charge
 
 ## 7. Current status
-Phase: **Phase 1 completed — catalog service & agent-readable JSON-LD schema ready for Phase 2.**
+Phase: **Phase 2 completed — policy/limits engine ready for Phase 3.**

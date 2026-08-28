@@ -12,6 +12,7 @@ yarn-error.log*
 
 # Python
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
 *.so
@@ -20,6 +21,15 @@ env/
 venv/
 ENV/
 .venv/
+.pytest_cache/
+**/.pytest_cache/
+
+# Tests & Verification Scripts
+tests/
+**/tests/
+backend/tests/
+backend/verify_*.py
+verify_*.py
 
 # Environment Variables
 .env
