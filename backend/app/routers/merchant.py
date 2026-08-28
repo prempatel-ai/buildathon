@@ -18,8 +18,16 @@ def create_merchant(merchant_in: MerchantCreate, db: Session = Depends(get_db)):
 def list_merchants(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return MerchantService.list_merchants(db, skip=skip, limit=limit)
 
+from app.core.security import get_current_merchant, verify_merchant_access
+from app.models.merchant import Merchant
+
 @router.get("/{merchant_id}", response_model=MerchantRead)
-def get_merchant(merchant_id: UUID, db: Session = Depends(get_db)):
+def get_merchant(
+    merchant_id: UUID,
+    current_merchant: Merchant = Depends(get_current_merchant),
+    db: Session = Depends(get_db)
+):
+    verify_merchant_access(current_merchant, merchant_id)
     merchant = MerchantService.get_merchant(db, merchant_id)
     if not merchant:
         raise HTTPException(

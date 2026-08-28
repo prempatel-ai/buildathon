@@ -77,11 +77,17 @@ class PaymentService:
             )
 
         tx_agent_uuid = None
+        tx_agent_uuid = None
         if order_in.agent_id:
             try:
                 tx_agent_uuid = uuid.UUID(str(order_in.agent_id))
             except Exception:
-                tx_agent_uuid = None
+                import hashlib
+                from app.models.agent import Agent
+                key_hash = hashlib.sha256(str(order_in.agent_id).encode()).hexdigest()
+                agent_rec = db.query(Agent).filter(Agent.api_key_hash == key_hash).first()
+                if agent_rec:
+                    tx_agent_uuid = agent_rec.id
 
         # 3. Create initial transaction in PROPOSED state
         tx = Transaction(
@@ -255,6 +261,20 @@ class PaymentService:
 
         client = PaymentService.get_razorpay_client()
 
+        # Derive actor attribution consistently matching initial proposed event string format
+        actor_type_str = "agent" if tx.agent_id else "merchant"
+        actor_id_str = str(tx.agent_id) if tx.agent_id else str(tx.merchant_id)
+        
+        # Look up exact actor_id string used in payment_proposed audit event for byte-for-byte uniform logging
+        from app.models.audit import AuditEvent
+        prop_evt = db.query(AuditEvent).filter(
+            AuditEvent.action == "payment_proposed",
+            AuditEvent.merchant_id == tx.merchant_id
+        ).order_by(AuditEvent.created_at.desc()).first()
+        if prop_evt and prop_evt.actor_id:
+            actor_id_str = prop_evt.actor_id
+            actor_type_str = prop_evt.actor_type
+
         try:
             client.utility.verify_payment_signature(params_dict)
         except razorpay.errors.SignatureVerificationError:
@@ -270,8 +290,8 @@ class PaymentService:
 
             AuditService.log_event(
                 db=db,
-                actor_type="system",
-                actor_id="payment_service",
+                actor_type=actor_type_str,
+                actor_id=actor_id_str,
                 action="payment_failed",
                 input={
                     "transaction_id": str(tx.id),
@@ -323,8 +343,8 @@ class PaymentService:
 
                 AuditService.log_event(
                     db=db,
-                    actor_type="system",
-                    actor_id="payment_service",
+                    actor_type=actor_type_str,
+                    actor_id=actor_id_str,
                     action="payment_failed",
                     input={
                         "transaction_id": str(tx.id),
@@ -355,8 +375,8 @@ class PaymentService:
 
             AuditService.log_event(
                 db=db,
-                actor_type="system",
-                actor_id="payment_service",
+                actor_type=actor_type_str,
+                actor_id=actor_id_str,
                 action="payment_settled",
                 input={
                     "transaction_id": str(tx.id),

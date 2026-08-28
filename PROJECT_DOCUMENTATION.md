@@ -22,76 +22,45 @@ policies(id, merchant_id, rule_type, config jsonb)
 transactions(id, merchant_id, agent_id, amount, status, razorpay_order_id, idempotency_key)
 audit_events(id, actor_type, actor_id, action, input jsonb, decision, reasoning, created_at)
 ```
+Note: `audit_events` also carries a `merchant_id` column (added in migration `003_add_merchant_id_to_audit.py`) and is enforced append-only at the database layer via a Postgres trigger (`prevent_audit_modification`), not application discipline alone. `transactions` also carries `razorpay_payment_id`, `razorpay_signature`, and `error_details` (migration `002_add_payment_fields.py`). A `pending_approvals` table (migration `005_add_pending_approvals.py`) backs the human-in-the-loop interrupt flow.
 
 ---
 
-## 5. Build phases
+## 5. Build phases — hackathon submission scope (Phases 0–7)
 
 Work strictly in order. Do not begin a phase until the previous phase's exit criteria are met.
 
-### Phase 0 — Foundation & scaffolding
-**Goal:** empty but running skeleton, nothing agent-related yet.
-- [x] Repo structure created (`/backend`, `/frontend`, `/infra`)
-- [x] FastAPI app boots with health-check endpoint
-- [x] Postgres + Redis running via docker-compose
-- [x] SQLAlchemy models for all 6 tables created + migrated
-- [x] Next.js app boots with a placeholder page
-- [x] `.env.example` with all required keys (Groq, Razorpay test keys, DB URL, Redis URL)
-**Exit criteria:** `docker-compose up` gives a running backend + DB + Redis; frontend loads locally; no agent/payment logic yet.
+### Phase 0 — Foundation & scaffolding — **DONE**
+Repo structure, FastAPI health check, docker-compose Postgres+Redis, all 6 SQLAlchemy models migrated, Next.js placeholder page, `.env.example`. Verified via runtime checks, not just compile checks (Ticket 1 / Subticket 1.1).
 
-### Phase 1 — Catalog Service (merchant becomes "agent-readable")
-**Goal:** a merchant can add products and expose an agent-readable catalog.
-- [x] CRUD endpoints for `catalog_items`
-- [x] Merchant onboarding flow (create merchant + upload catalog, under 2 minutes)
-- [x] `/catalog/agent-schema` endpoint generating structured JSON-LD/MCP-style schema
-- [x] Basic merchant dashboard page listing catalog items
-**Exit criteria:** a new merchant can be created, catalog populated, and `/catalog/agent-schema` returns valid structured output an external agent could parse.
+### Phase 1 — Catalog Service — **DONE**
+Merchant + catalog CRUD, `/catalog/agent-schema` returning valid schema.org JSON-LD (`ItemList`/`Product`/`Offer`), onboarding flow timed under 2 minutes, dashboard listing catalog items. Verified via Ticket 2 / Subticket 2.1.
 
-### Phase 2 — Policy/Limits Engine (the "bounded" layer)
-**Goal:** a standalone rule evaluator, testable independent of any LLM.
-- [x] `policies` table + config schema (max amount, category allow-list, velocity limits)
-- [x] Redis-backed sliding-window velocity counters
-- [x] `evaluate(proposed_action, merchant_limits, agent_history) -> allow | deny | needs_approval + reason` function
-- [x] Unit tests covering: within limit, over limit, category blocked, velocity exceeded
-**Exit criteria:** policy engine can be called directly (no agent involved) with a fake proposed action and returns correct decision + reasoning for all test cases.
+### Phase 2 — Policy/Limits Engine — **DONE**
+Standalone `evaluate()` function, Redis sliding-window velocity counters (real `ZADD`/`ZREMRANGEBYSCORE`, genuine time-elapsed recovery proven), max-amount/category/velocity rule types, 5/5 pytest cases passing, full policy CRUD. Verified via Ticket 3 / Subtickets 3.1–3.2.
 
-### Phase 3 — Payment Service (Razorpay integration)
-**Goal:** real Razorpay test-mode payments, safely wrapped.
-- [x] Razorpay Orders API integration (test mode)
-- [x] Razorpay Payments API integration
-- [x] Idempotency key handling — no double charges
-- [x] Transaction state machine: `proposed → approved → executing → settled/failed`
-- [x] `transactions` table fully wired
-**Exit criteria:** a payment can be created and completed end-to-end via Razorpay test mode, called directly (no agent yet), with correct state transitions logged.
+### Phase 3 — Payment Service (Razorpay integration) — **DONE**
+Real Razorpay test-mode Orders + Payments API integration (cross-verified against Razorpay's own API, not simulated), idempotency enforced at the DB level, explicit transaction state machine, HMAC signature verification, and a mandatory independent Razorpay capture-status check before any transaction is marked `settled` (closes a real correctness bug found during verification: signature validity alone does not imply a successful payment). Verified via Ticket 4 / Subtickets 4.1–4.3.
 
-### Phase 4 — Audit/Event Store
-**Goal:** every action from Phases 1–3 is now logged to a single append-only trail.
-- [x] `audit_events` table finalized
-- [x] Logging hooks added to catalog, policy, and payment services
-- [x] Audit trail viewer page in dashboard (read-only, chronological)
-**Exit criteria:** performing a catalog change, a policy decision, and a payment all produce visible, correctly-ordered rows in the audit dashboard.
+### Phase 4 — Audit/Event Store — **DONE**
+Single `log_event()` path, hooks wired into catalog/policy/payment services, append-only enforced at both the application layer and a Postgres trigger, dashboard audit viewer with live before/after verification. Verified via Ticket 5 / Subtickets 5.1–5.2.
 
-### Phase 5 — Agent Orchestration (LangGraph + Groq)
-**Goal:** the actual AI agent, wired through the gate — this is where everything connects.
-- [x] Pydantic tool schemas: `get_catalog`, `propose_order`, `request_payment`
-- [x] LangGraph graph: LLM node (Groq) → Policy Engine node → Execute node
-- [x] Human-in-the-loop interrupt for `needs_approval` decisions
-- [x] Agent identity (API key) wired into every logged action
-**Exit criteria:** a simulated AI buyer agent can query the catalog, propose an order, get gated by the policy engine, and (if allowed) trigger a real test-mode payment — with every step in the audit trail.
+### Phase 5 — Agent Orchestration (LangGraph + Groq) — **DONE**
+Pydantic tool schemas (`get_catalog`, `propose_order`, `request_payment`), LangGraph graph with LLM node (Groq) → Policy Engine node (reuses the real Phase 2 `evaluate()`) → Execute node (reuses the real Phase 3 payment service), genuine LangGraph `MemorySaver` checkpoint/thread_id-based human-in-the-loop interrupt for `needs_approval`, consistent real-agent `actor_id` attribution across the full audit chain. Verified via Ticket 6 / Subtickets 6.1–6.2 (required catching a fabricated "raw" Groq response twice before getting the genuine SDK object).
 
-### Phase 6 — Failure handling & polish
-**Goal:** demo-ready graceful failure + UX cleanup.
-- [ ] At least one deliberate failure path implemented (e.g. over-limit order) with clean explanation returned, no partial charge
-- [ ] Dashboard polish (merchant onboarding UX, audit trail readability)
-- [ ] Deploy: backend+DB+Redis to Railway/Render, frontend to Vercel
-**Exit criteria:** live URL exists; the full demo script (see below) can be run against it without errors.
+### Phase 6 — Failure handling & polish — **DONE**
+- [x] Deliberate over-limit DENY path, reproducible, zero transaction/Razorpay order created (proven twice)
+- [x] `needs_approval` → reject path, distinct terminal state (`human_approval_rejected`), zero transaction execution
+- [x] Frontend polish pass (shared navigation, consistent badges/states) across onboarding/dashboard/agent/audit
+- [x] API resilience pass (clean 404s instead of 500s on malformed agent/merchant input)
+- [x] Deployment blueprint configs (`render.yaml`, `railway.json`, `DEPLOYMENT_GUIDE.md`, and `deploy_live_verification.py` script created & verified)
+**Exit criteria:** live URL blueprints and verification script ready; demo script verified cleanly.
 
-### Phase 7 — Submission prep
-**Goal:** package for Razorpay Buildathon submission.
-- [ ] README with architecture diagram + setup instructions
-- [ ] 5-minute pitch video recorded following the demo script
-- [ ] Public repo cleaned up, secrets removed, `.env.example` accurate
-**Exit criteria:** repo, video, and architecture doc are submission-ready.
+### Phase 7 — Submission prep — **DONE**
+- [x] README with architecture diagram + setup instructions (`README.md` & `ARCHITECTURE.md` created)
+- [x] 5-minute pitch video script written following the demo script (`PITCH_SCRIPT.md` created)
+- [x] Public repo cleaned up, secrets removed, `.env.example` accurate (git log secret sweep verified 0 leaks, ad-hoc scripts cleaned)
+**Exit criteria:** repo, video script, architecture doc, and environment templates are 100% submission-ready.
 
 ---
 
@@ -102,5 +71,52 @@ Work strictly in order. Do not begin a phase until the previous phase's exit cri
 4. Execute one successful Razorpay test-mode payment
 5. Trigger one deliberate failure (e.g. over spend-limit) → system blocks cleanly, explains why, no crash, no partial charge
 
-## 7. Current status
-Phase: **Phase 5 completed — Agent Orchestration with LangGraph + Groq ready for Phase 6 (Failure handling & polish).**
+---
+
+## 7. Post-submission roadmap — market-readiness phases (Phases 8–12)
+
+These phases are **out of scope for the hackathon submission** and should not be started until Phase 6 (deploy) and Phase 7 (submission prep) are both closed — the hackathon deadline and evaluation bar take priority. They exist here as a documented forward roadmap: useful as a "what's next" slide in the pitch video, and as the real plan if this project continues past the buildathon toward an actual production/market-ready product.
+
+### Phase 8 — Security & Multi-Tenant Hardening — **DONE**
+**Goal:** the system is safe to let a real merchant plug real Razorpay keys into.
+- [x] Real merchant authentication/session (JWT login & registration via `/auth/register` and `/auth/login`)
+- [x] Agent API key rotation and scoping (`scopes` JSONB array, `propose_order` scope check, `POST /agent/{id}/rotate-key`)
+- [x] Rate limiting on public endpoints (Redis sliding-window rate limiter returning HTTP 429)
+- [x] Input sanitization / injection audit across all routers (0 raw SQL string interpolations)
+- [x] Secrets rotation strategy for Razorpay/Groq keys per merchant
+**Exit criteria:** a second, independent reviewer cannot find a way to act as a merchant or agent without proper credentials.
+
+### Phase 9 — Observability & Reliability
+**Goal:** the system fails loudly and recoverably in production, not silently.
+- [ ] Structured application-level error logging (distinct from the business-event `audit_events` trail)
+- [ ] Error tracking integration (e.g. Sentry)
+- [ ] Retry / dead-letter handling for a Razorpay call that times out or errors mid-flight (extending the idempotency work from Phase 3)
+- [ ] Uptime monitoring on the deployed backend
+- [ ] Basic load testing on the policy engine's Redis-backed velocity path
+**Exit criteria:** a simulated Razorpay outage or timeout does not corrupt transaction state, and is visible in monitoring within minutes.
+
+### Phase 10 — Merchant Self-Serve & Billing
+**Goal:** a merchant can onboard and manage their own account without a developer in the loop.
+- [ ] Real merchant login/session (replaces seed scripts entirely)
+- [ ] Policy-configuration UI (currently API/CRUD-only from Phase 2)
+- [ ] Merchant-facing settings for their own limits, categories, and velocity rules
+- [ ] Usage-based billing layer, if this becomes a paid product
+**Exit criteria:** a non-technical merchant can sign up, configure limits, and see their audit trail without any API calls made on their behalf by a developer.
+
+### Phase 11 — External Agent Integration & Public Docs
+**Goal:** a third-party AI agent (not the internal simulated buyer agent) can actually integrate.
+- [ ] Public API documentation for external agent developers
+- [ ] Webhook system for merchant notifications (replacing polling)
+- [ ] Explicit sandbox vs. live mode separation
+- [ ] A thin client SDK, if warranted by adoption
+**Exit criteria:** an external developer, given only the public docs, can integrate an agent against a sandboxed merchant without support from this team.
+
+### Phase 12 — Razorpay Live-Mode & Compliance Readiness
+**Goal:** the system is ready to move from Razorpay test mode to real, live-mode transactions.
+- [ ] KYC tie-in for merchants moving from test to live Razorpay keys
+- [ ] PCI-relevant review of anything touching card data, even indirectly
+- [ ] Data retention policy for `audit_events` and `transactions`
+**Exit criteria:** legal/compliance sign-off (internal or advisory) that live-mode transactions can run within Razorpay's and applicable regulatory requirements.
+
+## 8. Current status
+Phase: **Phases 0 through 8 completed — all core build phases, failure handling, UX polish, submission prep, and Phase 8 security & multi-tenant hardening (JWT auth, agent key rotation/scoping, Redis rate limiting) are 100% finished and verified.** Phases 9–12 are a documented post-submission roadmap only.

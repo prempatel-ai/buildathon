@@ -70,8 +70,8 @@ PostgreSQL + Redis
 1. **Agent Orchestration Service** — LangGraph graph, Groq (Llama 3.3 70B, tool-use mode) as reasoning node. Tools defined as strict Pydantic schemas: `get_catalog`, `propose_order`, `request_payment`.
 2. **Policy/Limits Engine** — the core IP. Stateless rule evaluator: input = proposed action, output = allow/deny/needs-approval + reason. Rules configurable per-merchant in Postgres (max amount, category allow-list, velocity limits via Redis).
 3. **Catalog Service** — CRUD + versioned product schema. Exposes `/catalog/agent-schema` as JSON-LD / MCP-style spec any external agent can query. This is what makes a merchant "agent-readable."
-4. **Payment Service** — wraps Razorpay Orders + Payments API (test mode). Idempotency keys mandatory (never double-charge). State machine: `proposed → approved → executing → settled/failed`.
-5. **Audit/Event Store** — append-only Postgres table, never mutated. Single source of truth for explainability, observability, and the audit trail requirement simultaneously.
+4. **Payment Service** — wraps Razorpay Orders + Payments API (test mode). Idempotency keys mandatory (never double-charge). State machine: `proposed → approved → executing → settled/failed`. Settlement requires an independent Razorpay capture-status check, not signature verification alone.
+5. **Audit/Event Store** — append-only Postgres table (enforced by both application code and a DB trigger), never mutated. Single source of truth for explainability, observability, and the audit trail requirement simultaneously.
 
 ## 9. Data model
 
@@ -80,8 +80,9 @@ merchants(id, name, razorpay_key_id, limits_config jsonb)
 agents(id, merchant_id, api_key_hash, name)
 catalog_items(id, merchant_id, name, price, stock, category)
 policies(id, merchant_id, rule_type, config jsonb)
-transactions(id, merchant_id, agent_id, amount, status, razorpay_order_id, idempotency_key)
-audit_events(id, actor_type, actor_id, action, input jsonb, decision, reasoning, created_at)
+transactions(id, merchant_id, agent_id, amount, status, razorpay_order_id, razorpay_payment_id, razorpay_signature, idempotency_key, error_details)
+audit_events(id, actor_type, actor_id, action, input jsonb, decision, reasoning, merchant_id, created_at)
+pending_approvals(id, ...)  -- backs the LangGraph human-in-the-loop interrupt
 ```
 
 ## 10. Tech stack
@@ -91,14 +92,12 @@ audit_events(id, actor_type, actor_id, action, input jsonb, decision, reasoning,
 | LLM | Groq API (Llama 3.3 70B, tool-use) | fast, cheap, real-time agent feel; OpenAI-compatible tool-calling |
 | Agent framework | LangGraph | explicit graph nodes/edges — policy gate is structural, not hoped-for; native human-in-the-loop interrupts; built-in state persistence for free audit scaffolding |
 | API | FastAPI + Pydantic v2 | typed contracts (critical for money-moving code), async |
-| DB | PostgreSQL (Supabase/Railway) | ACID, JSONB for flexible policy config |
+| DB | PostgreSQL (Supabase/Railway/Render) | ACID, JSONB for flexible policy config |
 | Cache/limits | Redis | atomic velocity counters, sliding-window rate limits |
-| Queue | Celery+Redis or `arq` | async payment execution + retries, don't block the agent loop |
 | Payments | Razorpay Python SDK (test mode) | idempotency support, same code path test→live |
 | Frontend | Next.js 14 (App Router) + Tailwind + shadcn/ui | merchant dashboard + audit trail viewer |
-| Auth | JWT (merchant login) + hashed API keys (agent identity) | separates human vs agent actors — required for audit trail to mean anything |
-| Observability | Structured logs → `audit_events` table (+ optional Sentry) | one source of truth, not two systems |
-| Deploy | Railway/Render (backend+DB+Redis) + Vercel (frontend) | live URL, usable by a real customer today |
+| Observability | Structured logs → `audit_events` table | one source of truth, not two systems |
+| Deploy | Render (backend+DB+Redis) + Vercel (frontend) | live URL, usable by a real customer today |
 
 ## 11. Repo structure
 
@@ -114,7 +113,6 @@ audit_events(id, actor_type, actor_id, action, input jsonb, decision, reasoning,
     /core           # config, auth, db session
   main.py
 /frontend            # Next.js dashboard (audit trail viewer, merchant onboarding)
-/infra               # docker-compose (postgres, redis), deploy configs
 ```
 
 ## 12. Demo script (what should be shown in the 5-min pitch video)
@@ -132,4 +130,4 @@ audit_events(id, actor_type, actor_id, action, input jsonb, decision, reasoning,
 - **One failure** is handled gracefully, not hidden
 
 ## 14. Status
-Architecture and stack finalized. Not yet built. Next steps: Pydantic tool schemas, LangGraph node implementation, policy engine rule logic.
+Phases 0–5 built and verified (foundation, catalog, policy engine, real Razorpay test-mode payments with capture-status gating, append-only audit trail, LangGraph+Groq agent orchestration). Phase 6 (failure handling & polish) mostly done — over-limit deny and human-rejection paths proven, frontend polished — with live deploy to Render + Vercel as the one outstanding step. Phase 7 (submission prep: README, pitch video, repo cleanup) not started. See `PROJECT_DOCUMENTATION.md` for the full phase-by-phase status and for Phases 8–12, a documented post-submission market-readiness roadmap (security hardening, observability, merchant self-serve, external agent integration, live-mode/compliance readiness) that is explicitly out of scope until the hackathon submission is complete.
