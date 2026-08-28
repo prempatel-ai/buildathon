@@ -73,10 +73,10 @@ Work strictly in order. Do not begin a phase until the previous phase's exit cri
 
 ### Phase 5 — Agent Orchestration (LangGraph + Groq)
 **Goal:** the actual AI agent, wired through the gate — this is where everything connects.
-- [ ] Pydantic tool schemas: `get_catalog`, `propose_order`, `request_payment`
-- [ ] LangGraph graph: LLM node (Groq) → Policy Engine node → Execute node
-- [ ] Human-in-the-loop interrupt for `needs_approval` decisions
-- [ ] Agent identity (API key) wired into every logged action
+- [x] Pydantic tool schemas: `get_catalog`, `propose_order`, `request_payment`
+- [x] LangGraph graph: LLM node (Groq) → Policy Engine node → Execute node
+- [x] Human-in-the-loop interrupt for `needs_approval` decisions
+- [x] Agent identity (API key) wired into every logged action
 **Exit criteria:** a simulated AI buyer agent can query the catalog, propose an order, get gated by the policy engine, and (if allowed) trigger a real test-mode payment — with every step in the audit trail.
 
 ### Phase 6 — Failure handling & polish
@@ -103,4 +103,4 @@ Work strictly in order. Do not begin a phase until the previous phase's exit cri
 5. Trigger one deliberate failure (e.g. over spend-limit) → system blocks cleanly, explains why, no crash, no partial charge
 
 ## 7. Current status
-Phase: **Phase 4 completed — audit/event store ready for Phase 5 (LangGraph Agent Orchestration).**
+Phase: **Phase 5 completed — Agent Orchestration with LangGraph + Groq ready for Phase 6 (Failure handling & polish).**

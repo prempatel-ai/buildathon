@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routers import health, merchant, catalog, policy, payment, audit
+from app.routers import health, merchant, catalog, policy, payment, audit, agent
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -25,6 +25,7 @@ app.include_router(catalog.router)
 app.include_router(policy.router)
 app.include_router(payment.router)
 app.include_router(audit.router)
+app.include_router(agent.router)
 
 @app.get("/")
 def root():

@@ -15,6 +15,12 @@ export default function Home() {
           </div>
           <div className="flex items-center space-x-3">
             <Link
+              href="/agent"
+              className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
+            >
+              AI Buyer Agent
+            </Link>
+            <Link
               href="/audit"
               className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
             >
