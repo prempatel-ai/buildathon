@@ -154,6 +154,15 @@ def agent_chat_endpoint(req: AgentChatRequest, db: Session = Depends(get_db)):
                 detail="Invalid or revoked agent API key."
             )
         
+        # Check Sandbox vs Live environment guard
+        ag_env = getattr(agent_obj, "environment", "sandbox") or "sandbox"
+        merch_env = getattr(merchant, "environment", "sandbox") or "sandbox"
+        if ag_env != merch_env:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Environment mismatch: Sandbox agent key '{agent_obj.name}' cannot execute actions against Live merchant store."
+            )
+
         # Check if prompt requests order proposal but agent lacks propose_order scope
         is_order_proposal = any(kw in req.prompt.lower() for kw in ["order", "buy", "purchase", "pay", "checkout"])
         if is_order_proposal and "propose_order" not in (agent_obj.scopes or []):
@@ -182,6 +191,24 @@ def agent_chat_endpoint(req: AgentChatRequest, db: Session = Depends(get_db)):
         agent_id=req.agent_id or "buyer_agent_01",
         prompt=req.prompt
     )
+
+    if result.get("status") in ["PAUSED_FOR_HUMAN_APPROVAL", "AWAITING_HUMAN_APPROVAL"] or result.get("policy_decision") == "NEEDS_APPROVAL":
+        try:
+            from app.services.webhook_service import WebhookService
+            WebhookService.dispatch_event(
+                db=db,
+                merchant_id=req.merchant_id,
+                event_type="needs_approval.created",
+                payload={
+                    "event": "needs_approval.created",
+                    "merchant_id": str(req.merchant_id),
+                    "pending_approval_id": result.get("pending_approval_id"),
+                    "reasoning": result.get("reasoning"),
+                    "tool_args": result.get("tool_args")
+                }
+            )
+        except Exception:
+            pass
     return AgentChatResponse(
         merchant_id=str(req.merchant_id),
         agent_id=req.agent_id or "buyer_agent_01",

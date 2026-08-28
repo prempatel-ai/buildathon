@@ -13,6 +13,7 @@ class Merchant(Base):
     password_hash = Column(String(255), nullable=True)
     razorpay_key_id = Column(String(255), nullable=True)
     limits_config = Column(JSONB, nullable=False, server_default='{}')
+    environment = Column(String(50), nullable=False, default="sandbox")
 
     # Relationships
     agents = relationship("Agent", back_populates="merchant", cascade="all, delete-orphan")

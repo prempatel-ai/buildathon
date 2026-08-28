@@ -12,6 +12,7 @@ class Agent(Base):
     api_key_hash = Column(String(255), nullable=False)
     name = Column(String(255), nullable=False)
     scopes = Column(JSONB, nullable=False, server_default='["read_catalog", "propose_order"]')
+    environment = Column(String(50), nullable=False, default="sandbox")
 
     # Relationships
     merchant = relationship("Merchant", back_populates="agents")
