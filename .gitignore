@@ -29,6 +29,7 @@ tests/
 **/tests/
 backend/tests/
 backend/verify_*.py
+backend/test_*.py
 verify_*.py
 
 # Environment Variables

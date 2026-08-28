@@ -57,18 +57,18 @@ Work strictly in order. Do not begin a phase until the previous phase's exit cri
 
 ### Phase 3 — Payment Service (Razorpay integration)
 **Goal:** real Razorpay test-mode payments, safely wrapped.
-- [ ] Razorpay Orders API integration (test mode)
-- [ ] Razorpay Payments API integration
-- [ ] Idempotency key handling — no double charges
-- [ ] Transaction state machine: `proposed → approved → executing → settled/failed`
-- [ ] `transactions` table fully wired
+- [x] Razorpay Orders API integration (test mode)
+- [x] Razorpay Payments API integration
+- [x] Idempotency key handling — no double charges
+- [x] Transaction state machine: `proposed → approved → executing → settled/failed`
+- [x] `transactions` table fully wired
 **Exit criteria:** a payment can be created and completed end-to-end via Razorpay test mode, called directly (no agent yet), with correct state transitions logged.
 
 ### Phase 4 — Audit/Event Store
 **Goal:** every action from Phases 1–3 is now logged to a single append-only trail.
-- [ ] `audit_events` table finalized
-- [ ] Logging hooks added to catalog, policy, and payment services
-- [ ] Audit trail viewer page in dashboard (read-only, chronological)
+- [x] `audit_events` table finalized
+- [x] Logging hooks added to catalog, policy, and payment services
+- [x] Audit trail viewer page in dashboard (read-only, chronological)
 **Exit criteria:** performing a catalog change, a policy decision, and a payment all produce visible, correctly-ordered rows in the audit dashboard.
 
 ### Phase 5 — Agent Orchestration (LangGraph + Groq)
@@ -103,4 +103,4 @@ Work strictly in order. Do not begin a phase until the previous phase's exit cri
 5. Trigger one deliberate failure (e.g. over spend-limit) → system blocks cleanly, explains why, no crash, no partial charge
 
 ## 7. Current status
-Phase: **Phase 2 completed — policy/limits engine ready for Phase 3.**
+Phase: **Phase 4 completed — audit/event store ready for Phase 5 (LangGraph Agent Orchestration).**

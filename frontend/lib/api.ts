@@ -16,6 +16,25 @@ export interface CatalogItem {
   category: string;
 }
 
+export interface AuditEvent {
+  id: string;
+  merchant_id?: string;
+  actor_type: string;
+  actor_id: string;
+  action: string;
+  input: Record<string, any>;
+  decision: string;
+  reasoning: string;
+  created_at: string;
+}
+
+export interface AuditPaginatedResponse {
+  total: number;
+  items: AuditEvent[];
+  skip: number;
+  limit: number;
+}
+
 export interface CreateMerchantPayload {
   name: string;
   razorpay_key_id?: string;
@@ -110,5 +129,26 @@ export async function deleteCatalogItem(itemId: string): Promise<void> {
 export async function fetchAgentSchema(merchantId: string): Promise<Record<string, any>> {
   const res = await fetch(`${API_BASE_URL}/catalog/agent-schema?merchant_id=${merchantId}`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch agent schema');
+  return res.json();
+}
+
+export async function fetchAuditEvents(params?: {
+  merchant_id?: string;
+  actor_type?: string;
+  action?: string;
+  skip?: number;
+  limit?: number;
+  sort_order?: string;
+}): Promise<AuditPaginatedResponse> {
+  const queryParams = new URLSearchParams();
+  if (params?.merchant_id) queryParams.set('merchant_id', params.merchant_id);
+  if (params?.actor_type) queryParams.set('actor_type', params.actor_type);
+  if (params?.action) queryParams.set('action', params.action);
+  if (params?.skip !== undefined) queryParams.set('skip', params.skip.toString());
+  if (params?.limit !== undefined) queryParams.set('limit', params.limit.toString());
+  if (params?.sort_order) queryParams.set('sort_order', params.sort_order);
+
+  const res = await fetch(`${API_BASE_URL}/audit/events?${queryParams.toString()}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch audit events');
   return res.json();
 }
