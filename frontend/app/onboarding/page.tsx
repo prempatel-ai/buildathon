@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Navigation from '@/components/Navigation';
 import { createMerchant, createCatalogItem, seedDemoMerchant, Merchant } from '@/lib/api';
 
 export default function OnboardingPage() {
@@ -110,18 +111,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
-      {/* Header */}
-      <header className="border-b border-slate-200 bg-white">
-        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center font-semibold text-white text-sm">
-              AP
-            </div>
-            <span className="font-semibold text-slate-900 tracking-tight">Agentpay</span>
-          </div>
-          <span className="text-xs font-mono text-slate-500">Merchant Onboarding Flow</span>
-        </div>
-      </header>
+      <Navigation />
 
       {/* Main Container */}
       <main className="max-w-xl w-full mx-auto px-6 py-12 flex-1">

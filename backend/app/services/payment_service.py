@@ -76,11 +76,18 @@ class PaymentService:
                 detail=f"Merchant with ID {order_in.merchant_id} does not exist"
             )
 
+        tx_agent_uuid = None
+        if order_in.agent_id:
+            try:
+                tx_agent_uuid = uuid.UUID(str(order_in.agent_id))
+            except Exception:
+                tx_agent_uuid = None
+
         # 3. Create initial transaction in PROPOSED state
         tx = Transaction(
             id=uuid.uuid4(),
             merchant_id=order_in.merchant_id,
-            agent_id=order_in.agent_id,
+            agent_id=tx_agent_uuid,
             amount=order_in.amount,
             status=TransactionStatus.PROPOSED.value,
             idempotency_key=order_in.idempotency_key,
@@ -104,17 +111,18 @@ class PaymentService:
                 detail="Idempotency conflict on transaction creation"
             )
 
-        actor_id_str = str(tx.agent_id) if tx.agent_id else "merchant_user"
+        actor_id_str = str(order_in.agent_id) if order_in.agent_id else "merchant_user"
+        actor_type_str = "agent" if order_in.agent_id else "system"
 
         AuditService.log_event(
             db=db,
-            actor_type="agent" if tx.agent_id else "system",
+            actor_type=actor_type_str,
             actor_id=actor_id_str,
             action="payment_proposed",
             input={
                 "transaction_id": str(tx.id),
                 "merchant_id": str(tx.merchant_id),
-                "agent_id": str(tx.agent_id) if tx.agent_id else None,
+                "agent_id": actor_id_str if order_in.agent_id else None,
                 "amount": str(tx.amount),
                 "idempotency_key": tx.idempotency_key
             },
@@ -131,13 +139,14 @@ class PaymentService:
 
         AuditService.log_event(
             db=db,
-            actor_type="system",
-            actor_id="policy_engine",
+            actor_type=actor_type_str,
+            actor_id=actor_id_str,
             action="payment_approved",
             input={
                 "transaction_id": str(tx.id),
                 "merchant_id": str(tx.merchant_id),
-                "amount": str(tx.amount)
+                "amount": str(tx.amount),
+                "system_component": "policy_engine"
             },
             decision="APPROVED",
             reasoning=f"Transaction {tx.id} approved for execution by policy checks.",
@@ -171,15 +180,16 @@ class PaymentService:
 
             AuditService.log_event(
                 db=db,
-                actor_type="system",
-                actor_id="payment_service",
+                actor_type=actor_type_str,
+                actor_id=actor_id_str,
                 action="payment_executing",
                 input={
                     "transaction_id": str(tx.id),
                     "merchant_id": str(tx.merchant_id),
                     "amount": str(tx.amount),
                     "razorpay_order_id": tx.razorpay_order_id,
-                    "receipt": receipt
+                    "receipt": receipt,
+                    "system_component": "payment_service"
                 },
                 decision="EXECUTING",
                 reasoning=f"Razorpay order '{tx.razorpay_order_id}' created successfully for ₹{tx.amount}.",
@@ -196,13 +206,14 @@ class PaymentService:
 
             AuditService.log_event(
                 db=db,
-                actor_type="system",
-                actor_id="payment_service",
+                actor_type=actor_type_str,
+                actor_id=actor_id_str,
                 action="payment_failed",
                 input={
                     "transaction_id": str(tx.id),
                     "merchant_id": str(tx.merchant_id),
-                    "error": str(e)
+                    "error": str(e),
+                    "system_component": "payment_service"
                 },
                 decision="FAILED",
                 reasoning=f"Razorpay order creation failed: {str(e)}",

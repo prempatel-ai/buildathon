@@ -15,7 +15,7 @@ class PaymentOrderCreate(BaseModel):
     merchant_id: UUID = Field(..., description="ID of owning merchant")
     amount: Decimal = Field(..., gt=0, decimal_places=2, description="Transaction amount in INR")
     idempotency_key: str = Field(..., min_length=1, max_length=255, description="Unique client idempotency key")
-    agent_id: Optional[UUID] = Field(None, description="Optional agent UUID")
+    agent_id: Optional[str] = Field(None, description="Optional agent ID or API key hash")
     receipt: Optional[str] = Field(None, description="Optional merchant receipt reference")
     notes: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Optional custom notes")
 

@@ -14,6 +14,8 @@ import {
   CatalogItem,
 } from '@/lib/api';
 
+import Navigation from '@/components/Navigation';
+
 function DashboardContent() {
   const searchParams = useSearchParams();
   const initialMerchantId = searchParams.get('merchant_id') || '';
@@ -39,50 +41,45 @@ function DashboardContent() {
 
   // Load merchants list on mount
   useEffect(() => {
+    async function loadMerchants() {
+      try {
+        const data = await fetchMerchants();
+        setMerchants(data);
+        if (data.length > 0 && !selectedMerchantId) {
+          setSelectedMerchantId(data[0].id);
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch merchants');
+        setLoading(false);
+      }
+    }
     loadMerchants();
   }, []);
 
-  // Load items when selected merchant changes
+  // Fetch catalog & agent schema whenever selectedMerchantId changes
   useEffect(() => {
-    if (selectedMerchantId) {
-      loadCatalogAndSchema(selectedMerchantId);
-    } else {
-      setItems([]);
-      setAgentSchema(null);
-      setLoading(false);
-    }
+    if (!selectedMerchantId) return;
+    loadCatalogAndSchema(selectedMerchantId);
   }, [selectedMerchantId]);
 
-  const loadMerchants = async () => {
-    try {
-      const data = await fetchMerchants();
-      setMerchants(data);
-      if (data.length > 0 && !selectedMerchantId) {
-        setSelectedMerchantId(data[0].id);
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load merchants');
-    }
-  };
-
-  const loadCatalogAndSchema = async (merchantId: string) => {
+  async function loadCatalogAndSchema(merchantId: string) {
     setLoading(true);
     setError(null);
     try {
-      const [itemsData, schemaData] = await Promise.all([
+      const [catData, schemaData] = await Promise.all([
         fetchCatalogItems(merchantId),
         fetchAgentSchema(merchantId),
       ]);
-      setItems(itemsData);
+      setItems(catData);
       setAgentSchema(schemaData);
     } catch (err: any) {
-      setError(err.message || 'Failed to load merchant data');
+      setError(err.message || 'Failed to load catalog/schema data');
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleOpenAddModal = () => {
+  const handleOpenCreateModal = () => {
     setEditingItem(null);
     setName('');
     setPrice('');
@@ -97,7 +94,7 @@ function DashboardContent() {
     setName(item.name);
     setPrice(item.price.toString());
     setStock(item.stock.toString());
-    setCategory(item.category);
+    setCategory(item.category || 'General');
     setFormError(null);
     setShowModal(true);
   };
@@ -164,24 +161,17 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Header */}
-      <header className="border-b border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <Navigation />
+      
+      {/* Merchant Bar */}
+      <div className="bg-white border-b border-slate-200 py-3 px-6">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center font-semibold text-white text-sm">
-              AP
-            </div>
-            <span className="font-semibold text-slate-900 tracking-tight">Agentpay</span>
-            <span className="text-slate-300">/</span>
-            <span className="text-xs font-medium text-slate-600">Merchant Dashboard</span>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            {/* Merchant Switcher */}
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Merchant:</span>
             <select
               value={selectedMerchantId}
               onChange={(e) => setSelectedMerchantId(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
             >
               {merchants.length === 0 ? (
                 <option value="">No merchants found</option>
@@ -193,22 +183,15 @@ function DashboardContent() {
                 ))
               )}
             </select>
-
-            <Link
-              href="/audit"
-              className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
-            >
-              Audit Trail
-            </Link>
-            <Link
-              href="/onboarding"
-              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition-colors"
-            >
-              + New Merchant
-            </Link>
           </div>
+          <Link
+            href="/onboarding"
+            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition-colors"
+          >
+            + Onboard New Merchant
+          </Link>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
       <main className="max-w-6xl w-full mx-auto px-6 py-8 flex-1">
@@ -267,7 +250,7 @@ function DashboardContent() {
                 <p className="text-xs text-slate-500">Products currently discoverable by AI buyer agents.</p>
               </div>
               <button
-                onClick={handleOpenAddModal}
+                onClick={handleOpenCreateModal}
                 disabled={!selectedMerchantId}
                 className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
               >
@@ -282,7 +265,7 @@ function DashboardContent() {
                 <p className="text-sm font-medium text-slate-700">No products in catalog</p>
                 <p className="text-xs text-slate-400 mt-1 mb-4">Add catalog items or use quick seed to test.</p>
                 <button
-                  onClick={handleOpenAddModal}
+                  onClick={handleOpenCreateModal}
                   className="px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-medium"
                 >
                   + Add First Product

@@ -10,6 +10,8 @@ import {
   AuditEvent,
 } from '@/lib/api';
 
+import Navigation from '@/components/Navigation';
+
 function AuditViewerContent() {
   const searchParams = useSearchParams();
   const initialMerchantId = searchParams.get('merchant_id') || '';
@@ -135,34 +137,7 @@ function AuditViewerContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Header Navigation */}
-      <header className="border-b border-slate-200 bg-white sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center font-semibold text-white text-sm">
-              AP
-            </div>
-            <span className="font-semibold text-slate-900 tracking-tight">Agentpay</span>
-            <span className="text-slate-300">/</span>
-            <span className="text-xs font-medium text-slate-600">Audit Trail Viewer</span>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <Link
-              href="/dashboard"
-              className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
-            >
-              &larr; Catalog Dashboard
-            </Link>
-            <Link
-              href="/onboarding"
-              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition-colors"
-            >
-              Onboarding
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Navigation />
 
       {/* Main Content */}
       <main className="max-w-6xl w-full mx-auto px-6 py-8 flex-1">
