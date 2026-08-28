@@ -319,3 +319,34 @@ export async function getMerchantUsage(): Promise<MerchantUsageData> {
   return res.json();
 }
 
+export async function getWebhooks(): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/webhooks`, { headers: getAuthHeaders(), cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch webhooks');
+  return res.json();
+}
+
+export async function registerWebhook(url: string, secret?: string): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/webhooks`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ url, secret }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to register webhook' }));
+    throw new Error(err.detail || 'Failed to register webhook');
+  }
+  return res.json();
+}
+
+export async function testWebhook(): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/webhooks/test`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Test webhook failed' }));
+    throw new Error(err.detail || 'Test webhook failed');
+  }
+  return res.json();
+}
+
