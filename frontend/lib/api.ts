@@ -63,8 +63,8 @@ export interface AuthResponse {
   access_token: string;
   token_type: string;
   merchant_id: string;
-  merchant_name: str;
-  email: str;
+  merchant_name: string;
+  email: string;
 }
 
 // Auth Storage Helpers
@@ -98,7 +98,7 @@ function getAuthHeaders(): Record<string, string> {
   return headers;
 }
 
-export async function loginMerchant(email: string, password: str): Promise<AuthResponse> {
+export async function loginMerchant(email: string, password: string): Promise<AuthResponse> {
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -113,7 +113,7 @@ export async function loginMerchant(email: string, password: str): Promise<AuthR
   return data;
 }
 
-export async function registerMerchant(name: string, email: string, password: str, razorpayKeyId?: string): Promise<AuthResponse> {
+export async function registerMerchant(name: string, email: string, password: string, razorpayKeyId?: string): Promise<AuthResponse> {
   const res = await fetch(`${API_BASE_URL}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
