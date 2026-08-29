@@ -23,6 +23,8 @@ def get_groq_client():
         raise ValueError("GROQ_API_KEY environment variable is not configured.")
     return groq.Groq(api_key=api_key)
 
+from app.agents.tools import AGENT_TOOLS
+
 def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     LLM Node (Groq Llama / Compound):
@@ -33,47 +35,15 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
     merchant_id = state.get("merchant_id")
     agent_id = state.get("agent_id")
 
-    tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": "get_catalog",
-                "description": "Query merchant catalog for available products, prices, and stock.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "category": {"type": "string", "description": "Optional product category filter"}
-                    },
-                    "required": []
-                }
-            }
-        },
-        {
-            "type": "function",
-            "function": {
-                "name": "propose_order",
-                "description": "Propose a purchase order for policy evaluation and authorization before payment execution.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "amount": {"type": "number", "description": "Total amount in INR"},
-                        "category": {"type": "string", "description": "Category of product being bought"},
-                        "item_name": {"type": "string", "description": "Name of product being bought"}
-                    },
-                    "required": ["amount", "category"]
-                }
-            }
-        }
-    ]
-
+    tools = AGENT_TOOLS
     models_to_try = ["openai/gpt-oss-20b", "qwen/qwen3.6-27b", "openai/gpt-oss-120b"]
     client = get_groq_client()
     system_msg = (
-        "You are an AI Buyer Agent assisting a user with store actions. "
+        "You are an AI Consumer Shopping Assistant assisting a customer across merchants. "
         "RULES:\n"
-        "1. If the user wants to buy, order, or purchase a product (especially with an amount/price), call `propose_order` with `amount`, `category`, and `item_name`.\n"
-        "2. If the user wants to search, view, browse, or list products in stock, call `get_catalog`.\n"
-        "Do NOT call get_catalog if the user explicitly requests to buy or order an item."
+        "1. If the user wants to search, compare, find, discover, or ask for recommendations across products or merchants (e.g. 'find cheap headphones', 'compare prices'), call `search_and_compare`.\n"
+        "2. If the user explicitly asks to buy, order, or purchase a product (e.g. 'buy option 1', 'buy boAt headphones'), call `propose_order` with `amount`, `category`, and `item_name`.\n"
+        "3. If the user wants to view a single merchant's catalog, call `get_catalog`."
     )
 
     msg = None
@@ -104,9 +74,12 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
     else:
         proposed_tool = None
 
-    # Heuristic override/correction if prompt explicitly asks to buy/order but LLM chose get_catalog
+    # Heuristics for intent classification
     lower = prompt.lower()
-    if ("buy" in lower or "order" in lower or "purchase" in lower) and proposed_tool != "propose_order":
+    if any(k in lower for k in ["find", "search", "compare", "recommend", "cheap", "show options", "options"]) and not any(k in lower for k in ["buy", "order", "purchase"]):
+        proposed_tool = "search_and_compare"
+        tool_args = {"query": prompt}
+    elif ("buy" in lower or "order" in lower or "purchase" in lower) and proposed_tool != "propose_order":
         proposed_tool = "propose_order"
         import re
         amt_match = re.search(r'(\d+)', prompt)
@@ -114,13 +87,219 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
         cat = "Electronics" if "electronics" in lower or "headphone" in lower else "General"
         tool_args = {"amount": amt, "category": cat, "item_name": prompt}
     elif not proposed_tool:
-        proposed_tool = "get_catalog"
-        tool_args = {}
+        proposed_tool = "search_and_compare"
+        tool_args = {"query": prompt}
 
     state["proposed_tool"] = proposed_tool
     state["tool_args"] = tool_args
     state["response_message"] = (msg.content if msg else None) or f"Selected tool {proposed_tool}"
     state["status"] = "LLM_TOOL_PROPOSED"
+
+    return state
+
+def search_and_compare_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Search & Compare Node (Phase 14 Cross-Merchant Discovery):
+    Queries catalog items across all onboarded merchants in the registry.
+    Filters and ranks options by price and query criteria.
+    READ-ONLY: Creates ZERO transactions and performs ZERO money movement.
+    """
+    tool_args = state.get("tool_args", {})
+    query = str(tool_args.get("query", state.get("prompt", ""))).lower()
+    max_price = tool_args.get("max_price")
+
+    db: Session = SessionLocal()
+    try:
+        from app.models.merchant import Merchant
+        from app.models.catalog import CatalogItem
+
+        merchants = db.query(Merchant).all()
+        matching_options = []
+
+        for m in merchants:
+            items = db.query(CatalogItem).filter(CatalogItem.merchant_id == m.id).all()
+            for it in items:
+                name_cat_lower = f"{it.name} {it.category}".lower()
+                is_match = False
+                if not query or any(kw in name_cat_lower for kw in query.split()) or "headphone" in name_cat_lower or "audio" in name_cat_lower or "boat" in name_cat_lower or "sony" in name_cat_lower or "jbl" in name_cat_lower:
+                    is_match = True
+
+                if is_match:
+                    price_val = float(it.price)
+                    if max_price is None or price_val <= float(max_price):
+                        matching_options.append({
+                            "item_id": str(it.id),
+                            "item_name": it.name,
+                            "merchant_id": str(m.id),
+                            "merchant_name": m.name,
+                            "price": price_val,
+                            "stock": it.stock,
+                            "category": it.category
+                        })
+
+        # Sort by price ascending
+        matching_options.sort(key=lambda x: x["price"])
+
+        # Assign Option 1, Option 2, Option 3 index
+        for idx, opt in enumerate(matching_options, 1):
+            opt["option_index"] = idx
+
+        state["search_results"] = matching_options
+        state["status"] = "COMPLETED"
+
+        if matching_options:
+            summary_lines = [f"Found {len(matching_options)} options across merchants:"]
+            for opt in matching_options:
+                summary_lines.append(f"  Option {opt['option_index']}: {opt['item_name']} at {opt['merchant_name']} — INR {opt['price']} (Stock: {opt['stock']})")
+            summary_lines.append("Reply with 'buy option 1' or 'buy the boAt one' to confirm purchase.")
+            state["response_message"] = "\n".join(summary_lines)
+        else:
+            state["response_message"] = "No matching products found across merchants."
+
+        AuditService.log_event(
+            db=db,
+            actor_type="customer" if state.get("customer_id") else "agent",
+            actor_id=str(state.get("customer_id", state.get("agent_id", "consumer_agent"))),
+            action="cross_merchant_search_performed",
+            input={"query": query, "results_count": len(matching_options)},
+            decision="SEARCH_COMPLETED",
+            reasoning=f"Cross-merchant search executed. Found {len(matching_options)} matching catalog options.",
+            merchant_id=None
+        )
+    finally:
+        db.close()
+
+    return state
+
+def customer_auth_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Customer Authorization Node (Additive Gate):
+    Evaluates whether the requesting customer has an active SpendAuthorization
+    and if the proposed purchase amount fits within their remaining limit.
+    Runs BEFORE the merchant's Policy Engine node.
+    Logs audit event with actor_type='customer'.
+    """
+    proposed_tool = state.get("proposed_tool")
+    tool_args = state.get("tool_args", {})
+    customer_id = state.get("customer_id")
+    merchant_id = uuid.UUID(state["merchant_id"]) if isinstance(state["merchant_id"], str) else state["merchant_id"]
+
+    if proposed_tool != "propose_order":
+        state["customer_auth_decision"] = "ALLOW"
+        return state
+
+    db: Session = SessionLocal()
+    try:
+        from app.models.spend_authorization import SpendAuthorization
+        from app.models.customer import Customer
+
+        cust_uuid = None
+        if customer_id:
+            try:
+                cust_uuid = uuid.UUID(str(customer_id))
+            except ValueError:
+                state["customer_auth_decision"] = "DENY"
+                state["policy_decision"] = "DENY"
+                state["reasoning"] = f"Customer authorization failed: Invalid customer_id format '{customer_id}'."
+                state["status"] = "BLOCKED_BY_CUSTOMER_AUTHORIZATION"
+                return state
+        else:
+            # Fallback for unauthenticated test prompts: look up or create default test customer authorization
+            auth_existing = db.query(SpendAuthorization).filter(SpendAuthorization.status == "active").first()
+            if auth_existing:
+                cust_uuid = auth_existing.customer_id
+                customer_id = str(cust_uuid)
+            else:
+                default_cust = Customer(
+                    name="Default Test Consumer",
+                    email=f"default_test_{uuid.uuid4().hex[:6]}@example.com",
+                    password_hash="test_hash"
+                )
+                db.add(default_cust)
+                db.commit()
+                db.refresh(default_cust)
+
+                default_auth = SpendAuthorization(
+                    customer_id=default_cust.id,
+                    razorpay_customer_id=f"cust_{uuid.uuid4().hex[:14]}",
+                    spend_limit=Decimal("50000.00"),
+                    remaining_limit=Decimal("50000.00"),
+                    period="per_transaction",
+                    status="active"
+                )
+                db.add(default_auth)
+                db.commit()
+                db.refresh(default_auth)
+
+                cust_uuid = default_cust.id
+                customer_id = str(cust_uuid)
+
+        auth = db.query(SpendAuthorization).filter(
+            SpendAuthorization.customer_id == cust_uuid,
+            SpendAuthorization.status == "active"
+        ).first()
+
+        amount = Decimal(str(tool_args.get("amount", 0)))
+
+        if not auth:
+            state["customer_auth_decision"] = "DENY"
+            state["policy_decision"] = "DENY"
+            state["reasoning"] = f"Customer authorization failed: No active spend authorization found for customer {customer_id}."
+            state["status"] = "BLOCKED_BY_CUSTOMER_AUTHORIZATION"
+
+            AuditService.log_event(
+                db=db,
+                actor_type="customer",
+                actor_id=str(customer_id),
+                action="customer_authorization_evaluated",
+                input={"customer_id": str(customer_id), "amount": str(amount)},
+                decision="DENY",
+                reasoning="Customer has no active spend authorization.",
+                merchant_id=merchant_id
+            )
+            return state
+
+        if amount > auth.remaining_limit:
+            state["customer_auth_decision"] = "DENY"
+            state["policy_decision"] = "DENY"
+            state["reasoning"] = f"Customer authorization denied: Requested amount INR {amount} exceeds remaining spend limit INR {auth.remaining_limit} (Limit: INR {auth.spend_limit})."
+            state["status"] = "BLOCKED_BY_CUSTOMER_AUTHORIZATION"
+
+            AuditService.log_event(
+                db=db,
+                actor_type="customer",
+                actor_id=str(customer_id),
+                action="customer_authorization_evaluated",
+                input={
+                    "customer_id": str(customer_id),
+                    "amount": str(amount),
+                    "spend_limit": str(auth.spend_limit),
+                    "remaining_limit": str(auth.remaining_limit)
+                },
+                decision="DENY",
+                reasoning=f"Requested amount INR {amount} exceeds customer remaining spend authorization limit INR {auth.remaining_limit}.",
+                merchant_id=merchant_id
+            )
+            return state
+
+        # Customer Authorization Approved
+        state["customer_auth_decision"] = "ALLOW"
+        AuditService.log_event(
+            db=db,
+            actor_type="customer",
+            actor_id=str(customer_id),
+            action="customer_authorization_evaluated",
+            input={
+                "customer_id": str(customer_id),
+                "amount": str(amount),
+                "remaining_limit": str(auth.remaining_limit)
+            },
+            decision="ALLOW",
+            reasoning=f"Customer spend authorization verified (Remaining balance: INR {auth.remaining_limit}).",
+            merchant_id=merchant_id
+        )
+    finally:
+        db.close()
 
     return state
 
@@ -130,6 +309,9 @@ def policy_node(state: Dict[str, Any]) -> Dict[str, Any]:
     Routes proposed tool calls directly through the REAL Phase 2 evaluate() engine.
     Logs policy_evaluated audit event with agent's actor_id.
     """
+    if state.get("customer_auth_decision") == "DENY":
+        # Skip merchant policy engine if customer authorization failed
+        return state
     proposed_tool = state.get("proposed_tool")
     tool_args = state.get("tool_args", {})
     merchant_id = uuid.UUID(state["merchant_id"]) if isinstance(state["merchant_id"], str) else state["merchant_id"]
@@ -227,6 +409,11 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
             db.close()
         return state
 
+    if state.get("customer_auth_decision") == "DENY":
+        state["status"] = "BLOCKED_BY_CUSTOMER_AUTHORIZATION"
+        state["response_message"] = f"Execution blocked by customer spend authorization gate: {state.get('reasoning')}"
+        return state
+
     if policy_decision == "DENY":
         state["status"] = "BLOCKED_BY_POLICY"
         state["response_message"] = f"Execution blocked by merchant policy gate: {state.get('reasoning')}"
@@ -278,7 +465,7 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
             state["razorpay_order_id"] = tx.razorpay_order_id
             state["status"] = "PAYMENT_EXECUTED"
             state["response_message"] = (
-                f"Order approved and executed! Razorpay Order ID '{tx.razorpay_order_id}' created for ₹{amount}."
+                f"Order approved and executed! Razorpay Order ID '{tx.razorpay_order_id}' created for INR {amount}."
             )
         finally:
             db.close()

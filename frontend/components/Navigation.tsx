@@ -10,6 +10,8 @@ export default function Navigation() {
   const navItems = [
     { href: '/onboarding', label: 'Onboarding' },
     { href: '/dashboard', label: 'Merchant Dashboard' },
+    { href: '/customer/dashboard', label: 'Consumer Portal' },
+    { href: '/customer/chat', label: 'Consumer Chat AI' },
     { href: '/agent', label: 'AI Buyer Agent' },
     { href: '/audit', label: 'Audit Trail' },
   ];

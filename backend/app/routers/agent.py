@@ -18,6 +18,7 @@ router = APIRouter(prefix="/agent", tags=["Agent Orchestration"])
 class AgentChatRequest(BaseModel):
     merchant_id: UUID = Field(..., description="ID of merchant store")
     agent_id: Optional[str] = Field("buyer_agent_01", description="ID or key of buyer agent")
+    customer_id: Optional[str] = Field(None, description="Optional customer ID for consumer spend authorization")
     prompt: str = Field(..., min_length=1, description="Natural language prompt for AI agent")
 
 class PendingApprovalActionRequest(BaseModel):
@@ -27,10 +28,12 @@ class PendingApprovalActionRequest(BaseModel):
 class AgentChatResponse(BaseModel):
     merchant_id: str
     agent_id: str
+    customer_id: Optional[str] = None
     thread_id: Optional[str] = None
     prompt: str
     proposed_tool: Optional[str] = None
     tool_args: Optional[Dict[str, Any]] = None
+    customer_auth_decision: Optional[str] = None
     policy_decision: Optional[str] = None
     reasoning: Optional[str] = None
     transaction_id: Optional[str] = None
@@ -189,7 +192,8 @@ def agent_chat_endpoint(req: AgentChatRequest, db: Session = Depends(get_db)):
     result = run_agent_workflow(
         merchant_id=str(req.merchant_id),
         agent_id=req.agent_id or "buyer_agent_01",
-        prompt=req.prompt
+        prompt=req.prompt,
+        customer_id=req.customer_id
     )
 
     if result.get("status") in ["PAUSED_FOR_HUMAN_APPROVAL", "AWAITING_HUMAN_APPROVAL"] or result.get("policy_decision") == "NEEDS_APPROVAL":
@@ -212,10 +216,12 @@ def agent_chat_endpoint(req: AgentChatRequest, db: Session = Depends(get_db)):
     return AgentChatResponse(
         merchant_id=str(req.merchant_id),
         agent_id=req.agent_id or "buyer_agent_01",
+        customer_id=req.customer_id,
         thread_id=result.get("thread_id"),
         prompt=req.prompt,
         proposed_tool=result.get("proposed_tool"),
         tool_args=result.get("tool_args"),
+        customer_auth_decision=result.get("customer_auth_decision"),
         policy_decision=result.get("policy_decision"),
         reasoning=result.get("reasoning"),
         transaction_id=result.get("transaction_id"),
