@@ -259,6 +259,39 @@ def create_merchant_agent(
         "created_at": agent.created_at.isoformat() if hasattr(agent, 'created_at') and agent.created_at else None
     }
 
+@router.delete("/agents/{agent_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_merchant_agent(
+    agent_id: UUID,
+    current_merchant: Merchant = Depends(get_current_merchant),
+    db: Session = Depends(get_db)
+):
+    """
+    Permanently revokes and deletes an AI agent key belonging to the authenticated merchant.
+    Strictly scoped via JWT Bearer token — cannot delete another merchant's agents.
+    """
+    agent = db.query(Agent).filter(
+        Agent.id == agent_id,
+        Agent.merchant_id == current_merchant.id
+    ).first()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found for this merchant.")
+
+    agent_name = agent.name
+    db.delete(agent)
+    db.commit()
+
+    AuditService.log_event(
+        db=db,
+        actor_type="merchant",
+        actor_id=str(current_merchant.id),
+        action="agent_key_revoked",
+        input={"agent_id": str(agent_id), "name": agent_name},
+        decision="REVOKED",
+        reasoning=f"Agent key '{agent_name}' permanently revoked and deleted by merchant.",
+        merchant_id=current_merchant.id
+    )
+
+
 @router.get("/usage", response_model=MerchantUsageRead)
 def get_merchant_usage_metrics(
     current_merchant: Merchant = Depends(get_current_merchant),

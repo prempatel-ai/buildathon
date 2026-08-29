@@ -167,8 +167,8 @@ function AuditViewerContent() {
               onChange={(e) => setSortOrder(e.target.value)}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:bg-white focus:border-slate-400 font-mono"
             >
-              <option value="asc font-mono">Oldest First (ASC)</option>
-              <option value="desc font-mono">Newest First (DESC)</option>
+              <option value="asc">Oldest First (ASC)</option>
+              <option value="desc">Newest First (DESC)</option>
             </select>
           </div>
         </div>

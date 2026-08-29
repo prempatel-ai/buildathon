@@ -107,8 +107,12 @@ export default function Navigation() {
                     {merchant?.name ? merchant.name[0].toUpperCase() : 'M'}
                   </div>
                   <span className="truncate max-w-[130px] font-semibold">{merchant?.name || 'Merchant Store'}</span>
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 uppercase tracking-wider">
-                    LIVE API
+                  <span className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase tracking-wider ${
+                    merchant?.environment === 'live'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {merchant?.environment === 'live' ? 'LIVE API' : 'SANDBOX API'}
                   </span>
                   <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                 </button>

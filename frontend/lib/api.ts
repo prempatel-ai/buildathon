@@ -6,6 +6,8 @@ export interface Merchant {
   email?: string;
   razorpay_key_id?: string;
   limits_config: Record<string, any>;
+  environment?: string;
+  kyc_status?: string;
 }
 
 export interface CatalogItem {
@@ -200,6 +202,33 @@ export async function createCatalogItem(payload: CreateCatalogItemPayload): Prom
   }
   return res.json();
 }
+
+export async function bulkImportCatalogItems(merchantId: string, items: CreateCatalogItemPayload[]): Promise<CatalogItem[]> {
+  const res = await fetch(`${API_BASE_URL}/catalog/bulk-import?merchant_id=${merchantId}`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(items),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ detail: 'Failed to bulk import catalog items' }));
+    throw new Error(typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail));
+  }
+  return res.json();
+}
+
+export async function syncShopifyCatalog(merchantId: string, storeUrl: string): Promise<CatalogItem[]> {
+  const res = await fetch(`${API_BASE_URL}/catalog/shopify-sync?merchant_id=${merchantId}&store_url=${encodeURIComponent(storeUrl)}`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ detail: 'Failed to sync Shopify store catalog' }));
+    throw new Error(typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail));
+  }
+  return res.json();
+}
+
+
 
 export async function updateCatalogItem(itemId: string, payload: UpdateCatalogItemPayload): Promise<CatalogItem> {
   const res = await fetch(`${API_BASE_URL}/catalog/items/${itemId}`, {

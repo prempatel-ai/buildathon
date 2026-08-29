@@ -107,11 +107,11 @@ export default function UsagePage() {
     }
   };
 
-  const totalVol = usage ? Number(usage.total_settled_volume) : 32400;
-  const settledCount = usage ? usage.settled_transactions : 27;
-  const totalCount = usage ? usage.total_transactions : 35;
-  const failedCount = usage ? usage.failed_transactions : 8;
-  const successRate = totalCount > 0 ? Math.round((settledCount / totalCount) * 100) : 77;
+  const totalVol = usage ? Number(usage.total_settled_volume) : 0;
+  const settledCount = usage ? usage.settled_transactions : 0;
+  const totalCount = usage ? usage.total_transactions : 0;
+  const failedCount = usage ? usage.failed_transactions : 0;
+  const successRate = totalCount > 0 ? Math.round((settledCount / totalCount) * 100) : 0;
   const velocityLimit = merchant?.limits_config?.velocity_limit || 5;
 
   const activeTimelineData = timelineData;
@@ -328,17 +328,13 @@ export default function UsagePage() {
                       <Skeleton className="h-8 w-full rounded-xl" />
                     </div>
                   </div>
-                ) : (
+                ) : agentPieData.length > 0 ? (
                   <>
                     <div className="w-48 h-48 relative flex items-center justify-center">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
-                            data={agentPieData.length > 0 ? agentPieData : [
-                              { name: 'ChatGPT Consumer AI', value: Math.max(18, Math.round(settledCount * 0.65)), color: '#6366f1' },
-                              { name: 'Dev Simulator Agent', value: Math.max(5, Math.round(settledCount * 0.25)), color: '#10b981' },
-                              { name: 'Custom Merchant Agent', value: Math.max(3, Math.round(settledCount * 0.10)), color: '#f59e0b' },
-                            ]}
+                            data={agentPieData}
                             cx="50%"
                             cy="50%"
                             innerRadius={55}
@@ -346,11 +342,7 @@ export default function UsagePage() {
                             paddingAngle={4}
                             dataKey="value"
                           >
-                            {(agentPieData.length > 0 ? agentPieData : [
-                              { name: 'ChatGPT Consumer AI', value: Math.max(18, Math.round(settledCount * 0.65)), color: '#6366f1' },
-                              { name: 'Dev Simulator Agent', value: Math.max(5, Math.round(settledCount * 0.25)), color: '#10b981' },
-                              { name: 'Custom Merchant Agent', value: Math.max(3, Math.round(settledCount * 0.10)), color: '#f59e0b' },
-                            ]).map((entry, index) => (
+                            {agentPieData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                             ))}
                           </Pie>
@@ -364,12 +356,8 @@ export default function UsagePage() {
                     </div>
 
                     <div className="flex-1 w-full space-y-3">
-                      {(agentPieData.length > 0 ? agentPieData : [
-                        { name: 'ChatGPT Consumer AI', value: Math.max(18, Math.round(settledCount * 0.65)), color: '#6366f1' },
-                        { name: 'Dev Simulator Agent', value: Math.max(5, Math.round(settledCount * 0.25)), color: '#10b981' },
-                        { name: 'Custom Merchant Agent', value: Math.max(3, Math.round(settledCount * 0.10)), color: '#f59e0b' },
-                      ]).map((agent) => {
-                        const pct = settledCount > 0 ? Math.round((agent.value / settledCount) * 100) : 100;
+                      {agentPieData.map((agent) => {
+                        const pct = settledCount > 0 ? Math.round((agent.value / settledCount) * 100) : 0;
                         return (
                           <div key={agent.name} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
                             <div className="flex items-center space-x-2.5">
@@ -385,6 +373,12 @@ export default function UsagePage() {
                       })}
                     </div>
                   </>
+                ) : (
+                  <div className="w-full flex flex-col items-center justify-center py-10 text-center space-y-2">
+                    <Bot className="w-8 h-8 text-slate-200" />
+                    <p className="text-xs font-bold text-slate-500">No data yet</p>
+                    <p className="text-[11px] text-slate-400">Complete a transaction to see agent volume distribution.</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -404,31 +398,27 @@ export default function UsagePage() {
                     <Skeleton className="h-10 flex-1 rounded-xl" />
                     <Skeleton className="h-6 flex-1 rounded-xl" />
                   </div>
-                ) : (
+                ) : decisionBarData.length > 0 ? (
                   <div className="h-48 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={decisionBarData.length > 0 ? decisionBarData : [
-                        { name: 'Settled', count: settledCount, fill: '#10b981' },
-                        { name: 'Policy Gated', count: Math.max(5, failedCount - 2), fill: '#f59e0b' },
-                        { name: 'Rate Throttled', count: 2, fill: '#ef4444' },
-                        { name: 'HMAC Mismatch', count: 1, fill: '#8b5cf6' },
-                      ]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <BarChart data={decisionBarData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
                         <RechartsTooltip />
                         <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                          {(decisionBarData.length > 0 ? decisionBarData : [
-                            { name: 'Settled', count: settledCount, fill: '#10b981' },
-                            { name: 'Policy Gated', count: Math.max(5, failedCount - 2), fill: '#f59e0b' },
-                            { name: 'Rate Throttled', count: 2, fill: '#ef4444' },
-                            { name: 'HMAC Mismatch', count: 1, fill: '#8b5cf6' },
-                          ]).map((entry, index) => (
+                          {decisionBarData.map((entry, index) => (
                             <Cell key={`bar-${index}`} fill={entry.fill} />
                           ))}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-48 w-full flex flex-col items-center justify-center text-center space-y-2">
+                    <ShieldCheck className="w-8 h-8 text-slate-200" />
+                    <p className="text-xs font-bold text-slate-500">No policy decisions yet</p>
+                    <p className="text-[11px] text-slate-400">Complete a transaction to see the policy evaluation breakdown.</p>
                   </div>
                 )}
               </CardContent>

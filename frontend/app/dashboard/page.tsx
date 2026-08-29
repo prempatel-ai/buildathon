@@ -7,6 +7,8 @@ import {
   getMerchantMe,
   fetchCatalogItems,
   createCatalogItem,
+  bulkImportCatalogItems,
+  syncShopifyCatalog,
   updateCatalogItem,
   deleteCatalogItem,
   fetchAgentSchema,
@@ -22,7 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { MetricCard } from '@/components/ui/metric-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Edit2, Trash2, Code, Package, Store } from 'lucide-react';
+import { Plus, Edit2, Trash2, Code, Package, Store, Upload, FileCode2 } from 'lucide-react';
 
 function DashboardContent() {
   const router = useRouter();
@@ -43,6 +45,82 @@ function DashboardContent() {
   const [category, setCategory] = useState('Electronics');
   const [formError, setFormError] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+
+  // Bulk Import Modal state
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkJson, setBulkJson] = useState(`[
+  { "name": "boAt Wave Call Smartwatch", "price": 1799, "stock": 40, "category": "Smartwatches" },
+  { "name": "boAt Airdopes 141", "price": 1299, "stock": 60, "category": "Earbuds" },
+  { "name": "boAt Stone 350 Speaker", "price": 1499, "stock": 25, "category": "Speakers" }
+]`);
+  const [bulkError, setBulkError] = useState<string | null>(null);
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkTab, setBulkTab] = useState<'json' | 'shopify'>('shopify');
+  const [shopifyDomain, setShopifyDomain] = useState('boat-lifestyle.myshopify.com');
+
+  const handleShopifySync = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!merchant?.id) return;
+    setBulkLoading(true);
+    setBulkError(null);
+    try {
+      await syncShopifyCatalog(merchant.id, shopifyDomain);
+      setShowBulkModal(false);
+      await loadDashboardData();
+    } catch (err: any) {
+      setBulkError(err.message || 'Failed to sync Shopify store catalog');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+
+  const handleBulkImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!merchant?.id) return;
+    setBulkLoading(true);
+    setBulkError(null);
+
+    try {
+      let itemsToImport: any[] = [];
+      const trimmed = bulkJson.trim();
+
+      if (trimmed.startsWith('[')) {
+        itemsToImport = JSON.parse(trimmed);
+      } else {
+        const lines = trimmed.split('\n').filter((l) => l.trim().length > 0);
+        itemsToImport = lines.map((line) => {
+          const parts = line.split(',').map((p) => p.trim());
+          return {
+            name: parts[0] || 'Imported Product',
+            price: parseFloat(parts[1]) || 999,
+            stock: parseInt(parts[2]) || 50,
+            category: parts[3] || 'General',
+          };
+        });
+      }
+
+      if (!Array.isArray(itemsToImport) || itemsToImport.length === 0) {
+        throw new Error('Invalid JSON/CSV payload. Must be a non-empty list of products.');
+      }
+
+      const formatted = itemsToImport.map((it) => ({
+        merchant_id: merchant.id,
+        name: String(it.name || 'Unnamed Product').trim(),
+        price: parseFloat(it.price) || 0,
+        stock: parseInt(it.stock) || 0,
+        category: String(it.category || 'General').trim(),
+      }));
+
+      await bulkImportCatalogItems(merchant.id, formatted);
+      setShowBulkModal(false);
+      await loadDashboardData();
+    } catch (err: any) {
+      setBulkError(err.message || 'Failed to bulk import products.');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
 
   useEffect(() => {
     const token = getAuthToken();
@@ -260,10 +338,16 @@ function DashboardContent() {
                 <h2 className="text-base font-bold text-slate-900">Catalog Products</h2>
                 <p className="text-xs text-slate-500">Manage products available for autonomous AI agent transactions.</p>
               </div>
-              <Button variant="indigo" size="sm" onClick={handleOpenCreateModal}>
-                <Plus className="w-3.5 h-3.5 mr-1.5" />
-                Add Product
-              </Button>
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" size="sm" onClick={() => setShowBulkModal(true)}>
+                  <Upload className="w-3.5 h-3.5 mr-1.5" />
+                  Bulk Import / Sync
+                </Button>
+                <Button variant="indigo" size="sm" onClick={handleOpenCreateModal}>
+                  <Plus className="w-3.5 h-3.5 mr-1.5" />
+                  Add Product
+                </Button>
+              </div>
             </div>
 
             {loading ? (
@@ -446,6 +530,142 @@ function DashboardContent() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Import / Sync Modal */}
+      {showBulkModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 max-w-xl w-full shadow-2xl animate-fade-in">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                  <Upload className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Bulk Product Catalog Import / Sync</h3>
+                  <p className="text-xs text-slate-500">Paste JSON or CSV catalog exported from Shopify, WooCommerce, or custom store.</p>
+                </div>
+              </div>
+              <button onClick={() => setShowBulkModal(false)} className="text-slate-400 hover:text-slate-600 font-bold text-sm">
+                ✕
+              </button>
+            </div>
+
+            <div className="flex items-center space-x-2 border-b border-slate-100 pb-3 mb-4 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setBulkTab('shopify')}
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  bulkTab === 'shopify' ? 'bg-slate-900 text-white font-bold' : 'text-slate-500 hover:bg-slate-100'
+                }`}
+              >
+                ⚡ Shopify Auto-Sync
+              </button>
+              <button
+                type="button"
+                onClick={() => setBulkTab('json')}
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  bulkTab === 'json' ? 'bg-slate-900 text-white font-bold' : 'text-slate-500 hover:bg-slate-100'
+                }`}
+              >
+                JSON / CSV Manual Paste
+              </button>
+            </div>
+
+            {bulkError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-mono">
+                {bulkError}
+              </div>
+            )}
+
+            {bulkTab === 'shopify' ? (
+              <form onSubmit={handleShopifySync} className="space-y-4">
+                <div className="p-4 bg-indigo-50/60 border border-indigo-100 rounded-2xl">
+                  <div className="text-xs font-bold text-indigo-900 mb-1">Automatic Shopify Product Connector</div>
+                  <p className="text-xs text-indigo-700/80 leading-relaxed">
+                    Connect your Shopify store URL. Agentpay will fetch your products, variant pricing, inventory stock, and categories directly from your Shopify Storefront API.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 font-mono">
+                    Shopify Store Domain / URL
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={shopifyDomain}
+                    onChange={(e) => setShopifyDomain(e.target.value)}
+                    placeholder="boat-lifestyle.myshopify.com"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:bg-white focus:border-indigo-500"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">Example: boat-lifestyle.myshopify.com or your custom domain.</p>
+                </div>
+
+                <div className="pt-3 flex justify-end space-x-2 border-t border-slate-100">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setShowBulkModal(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="default" size="sm" loading={bulkLoading}>
+                    ⚡ Sync Shopify Store Now
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleBulkImport} className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-slate-700 font-mono">
+                      JSON Array or CSV Catalog Data
+                    </label>
+                    <span className="text-[10px] font-mono text-slate-400">Name, Price, Stock, Category</span>
+                  </div>
+                  <textarea
+                    rows={7}
+                    required
+                    value={bulkJson}
+                    onChange={(e) => setBulkJson(e.target.value)}
+                    placeholder={`[`}
+                    className="w-full p-3 font-mono text-xs bg-slate-900 text-emerald-400 rounded-xl border border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-2">
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setBulkJson(`[
+  { "name": "boAt Wave Call Smartwatch", "price": 1799, "stock": 40, "category": "Smartwatches" },
+  { "name": "boAt Airdopes 141", "price": 1299, "stock": 60, "category": "Earbuds" },
+  { "name": "boAt Stone 350 Speaker", "price": 1499, "stock": 25, "category": "Speakers" }
+]`)}
+                      className="px-2.5 py-1 text-[11px] font-mono bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg"
+                    >
+                      Preset: boAt
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBulkJson(`boAt Rockerz 550, 1999, 30, Headphones
+JBL Tune 760NC, 5499, 15, Headphones`)}
+                      className="px-2.5 py-1 text-[11px] font-mono bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg"
+                    >
+                      Preset: CSV
+                    </button>
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => setShowBulkModal(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" variant="default" size="sm" loading={bulkLoading}>
+                      Import All Products
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
