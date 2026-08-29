@@ -68,7 +68,7 @@ export function ModernLandingHero() {
 
   return (
     <section className="relative flex min-h-screen w-full flex-col items-center bg-[#030303] font-sans text-white selection:bg-white selection:text-black pb-32 overflow-hidden">
-      
+
       {/* 
         1. Subdued Background Grid Mesh & Top Radial Spotlight 
       */}
@@ -146,7 +146,7 @@ export function ModernLandingHero() {
         3. Hero Typography & Pill Badge
       */}
       <main className="z-10 flex w-full max-w-[1020px] flex-col items-center px-6 pt-28 text-center md:pt-36">
-        
+
         {/* Pill Badge */}
         <Link
           href="/health"
@@ -260,25 +260,22 @@ export function ModernLandingHero() {
               <div className="flex items-center space-x-1 bg-black p-0.5 rounded border border-white/10 font-mono text-[10px]">
                 <button
                   onClick={() => setActiveTab('gates')}
-                  className={`px-2.5 py-1 rounded transition-colors ${
-                    activeTab === 'gates' ? 'bg-white text-black font-bold' : 'text-neutral-500 hover:text-white'
-                  }`}
+                  className={`px-2.5 py-1 rounded transition-colors ${activeTab === 'gates' ? 'bg-white text-black font-bold' : 'text-neutral-500 hover:text-white'
+                    }`}
                 >
                   Dual Gate Pipeline
                 </button>
                 <button
                   onClick={() => setActiveTab('payload')}
-                  className={`px-2.5 py-1 rounded transition-colors ${
-                    activeTab === 'payload' ? 'bg-white text-black font-bold' : 'text-neutral-500 hover:text-white'
-                  }`}
+                  className={`px-2.5 py-1 rounded transition-colors ${activeTab === 'payload' ? 'bg-white text-black font-bold' : 'text-neutral-500 hover:text-white'
+                    }`}
                 >
                   API Request
                 </button>
                 <button
                   onClick={() => setActiveTab('audit')}
-                  className={`px-2.5 py-1 rounded transition-colors ${
-                    activeTab === 'audit' ? 'bg-white text-black font-bold' : 'text-neutral-500 hover:text-white'
-                  }`}
+                  className={`px-2.5 py-1 rounded transition-colors ${activeTab === 'audit' ? 'bg-white text-black font-bold' : 'text-neutral-500 hover:text-white'
+                    }`}
                 >
                   Immutable Audit
                 </button>
@@ -350,7 +347,7 @@ export function ModernLandingHero() {
               <div className="space-y-2 text-neutral-300 animate-fade-in">
                 <p className="text-neutral-500">// Agent API Request Payload</p>
                 <pre className="text-neutral-300 p-3 bg-black rounded border border-white/[0.08]">
-{`POST /agent/chat HTTP/1.1
+                  {`POST /agent/chat HTTP/1.1
 Host: api.agentpay.dev
 Authorization: Bearer agent_key_8f29c1d0a7b4
 Content-Type: application/json
@@ -368,7 +365,7 @@ Content-Type: application/json
               <div className="space-y-2 text-neutral-300 animate-fade-in">
                 <p className="text-neutral-500">// Append-Only PostgreSQL Audit Ledger Record</p>
                 <pre className="text-neutral-300 p-3 bg-black rounded border border-white/[0.08]">
-{`{
+                  {`{
   "audit_event_id": "evt_7f8a9b0c-1d2e-3f4a",
   "merchant_id": "fe9038dc-5d00-4171-a9d6-b292e5dae054",
   "actor_type": "agent",
