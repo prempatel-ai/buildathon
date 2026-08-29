@@ -12,19 +12,15 @@ import {
   MenubarTrigger,
 } from '@/components/ui/menubar';
 import {
-  LayoutGrid,
-  Home,
-  Activity,
-  BarChart3,
-  Settings,
-  ShieldCheck,
-  Key,
-  FileText,
-  Webhook,
-  LogOut,
-  Store,
-  UserCheck
-} from 'lucide-react';
+  IconStoreCatalog,
+  IconGovernance,
+  IconAnalytics,
+  IconAgentKey,
+  IconAudit,
+  IconWebhook,
+  IconDashboard,
+  IconSignOut
+} from '@/components/ui/custom-icons';
 import { removeAuthToken } from '@/lib/api';
 
 export default function Navigation() {
@@ -84,64 +80,64 @@ export default function Navigation() {
           </Link>
         </div>
 
-        {/* Shadcn Menubar Component Integration for Merchant Side */}
+        {/* Custom SVG Duotone Icon Menubar Navigation */}
         {isMerchantContext ? (
           <div className="flex items-center space-x-3">
             <Menubar className="border-slate-200 bg-slate-50/70 shadow-2xs">
               {/* Menu 1: Store & Catalog */}
               <MenubarMenu>
-                <MenubarTrigger className="text-xs font-semibold cursor-pointer">
-                  <Store className="mr-1.5 size-3.5 text-indigo-600" />
+                <MenubarTrigger className="text-xs font-bold cursor-pointer">
+                  <IconStoreCatalog size={15} className="mr-2 text-indigo-600" />
                   Store & Catalog
                 </MenubarTrigger>
                 <MenubarContent className="bg-white border border-slate-200 shadow-lg text-xs font-sans">
-                  <MenubarItem onClick={() => router.push('/dashboard')} className="cursor-pointer">
-                    <Home className="mr-2 size-3.5 text-slate-500" />
+                  <MenubarItem onClick={() => router.push('/dashboard')} className="cursor-pointer font-semibold">
+                    <IconDashboard size={14} className="mr-2 text-slate-600" />
                     Dashboard & Products
                   </MenubarItem>
                   <MenubarItem onClick={() => router.push('/dashboard')} className="cursor-pointer">
-                    <LayoutGrid className="mr-2 size-3.5 text-slate-500" />
+                    <IconStoreCatalog size={14} className="mr-2 text-slate-400" />
                     Agent JSON-LD Schema
                   </MenubarItem>
                 </MenubarContent>
               </MenubarMenu>
 
-              {/* Menu 2: Governance & Rules */}
+              {/* Menu 2: Governance & Security */}
               <MenubarMenu>
-                <MenubarTrigger className="text-xs font-semibold cursor-pointer">
-                  <ShieldCheck className="mr-1.5 size-3.5 text-emerald-600" />
+                <MenubarTrigger className="text-xs font-bold cursor-pointer">
+                  <IconGovernance size={15} className="mr-2 text-emerald-600" />
                   Governance
                 </MenubarTrigger>
                 <MenubarContent className="bg-white border border-slate-200 shadow-lg text-xs font-sans">
-                  <MenubarItem onClick={() => router.push('/settings')} className="cursor-pointer">
-                    <Settings className="mr-2 size-3.5 text-slate-500" />
+                  <MenubarItem onClick={() => router.push('/settings')} className="cursor-pointer font-semibold">
+                    <IconGovernance size={14} className="mr-2 text-slate-600" />
                     Policy Rules & Limits
                   </MenubarItem>
                   <MenubarItem onClick={() => router.push('/agents-list')} className="cursor-pointer">
-                    <Key className="mr-2 size-3.5 text-slate-500" />
+                    <IconAgentKey size={14} className="mr-2 text-slate-500" />
                     AI Agent API Keys
                   </MenubarItem>
                   <MenubarSeparator />
                   <MenubarItem onClick={() => router.push('/audit')} className="cursor-pointer">
-                    <FileText className="mr-2 size-3.5 text-slate-500" />
+                    <IconAudit size={14} className="mr-2 text-slate-500" />
                     Immutable Audit Log
                   </MenubarItem>
                 </MenubarContent>
               </MenubarMenu>
 
-              {/* Menu 3: Integrations & Analytics */}
+              {/* Menu 3: Analytics & Hooks */}
               <MenubarMenu>
-                <MenubarTrigger className="text-xs font-semibold cursor-pointer">
-                  <BarChart3 className="mr-1.5 size-3.5 text-amber-600" />
+                <MenubarTrigger className="text-xs font-bold cursor-pointer">
+                  <IconAnalytics size={15} className="mr-2 text-amber-600" />
                   Analytics & Hooks
                 </MenubarTrigger>
                 <MenubarContent className="bg-white border border-slate-200 shadow-lg text-xs font-sans">
-                  <MenubarItem onClick={() => router.push('/usage')} className="cursor-pointer">
-                    <Activity className="mr-2 size-3.5 text-slate-500" />
+                  <MenubarItem onClick={() => router.push('/usage')} className="cursor-pointer font-semibold">
+                    <IconAnalytics size={14} className="mr-2 text-slate-600" />
                     Executive Analytics
                   </MenubarItem>
                   <MenubarItem onClick={() => router.push('/webhooks')} className="cursor-pointer">
-                    <Webhook className="mr-2 size-3.5 text-slate-500" />
+                    <IconWebhook size={14} className="mr-2 text-slate-500" />
                     Webhooks & Notifications
                   </MenubarItem>
                 </MenubarContent>
@@ -150,9 +146,9 @@ export default function Navigation() {
 
             <button
               onClick={handleLogout}
-              className="px-3 py-1.5 border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-slate-600 rounded-xl text-xs font-bold transition-colors flex items-center space-x-1"
+              className="px-3.5 py-1.5 border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-slate-600 rounded-xl text-xs font-bold transition-colors flex items-center space-x-1.5"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <IconSignOut size={14} />
               <span>Sign Out</span>
             </button>
           </div>
@@ -179,7 +175,6 @@ export default function Navigation() {
               href="/customer/dashboard"
               className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200/80 bg-slate-50/50 flex items-center space-x-1"
             >
-              <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
               <span>Consumer Portal</span>
             </Link>
           </nav>

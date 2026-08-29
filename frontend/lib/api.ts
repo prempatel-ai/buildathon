@@ -315,8 +315,41 @@ export async function createMerchantAgent(name: string, scopes: string[]): Promi
 
 export async function getMerchantUsage(): Promise<MerchantUsageData> {
   const res = await fetch(`${API_BASE_URL}/merchants/usage`, { headers: getAuthHeaders(), cache: 'no-store' });
-  if (!res.ok) throw new Error('Failed to fetch merchant usage');
+  if (!res.ok) throw new Error('Failed to fetch merchant usage metrics');
   return res.json();
+}
+
+export async function fetchMerchantTimeline(range: string = '7d'): Promise<{ date: string; value: number; change: number }[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/merchants/analytics/timeline?range=${range}`, { headers: getAuthHeaders(), cache: 'no-store' });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.warn('Network error fetching timeline analytics:', err);
+    return [];
+  }
+}
+
+export async function fetchMerchantAgentDistribution(): Promise<{ name: string; value: number; color: string }[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/merchants/analytics/agent-distribution`, { headers: getAuthHeaders(), cache: 'no-store' });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.warn('Network error fetching agent distribution:', err);
+    return [];
+  }
+}
+
+export async function fetchMerchantDecisionBreakdown(): Promise<{ name: string; count: number; fill: string }[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/merchants/analytics/decision-breakdown`, { headers: getAuthHeaders(), cache: 'no-store' });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.warn('Network error fetching decision breakdown:', err);
+    return [];
+  }
 }
 
 export async function getWebhooks(): Promise<any> {
