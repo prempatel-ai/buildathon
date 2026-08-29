@@ -235,7 +235,8 @@ class CatalogService:
             headers = {"X-Shopify-Access-Token": access_token}
         else:
             endpoint = f"{clean_url}/products.json"
-            headers = {"User-Agent": "Agentpay-Shopify-Sync/1.0"}
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+
         
         fetched_products = []
         try:
