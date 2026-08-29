@@ -427,6 +427,38 @@ class PaymentService:
                 merchant_id=tx.merchant_id
             )
 
+            # Decrement customer spend authorization limit if customer_id provided
+            if getattr(verify_in, "customer_id", None):
+                try:
+                    from app.models.spend_authorization import SpendAuthorization
+                    auth = db.query(SpendAuthorization).filter(
+                        SpendAuthorization.customer_id == verify_in.customer_id,
+                        SpendAuthorization.status == "active"
+                    ).first()
+                    if auth:
+                        new_remaining = max(Decimal('0.00'), auth.remaining_limit - tx.amount)
+                        auth.remaining_limit = new_remaining
+                        db.commit()
+                        db.refresh(auth)
+
+                        AuditService.log_event(
+                            db=db,
+                            actor_type="customer",
+                            actor_id=str(verify_in.customer_id),
+                            action="customer_limit_decremented",
+                            input={
+                                "transaction_id": str(tx.id),
+                                "amount_settled": str(tx.amount),
+                                "previous_remaining": str(auth.remaining_limit + tx.amount),
+                                "new_remaining": str(auth.remaining_limit)
+                            },
+                            decision="DECREMENTED",
+                            reasoning=f"Customer spend authorization remaining limit decremented by ₹{tx.amount} to ₹{auth.remaining_limit} upon payment settlement.",
+                            merchant_id=tx.merchant_id
+                        )
+                except Exception as exc:
+                    print(f"[CUSTOMER_LIMIT_DECREMENT_ERROR]: {exc}")
+
             try:
                 from app.services.webhook_service import WebhookService
                 WebhookService.dispatch_event(

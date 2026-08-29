@@ -16,6 +16,8 @@ depends_on = None
 
 def upgrade() -> None:
     op.add_column('agents', sqa.Column('scopes', JSONB, nullable=False, server_default='["read_catalog", "propose_order"]'))
+    op.add_column('agents', sqa.Column('environment', sqa.String(50), nullable=False, server_default='sandbox'))
 
 def downgrade() -> None:
     op.drop_column('agents', 'scopes')
+    op.drop_column('agents', 'environment', if_exists=True)

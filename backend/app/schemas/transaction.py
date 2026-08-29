@@ -24,6 +24,7 @@ class PaymentVerifyRequest(BaseModel):
     razorpay_order_id: str = Field(..., min_length=1, description="Razorpay Order ID")
     razorpay_payment_id: str = Field(..., min_length=1, description="Razorpay Payment ID")
     razorpay_signature: str = Field(..., min_length=1, description="Razorpay HMAC SHA256 signature")
+    customer_id: Optional[UUID] = Field(None, description="Optional customer ID for spend limit decrement")
     idempotency_key: Optional[str] = Field(None, description="Optional idempotency key for verification call")
 
 class TransactionRead(BaseModel):

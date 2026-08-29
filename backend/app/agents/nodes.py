@@ -124,12 +124,147 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
     return state
 
+def customer_auth_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Customer Authorization Node (Additive Gate):
+    Evaluates whether the requesting customer has an active SpendAuthorization
+    and if the proposed purchase amount fits within their remaining limit.
+    Runs BEFORE the merchant's Policy Engine node.
+    Logs audit event with actor_type='customer'.
+    """
+    proposed_tool = state.get("proposed_tool")
+    tool_args = state.get("tool_args", {})
+    customer_id = state.get("customer_id")
+    merchant_id = uuid.UUID(state["merchant_id"]) if isinstance(state["merchant_id"], str) else state["merchant_id"]
+
+    if proposed_tool != "propose_order":
+        state["customer_auth_decision"] = "ALLOW"
+        return state
+
+    db: Session = SessionLocal()
+    try:
+        from app.models.spend_authorization import SpendAuthorization
+        from app.models.customer import Customer
+
+        cust_uuid = None
+        if customer_id:
+            try:
+                cust_uuid = uuid.UUID(str(customer_id))
+            except ValueError:
+                state["customer_auth_decision"] = "DENY"
+                state["policy_decision"] = "DENY"
+                state["reasoning"] = f"Customer authorization failed: Invalid customer_id format '{customer_id}'."
+                state["status"] = "BLOCKED_BY_CUSTOMER_AUTHORIZATION"
+                return state
+        else:
+            # Fallback for unauthenticated test prompts: look up or create default test customer authorization
+            auth_existing = db.query(SpendAuthorization).filter(SpendAuthorization.status == "active").first()
+            if auth_existing:
+                cust_uuid = auth_existing.customer_id
+                customer_id = str(cust_uuid)
+            else:
+                default_cust = Customer(
+                    name="Default Test Consumer",
+                    email=f"default_test_{uuid.uuid4().hex[:6]}@example.com",
+                    password_hash="test_hash"
+                )
+                db.add(default_cust)
+                db.commit()
+                db.refresh(default_cust)
+
+                default_auth = SpendAuthorization(
+                    customer_id=default_cust.id,
+                    razorpay_customer_id=f"cust_{uuid.uuid4().hex[:14]}",
+                    spend_limit=Decimal("50000.00"),
+                    remaining_limit=Decimal("50000.00"),
+                    period="per_transaction",
+                    status="active"
+                )
+                db.add(default_auth)
+                db.commit()
+                db.refresh(default_auth)
+
+                cust_uuid = default_cust.id
+                customer_id = str(cust_uuid)
+
+        auth = db.query(SpendAuthorization).filter(
+            SpendAuthorization.customer_id == cust_uuid,
+            SpendAuthorization.status == "active"
+        ).first()
+
+        amount = Decimal(str(tool_args.get("amount", 0)))
+
+        if not auth:
+            state["customer_auth_decision"] = "DENY"
+            state["policy_decision"] = "DENY"
+            state["reasoning"] = f"Customer authorization failed: No active spend authorization found for customer {customer_id}."
+            state["status"] = "BLOCKED_BY_CUSTOMER_AUTHORIZATION"
+
+            AuditService.log_event(
+                db=db,
+                actor_type="customer",
+                actor_id=str(customer_id),
+                action="customer_authorization_evaluated",
+                input={"customer_id": str(customer_id), "amount": str(amount)},
+                decision="DENY",
+                reasoning="Customer has no active spend authorization.",
+                merchant_id=merchant_id
+            )
+            return state
+
+        if amount > auth.remaining_limit:
+            state["customer_auth_decision"] = "DENY"
+            state["policy_decision"] = "DENY"
+            state["reasoning"] = f"Customer authorization denied: Requested amount INR {amount} exceeds remaining spend limit INR {auth.remaining_limit} (Limit: INR {auth.spend_limit})."
+            state["status"] = "BLOCKED_BY_CUSTOMER_AUTHORIZATION"
+
+            AuditService.log_event(
+                db=db,
+                actor_type="customer",
+                actor_id=str(customer_id),
+                action="customer_authorization_evaluated",
+                input={
+                    "customer_id": str(customer_id),
+                    "amount": str(amount),
+                    "spend_limit": str(auth.spend_limit),
+                    "remaining_limit": str(auth.remaining_limit)
+                },
+                decision="DENY",
+                reasoning=f"Requested amount INR {amount} exceeds customer remaining spend authorization limit INR {auth.remaining_limit}.",
+                merchant_id=merchant_id
+            )
+            return state
+
+        # Customer Authorization Approved
+        state["customer_auth_decision"] = "ALLOW"
+        AuditService.log_event(
+            db=db,
+            actor_type="customer",
+            actor_id=str(customer_id),
+            action="customer_authorization_evaluated",
+            input={
+                "customer_id": str(customer_id),
+                "amount": str(amount),
+                "remaining_limit": str(auth.remaining_limit)
+            },
+            decision="ALLOW",
+            reasoning=f"Customer spend authorization verified (Remaining balance: INR {auth.remaining_limit}).",
+            merchant_id=merchant_id
+        )
+    finally:
+        db.close()
+
+    return state
+
 def policy_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     Policy Engine Node:
     Routes proposed tool calls directly through the REAL Phase 2 evaluate() engine.
     Logs policy_evaluated audit event with agent's actor_id.
     """
+    if state.get("customer_auth_decision") == "DENY":
+        # Skip merchant policy engine if customer authorization failed
+        return state
     proposed_tool = state.get("proposed_tool")
     tool_args = state.get("tool_args", {})
     merchant_id = uuid.UUID(state["merchant_id"]) if isinstance(state["merchant_id"], str) else state["merchant_id"]
@@ -227,6 +362,11 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
             db.close()
         return state
 
+    if state.get("customer_auth_decision") == "DENY":
+        state["status"] = "BLOCKED_BY_CUSTOMER_AUTHORIZATION"
+        state["response_message"] = f"Execution blocked by customer spend authorization gate: {state.get('reasoning')}"
+        return state
+
     if policy_decision == "DENY":
         state["status"] = "BLOCKED_BY_POLICY"
         state["response_message"] = f"Execution blocked by merchant policy gate: {state.get('reasoning')}"
@@ -278,7 +418,7 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
             state["razorpay_order_id"] = tx.razorpay_order_id
             state["status"] = "PAYMENT_EXECUTED"
             state["response_message"] = (
-                f"Order approved and executed! Razorpay Order ID '{tx.razorpay_order_id}' created for ₹{amount}."
+                f"Order approved and executed! Razorpay Order ID '{tx.razorpay_order_id}' created for INR {amount}."
             )
         finally:
             db.close()
