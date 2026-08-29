@@ -10,20 +10,24 @@ import {
   Check,
   Copy,
   Terminal,
-  ExternalLink,
   Lock,
-  Shield,
+  ShieldCheck,
   Zap,
-  FileCode2,
-  Database,
-  ArrowUpRight
+  Activity,
+  Play,
+  RotateCcw,
+  ArrowDown
 } from 'lucide-react';
 import CommandSearchModal from '@/components/CommandSearchModal';
 
 export function ModernLandingHero() {
   const [searchOpen, setSearchOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'payload' | 'gates' | 'audit'>('gates');
+  const [activeTab, setActiveTab] = useState<'gates' | 'payload' | 'audit'>('gates');
   const [copiedCode, setCopiedCode] = useState(false);
+
+  // Live Interactive Simulation State inside Inspector Terminal
+  const [simStep, setSimStep] = useState<number>(4);
+  const [isSimulating, setIsSimulating] = useState<boolean>(false);
 
   // Global ⌘K / Ctrl+K keyboard shortcut listener
   useEffect(() => {
@@ -43,19 +47,38 @@ export function ModernLandingHero() {
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
+  const runLiveSimulation = () => {
+    if (isSimulating) return;
+    setActiveTab('gates');
+    setIsSimulating(true);
+    setSimStep(0);
+
+    const stepTimeouts = [
+      setTimeout(() => setSimStep(1), 400),
+      setTimeout(() => setSimStep(2), 900),
+      setTimeout(() => setSimStep(3), 1400),
+      setTimeout(() => {
+        setSimStep(4);
+        setIsSimulating(false);
+      }, 1900),
+    ];
+
+    return () => stepTimeouts.forEach(clearTimeout);
+  };
+
   return (
     <section className="relative flex min-h-screen w-full flex-col items-center bg-[#030303] font-sans text-white selection:bg-white selection:text-black pb-32 overflow-hidden">
       
       {/* 
-        1. Subdued Background Grid Mesh & Subtle Top Radial Spotlight 
+        1. Subdued Background Grid Mesh & Top Radial Spotlight 
       */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 -z-10 h-[500px] w-[1000px] bg-[radial-gradient(ellipse_50%_50%_at_50%_0%,rgba(255,255,255,0.06),rgba(0,0,0,0))]" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 -z-10 h-[600px] w-[1100px] bg-[radial-gradient(ellipse_60%_60%_at_50%_0%,rgba(255,255,255,0.07),rgba(0,0,0,0))]" />
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_70%_50%_at_50%_0%,#000_60%,transparent_100%)]" />
 
       {/* 
-        2. Senior Designer Header Navbar (Monochrome High-Contrast)
+        2. Senior Designer Header Navbar with Smooth Anchor Links
       */}
-      <header className="fixed top-0 z-40 w-full border-b border-white/[0.08] bg-[#030303]/80 backdrop-blur-xl">
+      <header className="fixed top-0 z-40 w-full border-b border-white/[0.08] bg-[#030303]/85 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
           {/* Brand */}
           <div className="flex items-center space-x-3">
@@ -71,11 +94,14 @@ export function ModernLandingHero() {
             </span>
           </div>
 
-          {/* Navigation Links */}
+          {/* Smooth Scroll Navigation Links */}
           <nav className="hidden md:flex items-center space-x-6 text-xs text-neutral-400 font-medium">
-            <Link href="/health" className="hover:text-white transition-colors">
-              Health Diagnostic
-            </Link>
+            <a href="#inspector" className="hover:text-white transition-colors">
+              Live Inspector
+            </a>
+            <a href="#architecture" className="hover:text-white transition-colors">
+              Architecture
+            </a>
             <Link href="/audit" className="hover:text-white transition-colors">
               Audit Explorer
             </Link>
@@ -102,13 +128,13 @@ export function ModernLandingHero() {
 
             <Link
               href="/customer/chat"
-              className="rounded-md bg-white px-3 py-1 text-xs font-bold text-black transition-colors hover:bg-neutral-200"
+              className="rounded-md bg-white px-3 py-1 text-xs font-bold text-black transition-all hover:bg-neutral-200 active:scale-95"
             >
               Consumer Chat
             </Link>
             <Link
               href="/login"
-              className="rounded-md border border-white/15 bg-transparent px-3 py-1 text-xs font-semibold text-neutral-300 transition-colors hover:bg-white/10 hover:text-white"
+              className="rounded-md border border-white/15 bg-transparent px-3 py-1 text-xs font-semibold text-neutral-300 transition-all hover:bg-white/10 hover:text-white active:scale-95"
             >
               Merchant Sign In
             </Link>
@@ -124,7 +150,7 @@ export function ModernLandingHero() {
         {/* Pill Badge */}
         <Link
           href="/health"
-          className="group mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] py-1 pl-1 pr-3 text-xs font-mono text-neutral-400 backdrop-blur-md transition-colors hover:border-white/25 hover:bg-white/[0.05]"
+          className="group mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] py-1 pl-1 pr-3 text-xs font-mono text-neutral-400 backdrop-blur-md transition-all hover:border-white/25 hover:bg-white/[0.05]"
         >
           <span className="rounded-full bg-white px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-black">
             v1.0 SPEC
@@ -134,18 +160,18 @@ export function ModernLandingHero() {
         </Link>
 
         {/* Headline */}
-        <h1 className="mb-6 max-w-4xl text-balance text-5xl font-extrabold tracking-tighter text-white sm:text-7xl lg:text-8xl leading-[1.04]">
+        <h1 className="animate-fade-in mb-6 max-w-4xl text-balance text-5xl font-extrabold tracking-tighter text-white sm:text-7xl lg:text-8xl leading-[1.04]">
           The Payment Layer <br className="hidden sm:block" />
           <span className="text-neutral-500">for Autonomous AI Agents.</span>
         </h1>
 
         {/* Subtitle */}
-        <p className="mx-auto mb-10 max-w-[620px] text-balance text-sm sm:text-base leading-relaxed text-neutral-400 font-normal">
+        <p className="animate-fade-in mx-auto mb-10 max-w-[620px] text-balance text-sm sm:text-base leading-relaxed text-neutral-400 font-normal">
           Agentpay provides tokenized consumer spend mandates and merchant policy enforcement for AI buyer agents executing live settlements on Razorpay.
         </p>
 
         {/* Action Buttons */}
-        <div className="flex w-full flex-col items-center justify-center gap-3 sm:flex-row mb-14">
+        <div className="animate-fade-up flex w-full flex-col items-center justify-center gap-3 sm:flex-row mb-14">
           <Link
             href="/customer/chat"
             className="flex h-10 w-full items-center justify-center gap-2 rounded-md bg-white px-5 text-xs font-bold text-black transition-all hover:bg-neutral-200 active:scale-[0.98] sm:w-auto"
@@ -161,7 +187,7 @@ export function ModernLandingHero() {
           </Link>
           <button
             onClick={handleCopyInstall}
-            className="flex h-10 w-full items-center justify-center gap-2 rounded-md border border-white/10 bg-neutral-900/80 px-4 font-mono text-xs text-neutral-400 transition-colors hover:text-white sm:w-auto"
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-md border border-white/10 bg-neutral-900/80 px-4 font-mono text-xs text-neutral-400 transition-all hover:text-white hover:border-white/20 sm:w-auto"
           >
             {copiedCode ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
             <span>npm install @agentpay/sdk</span>
@@ -169,7 +195,7 @@ export function ModernLandingHero() {
         </div>
 
         {/* Technical Protocol Spec Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-4 w-full max-w-3xl border-y border-white/[0.08] py-5 mb-16 font-mono text-left text-xs text-neutral-400">
+        <div id="specs" className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-4 w-full max-w-3xl border-y border-white/[0.08] py-5 mb-16 font-mono text-left text-xs text-neutral-400">
           <div>
             <div className="text-[10px] text-neutral-600 uppercase tracking-wider mb-0.5">LATENCY GUARANTEE</div>
             <div className="font-bold text-white text-sm">&lt; 80ms Evaluation</div>
@@ -193,9 +219,9 @@ export function ModernLandingHero() {
         </div>
 
         {/* 
-          4. Senior Developer Inspector Window (Interactive Bento)
+          4. Senior Developer Inspector Window (Interactive Bento & Live Simulation)
         */}
-        <div className="w-full max-w-4xl rounded-xl border border-white/10 bg-[#080808] text-left shadow-2xl overflow-hidden">
+        <div id="inspector" className="w-full max-w-4xl rounded-xl border border-white/10 bg-[#080808] text-left shadow-2xl overflow-hidden scroll-mt-24">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-white/[0.08] bg-black/40 px-4 py-2.5">
             <div className="flex items-center space-x-2">
@@ -206,41 +232,62 @@ export function ModernLandingHero() {
               </div>
               <span className="font-mono text-xs text-neutral-400 flex items-center gap-1.5">
                 <Terminal className="h-3.5 w-3.5 text-neutral-400" />
-                <span>Protocol Execution Trace & Audit Log</span>
+                <span>Protocol Inspector & Real-Time Simulation</span>
               </span>
             </div>
 
-            {/* View Tabs */}
-            <div className="flex items-center space-x-1 bg-black p-0.5 rounded border border-white/10 font-mono text-[10px]">
+            <div className="flex items-center space-x-2">
+              {/* Interactive Live Simulation Trigger Button */}
               <button
-                onClick={() => setActiveTab('gates')}
-                className={`px-2.5 py-1 rounded transition-colors ${
-                  activeTab === 'gates' ? 'bg-white text-black font-bold' : 'text-neutral-500 hover:text-white'
-                }`}
+                onClick={runLiveSimulation}
+                disabled={isSimulating}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-white font-mono text-[10px] font-bold transition-all disabled:opacity-50"
               >
-                Dual Gate Pipeline
+                {isSimulating ? (
+                  <>
+                    <RotateCcw className="h-3 w-3 animate-spin text-emerald-400" />
+                    <span>Simulating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-3 w-3 text-emerald-400 fill-emerald-400" />
+                    <span>Run Live Simulation</span>
+                  </>
+                )}
               </button>
-              <button
-                onClick={() => setActiveTab('payload')}
-                className={`px-2.5 py-1 rounded transition-colors ${
-                  activeTab === 'payload' ? 'bg-white text-black font-bold' : 'text-neutral-500 hover:text-white'
-                }`}
-              >
-                API Request
-              </button>
-              <button
-                onClick={() => setActiveTab('audit')}
-                className={`px-2.5 py-1 rounded transition-colors ${
-                  activeTab === 'audit' ? 'bg-white text-black font-bold' : 'text-neutral-500 hover:text-white'
-                }`}
-              >
-                Immutable Audit
-              </button>
+
+              {/* View Tabs */}
+              <div className="flex items-center space-x-1 bg-black p-0.5 rounded border border-white/10 font-mono text-[10px]">
+                <button
+                  onClick={() => setActiveTab('gates')}
+                  className={`px-2.5 py-1 rounded transition-colors ${
+                    activeTab === 'gates' ? 'bg-white text-black font-bold' : 'text-neutral-500 hover:text-white'
+                  }`}
+                >
+                  Dual Gate Pipeline
+                </button>
+                <button
+                  onClick={() => setActiveTab('payload')}
+                  className={`px-2.5 py-1 rounded transition-colors ${
+                    activeTab === 'payload' ? 'bg-white text-black font-bold' : 'text-neutral-500 hover:text-white'
+                  }`}
+                >
+                  API Request
+                </button>
+                <button
+                  onClick={() => setActiveTab('audit')}
+                  className={`px-2.5 py-1 rounded transition-colors ${
+                    activeTab === 'audit' ? 'bg-white text-black font-bold' : 'text-neutral-500 hover:text-white'
+                  }`}
+                >
+                  Immutable Audit
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Window Body */}
-          <div className="p-5 font-mono text-xs leading-relaxed bg-[#050505] min-h-[240px]">
+          <div className="p-5 font-mono text-xs leading-relaxed bg-[#050505] min-h-[250px]">
             {activeTab === 'gates' && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-neutral-400 pb-2 border-b border-white/[0.06]">
@@ -249,43 +296,58 @@ export function ModernLandingHero() {
                 </div>
 
                 <div className="space-y-2 text-neutral-300">
-                  <div className="flex items-start gap-2">
-                    <span className="text-neutral-500 font-bold">[1/4]</span>
-                    <div>
-                      <span className="text-white font-bold">Customer Spend Authorization:</span> <span className="text-emerald-400 font-bold">ALLOW</span>
-                      <p className="text-[11px] text-neutral-500">Spend Limit: ₹5,000.00 &bull; Requested Order: ₹2,499.00 &bull; Remaining Balance: ₹2,501.00</p>
+                  {simStep >= 1 && (
+                    <div className="flex items-start gap-2 animate-fade-in">
+                      <span className="text-neutral-500 font-bold">[1/4]</span>
+                      <div>
+                        <span className="text-white font-bold">Customer Spend Authorization:</span> <span className="text-emerald-400 font-bold">ALLOW</span>
+                        <p className="text-[11px] text-neutral-500">Spend Limit: ₹5,000.00 &bull; Requested Order: ₹2,499.00 &bull; Remaining Balance: ₹2,501.00</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="flex items-start gap-2">
-                    <span className="text-neutral-500 font-bold">[2/4]</span>
-                    <div>
-                      <span className="text-white font-bold">Merchant Policy Engine:</span> <span className="text-emerald-400 font-bold">ALLOW</span>
-                      <p className="text-[11px] text-neutral-500">Engine: Groq Llama 3.3 70B &bull; Max Item Cap: ₹10,000.00 &bull; Category: Headphones (Allowed)</p>
+                  {simStep >= 2 && (
+                    <div className="flex items-start gap-2 animate-fade-in">
+                      <span className="text-neutral-500 font-bold">[2/4]</span>
+                      <div>
+                        <span className="text-white font-bold">Merchant Policy Engine:</span> <span className="text-emerald-400 font-bold">ALLOW</span>
+                        <p className="text-[11px] text-neutral-500">Engine: Groq Llama 3.3 70B &bull; Max Item Cap: ₹10,000.00 &bull; Category: Headphones (Allowed)</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="flex items-start gap-2">
-                    <span className="text-neutral-500 font-bold">[3/4]</span>
-                    <div>
-                      <span className="text-white font-bold">Redis Sliding Window Velocity:</span> <span className="text-emerald-400 font-bold">PASSED</span>
-                      <p className="text-[11px] text-neutral-500">Agent Key: ag_8f29... &bull; Window Rate: 3/5 requests/min</p>
+                  {simStep >= 3 && (
+                    <div className="flex items-start gap-2 animate-fade-in">
+                      <span className="text-neutral-500 font-bold">[3/4]</span>
+                      <div>
+                        <span className="text-white font-bold">Redis Sliding Window Velocity:</span> <span className="text-emerald-400 font-bold">PASSED</span>
+                        <p className="text-[11px] text-neutral-500">Agent Key: ag_8f29... &bull; Window Rate: 3/5 requests/min</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="flex items-start gap-2">
-                    <span className="text-neutral-500 font-bold">[4/4]</span>
-                    <div>
-                      <span className="text-white font-bold">Razorpay Live Settlement:</span> <span className="text-emerald-400 font-bold">SETTLED</span>
-                      <p className="text-[11px] text-neutral-500">Razorpay Order: order_P8x9kL2mA0z &bull; Payment Capture: pay_Q9y0nM3nB1x</p>
+                  {simStep >= 4 && (
+                    <div className="flex items-start gap-2 animate-fade-in">
+                      <span className="text-neutral-500 font-bold">[4/4]</span>
+                      <div>
+                        <span className="text-white font-bold">Razorpay Live Settlement:</span> <span className="text-emerald-400 font-bold">SETTLED</span>
+                        <p className="text-[11px] text-neutral-500">Razorpay Order: order_P8x9kL2mA0z &bull; Payment Capture: pay_Q9y0nM3nB1x</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
+
+                {simStep === 4 && (
+                  <div className="pt-2 flex items-center gap-2 animate-fade-in">
+                    <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-emerald-400 font-bold">Execution Complete. Status: SETTLED</span>
+                  </div>
+                )}
               </div>
             )}
 
             {activeTab === 'payload' && (
-              <div className="space-y-2 text-neutral-300">
+              <div className="space-y-2 text-neutral-300 animate-fade-in">
                 <p className="text-neutral-500">// Agent API Request Payload</p>
                 <pre className="text-neutral-300 p-3 bg-black rounded border border-white/[0.08]">
 {`POST /agent/chat HTTP/1.1
@@ -303,7 +365,7 @@ Content-Type: application/json
             )}
 
             {activeTab === 'audit' && (
-              <div className="space-y-2 text-neutral-300">
+              <div className="space-y-2 text-neutral-300 animate-fade-in">
                 <p className="text-neutral-500">// Append-Only PostgreSQL Audit Ledger Record</p>
                 <pre className="text-neutral-300 p-3 bg-black rounded border border-white/[0.08]">
 {`{
@@ -314,7 +376,7 @@ Content-Type: application/json
   "action": "payment_order_settled",
   "decision": "ALLOW",
   "reasoning": "Dual-gated check passed: Customer spend limit valid (₹2499 <= ₹5000), Merchant max_amount valid (₹2499 <= ₹10000). Payment captured via Razorpay ID pay_Q9y0nM3nB1x.",
-  "created_at": "2026-08-30T00:35:12Z"
+  "created_at": "2026-08-30T00:37:12Z"
 }`}
                 </pre>
               </div>
@@ -325,7 +387,7 @@ Content-Type: application/json
         {/* 
           5. Deep Architecture Specifications (The 4 Pillars - Monochrome Senior Layout)
         */}
-        <div className="mt-24 w-full">
+        <div id="architecture" className="mt-24 w-full scroll-mt-24">
           <div className="text-left mb-10 border-b border-white/[0.08] pb-6">
             <div className="font-mono text-xs uppercase tracking-widest text-neutral-500 mb-1">
               PROTOCOL ARCHITECTURE
@@ -340,7 +402,7 @@ Content-Type: application/json
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
             {/* Pillar 01 */}
-            <div className="rounded-xl border border-white/[0.08] bg-[#060606] p-6 transition-colors hover:border-white/20">
+            <div className="rounded-xl border border-white/[0.08] bg-[#060606] p-6 transition-all duration-300 hover:border-white/25 hover:-translate-y-0.5">
               <div className="flex items-center justify-between mb-4">
                 <span className="font-mono text-xs font-bold text-neutral-500">01 / CONSUMER SPEND VAULT</span>
                 <span className="px-2 py-0.5 rounded border border-white/10 font-mono text-[9px] text-neutral-400 uppercase">
@@ -354,7 +416,7 @@ Content-Type: application/json
             </div>
 
             {/* Pillar 02 */}
-            <div className="rounded-xl border border-white/[0.08] bg-[#060606] p-6 transition-colors hover:border-white/20">
+            <div className="rounded-xl border border-white/[0.08] bg-[#060606] p-6 transition-all duration-300 hover:border-white/25 hover:-translate-y-0.5">
               <div className="flex items-center justify-between mb-4">
                 <span className="font-mono text-xs font-bold text-neutral-500">02 / MERCHANT POLICY ENGINE</span>
                 <span className="px-2 py-0.5 rounded border border-white/10 font-mono text-[9px] text-neutral-400 uppercase">
@@ -368,7 +430,7 @@ Content-Type: application/json
             </div>
 
             {/* Pillar 03 */}
-            <div className="rounded-xl border border-white/[0.08] bg-[#060606] p-6 transition-colors hover:border-white/20">
+            <div className="rounded-xl border border-white/[0.08] bg-[#060606] p-6 transition-all duration-300 hover:border-white/25 hover:-translate-y-0.5">
               <div className="flex items-center justify-between mb-4">
                 <span className="font-mono text-xs font-bold text-neutral-500">03 / SETTLEMENT ENGINE</span>
                 <span className="px-2 py-0.5 rounded border border-white/10 font-mono text-[9px] text-neutral-400 uppercase">
@@ -382,7 +444,7 @@ Content-Type: application/json
             </div>
 
             {/* Pillar 04 */}
-            <div className="rounded-xl border border-white/[0.08] bg-[#060606] p-6 transition-colors hover:border-white/20">
+            <div className="rounded-xl border border-white/[0.08] bg-[#060606] p-6 transition-all duration-300 hover:border-white/25 hover:-translate-y-0.5">
               <div className="flex items-center justify-between mb-4">
                 <span className="font-mono text-xs font-bold text-neutral-500">04 / ACCOUNTABILITY</span>
                 <span className="px-2 py-0.5 rounded border border-white/10 font-mono text-[9px] text-neutral-400 uppercase">
@@ -413,17 +475,17 @@ Content-Type: application/json
           <div className="flex items-center space-x-3 shrink-0">
             <Link
               href="/login"
-              className="flex items-center gap-1.5 rounded-md bg-white px-4 py-2 text-xs font-bold text-black transition-colors hover:bg-neutral-200"
+              className="flex items-center gap-1.5 rounded-md bg-white px-4 py-2 text-xs font-bold text-black transition-all hover:bg-neutral-200 active:scale-95"
             >
               <span>Get Started</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
             <Link
               href="/health"
-              className="flex items-center gap-1.5 rounded-md border border-white/15 bg-transparent px-4 py-2 text-xs font-semibold text-neutral-300 transition-colors hover:bg-white/10 hover:text-white"
+              className="flex items-center gap-1.5 rounded-md border border-white/15 bg-transparent px-4 py-2 text-xs font-semibold text-neutral-300 transition-all hover:bg-white/10 hover:text-white active:scale-95"
             >
               <span>System Health</span>
-              <ArrowUpRight className="h-3.5 w-3.5 text-neutral-400" />
+              <ArrowDown className="h-3.5 w-3.5 text-neutral-400" />
             </Link>
           </div>
         </div>
