@@ -39,3 +39,9 @@ def delete_catalog_item(item_id: UUID, db: Session = Depends(get_db)):
 def get_agent_schema(merchant_id: UUID, db: Session = Depends(get_db)):
     """Returns a structured schema.org JSON-LD document representing the merchant's catalog for AI buyer agents."""
     return CatalogService.generate_agent_schema(db, merchant_id)
+
+@router.post("/bulk-import", response_model=List[CatalogItemRead], status_code=status.HTTP_201_CREATED)
+def bulk_import_catalog_items(merchant_id: UUID, items_in: List[CatalogItemCreate], db: Session = Depends(get_db)):
+    """Bulk import catalog items for a merchant via JSON or Shopify/CSV sync."""
+    return CatalogService.bulk_import_catalog_items(db, merchant_id=merchant_id, items_data=items_in)
+

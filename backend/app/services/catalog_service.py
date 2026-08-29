@@ -182,3 +182,44 @@ class CatalogService:
             "numberOfItems": len(items),
             "itemListElement": elements
         }
+
+    @staticmethod
+    def bulk_import_catalog_items(db: Session, merchant_id: UUID, items_data: List[CatalogItemCreate]) -> List[CatalogItem]:
+        merchant = db.query(Merchant).filter(Merchant.id == merchant_id).first()
+        if not merchant:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Merchant with ID {merchant_id} does not exist"
+            )
+        
+        created_items = []
+        for item_in in items_data:
+            item = CatalogItem(
+                merchant_id=merchant_id,
+                name=item_in.name,
+                price=item_in.price,
+                stock=item_in.stock,
+                category=item_in.category
+            )
+            db.add(item)
+            created_items.append(item)
+            
+        db.commit()
+        for item in created_items:
+            db.refresh(item)
+            
+        AuditService.log_event(
+            db=db,
+            actor_type="merchant",
+            actor_id=str(merchant_id),
+            action="catalog_bulk_imported",
+            input={
+                "merchant_id": str(merchant_id),
+                "count": len(created_items)
+            },
+            decision="N/A",
+            reasoning=f"Bulk imported {len(created_items)} items into catalog for merchant '{merchant.name}'.",
+            merchant_id=merchant_id
+        )
+        return created_items
+
