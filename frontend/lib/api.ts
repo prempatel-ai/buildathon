@@ -6,6 +6,8 @@ export interface Merchant {
   email?: string;
   razorpay_key_id?: string;
   limits_config: Record<string, any>;
+  environment?: string;
+  kyc_status?: string;
 }
 
 export interface CatalogItem {

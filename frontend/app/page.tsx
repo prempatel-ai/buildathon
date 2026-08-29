@@ -1,10 +1,35 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 
 export default function Home() {
+  const router = useRouter();
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    const merchToken = localStorage.getItem('agentpay_auth_token') || localStorage.getItem('access_token');
+    const custToken = localStorage.getItem('customer_token');
+
+    if (merchToken) {
+      router.replace('/dashboard');
+    } else if (custToken) {
+      router.replace('/customer/chat');
+    } else {
+      setCheckingAuth(false);
+    }
+  }, [router]);
+
+  if (checkingAuth) {
+    return (
+      <div className="flex flex-col min-h-screen bg-slate-50 font-sans items-center justify-center">
+        <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 font-sans">
       <Navigation />
@@ -24,7 +49,7 @@ export default function Home() {
 
         {/* Subtitle */}
         <p className="text-base sm:text-lg text-slate-600 max-w-2xl mb-10 leading-relaxed font-normal">
-          The first dual-gated commerce infrastructure connecting autonomous AI buyer agents with Razorpay payments. Consumer spend bounds $\cap$ Merchant policy enforcement $\cap$ Append-only audit trail.
+          The first dual-gated commerce infrastructure connecting autonomous AI buyer agents with Razorpay payments. Consumer spend bounds &bull; Merchant policy enforcement &bull; Append-only audit trail.
         </p>
 
         {/* Primary Action Buttons */}
@@ -55,34 +80,34 @@ export default function Home() {
         {/* 4 Governance Pillars Section */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-left w-full">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="text-xs font-bold font-mono text-emerald-600 uppercase tracking-wider mb-2">Pillar 1</div>
+            <div className="text-[10px] font-bold font-mono text-emerald-600 uppercase tracking-wider mb-2">CONSUMER GOVERNANCE</div>
             <h3 className="text-sm font-bold text-slate-900 mb-1">Consumer Authorization</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              UPI Reserve Pay tokenized e-mandates. Bounded spend limits set by the user before any agent purchase.
+              UPI Reserve Pay tokenized e-mandates with strict user-defined spend caps & category restrictions.
             </p>
           </div>
 
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="text-xs font-bold font-mono text-emerald-600 uppercase tracking-wider mb-2">Pillar 2</div>
+            <div className="text-[10px] font-bold font-mono text-indigo-600 uppercase tracking-wider mb-2">MERCHANT POLICY GATE</div>
             <h3 className="text-sm font-bold text-slate-900 mb-1">Merchant Policy Engine</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Groq Llama 3.3 70B policy checks, category rules, and Redis velocity rate limiting per agent key.
+              Groq Llama 3.3 70B policy evaluation, inventory validation & Redis velocity rate-limiting per agent key.
             </p>
           </div>
 
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="text-xs font-bold font-mono text-emerald-600 uppercase tracking-wider mb-2">Pillar 3</div>
+            <div className="text-[10px] font-bold font-mono text-amber-600 uppercase tracking-wider mb-2">PAYMENT SETTLEMENT</div>
             <h3 className="text-sm font-bold text-slate-900 mb-1">Razorpay Settlement</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Instant Order creation and HMAC SHA256 signature verified live capture settlement with webhooks.
+              Instant Order creation, live signature-verified payment capture & HMAC SHA-256 webhooks.
             </p>
           </div>
 
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="text-xs font-bold font-mono text-emerald-600 uppercase tracking-wider mb-2">Pillar 4</div>
-            <h3 className="text-sm font-bold text-slate-900 mb-1">3-Actor Audit Store</h3>
+            <div className="text-[10px] font-bold font-mono text-purple-600 uppercase tracking-wider mb-2">AUDIT LEDGER</div>
+            <h3 className="text-sm font-bold text-slate-900 mb-1">Append-Only Audit Trail</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Immutable PostgreSQL ledger recording actions across customer, agent, and merchant actor types.
+              Immutable PostgreSQL audit store tracking decision reasoning across Customer, Agent, and Merchant actors.
             </p>
           </div>
         </div>
