@@ -119,3 +119,60 @@ def test_sandbox_vs_live_environment_guard_rejection(db_session):
 
     assert resp.status_code == 403
     assert "Environment mismatch" in resp.json()["detail"]
+
+
+def test_kyc_gate_live_environment_switch(db_session):
+    """Test that merchant cannot switch to live environment without verified KYC."""
+    from app.core.security import create_access_token
+    from app.models.audit import AuditEvent
+
+    # Merchant with default kyc_status='unverified'
+    m = Merchant(
+        id=uuid.uuid4(),
+        name="KYC Gate Test Merchant",
+        email=f"kyc_{uuid.uuid4().hex[:6]}@store.com",
+        password_hash="pwd",
+        environment="sandbox",
+        kyc_status="unverified"
+    )
+    db_session.add(m)
+    db_session.commit()
+
+    token = create_access_token({"sub": str(m.id), "email": m.email})
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 1. Attempt to switch to live with unverified KYC -> 403 Forbidden
+    resp = client.put("/merchants/environment", json={"environment": "live"}, headers=headers)
+    assert resp.status_code == 403
+    assert "KYC status must be 'verified'" in resp.json()["detail"]
+
+    # 2. Verify audit event for denial
+    deny_event = db_session.query(AuditEvent).filter(
+        AuditEvent.merchant_id == m.id,
+        AuditEvent.action == "environment_switch_denied"
+    ).first()
+    assert deny_event is not None
+    assert deny_event.decision == "DENIED"
+
+    # 3. Switch to sandbox (should always work)
+    resp = client.put("/merchants/environment", json={"environment": "sandbox"}, headers=headers)
+    assert resp.status_code == 200
+    assert resp.json()["environment"] == "sandbox"
+
+    # 4. Update KYC to verified in DB
+    m.kyc_status = "verified"
+    db_session.commit()
+
+    # 5. Switch to live with verified KYC -> 200 OK
+    resp = client.put("/merchants/environment", json={"environment": "live"}, headers=headers)
+    assert resp.status_code == 200
+    assert resp.json()["environment"] == "live"
+    assert resp.json()["kyc_status"] == "verified"
+
+    # 6. Verify audit event for successful switch
+    switch_event = db_session.query(AuditEvent).filter(
+        AuditEvent.merchant_id == m.id,
+        AuditEvent.action == "environment_switched"
+    ).first()
+    assert switch_event is not None
+    assert switch_event.decision == "SWITCHED"

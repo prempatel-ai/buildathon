@@ -136,7 +136,74 @@ The endpoint evaluates your request against the merchant's active spend policies
 
 ---
 
-## 6. Merchant Webhook Notifications & Signature Verification
+## 6. Step 3: Completing & Verifying Payment Settlement
+
+Once an order proposal returns an `ALLOW` decision (or after a human merchant approves a `NEEDS_APPROVAL` request), the transaction is initialized with a `transaction_id` and a Razorpay `razorpay_order_id`.
+
+### Responsibility Breakdown:
+- **AI Agent Responsibility**: Submits the initial purchase proposal via `POST /agent/chat` and obtains the returned `transaction_id` and `razorpay_order_id`.
+- **Customer / Checkout Frontend Responsibility**: Passes the `razorpay_order_id` to the payment checkout flow (e.g. Razorpay Standard Checkout modal or netbanking gateway). Upon successful payment authorization by the payer, Razorpay returns a `razorpay_payment_id` and a cryptographic `razorpay_signature`.
+- **Settlement Verification Responsibility**: The merchant application (or agent helper) submits `transaction_id`, `razorpay_order_id`, `razorpay_payment_id`, and `razorpay_signature` to `POST /payments/verify-and-capture` to execute signature verification and trigger backend capture status confirmation.
+
+---
+
+### Request Endpoint & Payload (`POST /payments/verify-and-capture`)
+
+```http
+POST /payments/verify-and-capture HTTP/1.1
+Host: api.agentpay.com
+Content-Type: application/json
+Authorization: Bearer <merchant_jwt_or_agent_key>
+
+{
+  "transaction_id": "6aef232f-0ab2-4aae-a783-f129ab39fcad",
+  "razorpay_order_id": "order_TVJDZNi8Gaz6x7",
+  "razorpay_payment_id": "pay_TVJDRt2BmviMuS",
+  "razorpay_signature": "9b12a83f982c47a5...<64_char_hex_hmac>"
+}
+```
+
+---
+
+### Strict Capture-Status Guarantee (Trust Signal)
+
+> [!IMPORTANT]
+> **Independent Settlement Verification Guarantee**:
+> Agentpay enforces a zero-trust financial contract. The system **NEVER** marks a transaction as `settled` based on order creation or signature verification alone.
+> Upon receiving a capture verification request, Agentpay's backend directly queries Razorpay's independent payment status API (`GET /v1/payments/{payment_id}`).
+> The word `"settled"` ONLY appears in the Agentpay database when Razorpay's official API independently confirms `status: "captured"` and `captured: true`. If Razorpay returns any non-captured state (`authorized`, `failed`, `refunded`), the transaction is transitioned to `failed`.
+
+---
+
+### Settlement Response Payloads
+
+#### A. Successful Settlement (`settled`)
+```json
+{
+  "id": "6aef232f-0ab2-4aae-a783-f129ab39fcad",
+  "merchant_id": "39f7d49d-7edc-4d8a-8fb3-f1cbc63f919e",
+  "amount": 500.00,
+  "currency": "INR",
+  "status": "settled",
+  "razorpay_order_id": "order_TVJDZNi8Gaz6x7",
+  "razorpay_payment_id": "pay_TVJDRt2BmviMuS",
+  "error_details": null,
+  "created_at": "2026-08-28T19:41:57Z"
+}
+```
+
+#### B. Failed Verification or Uncaptured State (`failed`)
+```json
+// HTTP 400 Bad Request
+{
+  "detail": "Payment capture verification failed. Razorpay payment status is 'authorized' (captured: False)."
+}
+```
+*Note: In the database, the transaction state is cleanly updated to `status: "failed"` with full error context logged in `error_details` and audit logs.*
+
+---
+
+## 7. Merchant Webhook Notifications & Signature Verification
 
 Merchants receive real-time HTTP POST webhooks on state changes (`needs_approval.created`, `payment.settled`, `payment.failed`).
 

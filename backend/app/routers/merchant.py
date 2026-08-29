@@ -31,7 +31,8 @@ from app.schemas.merchant import (
     MerchantSettingsUpdate,
     MerchantUsageRead,
     MerchantAgentRead,
-    MerchantAgentCreate
+    MerchantAgentCreate,
+    MerchantEnvironmentSwitch
 )
 from app.services.audit_service import AuditService
 import hashlib
@@ -137,6 +138,58 @@ def update_merchant_settings(
         input=limits_config,
         decision="UPDATED",
         reasoning="Merchant updated self-serve spend limits and policy configurations.",
+        merchant_id=current_merchant.id
+    )
+
+    return current_merchant
+
+@router.put("/environment", response_model=MerchantRead)
+def switch_merchant_environment(
+    env_in: MerchantEnvironmentSwitch,
+    current_merchant: Merchant = Depends(get_current_merchant),
+    db: Session = Depends(get_db)
+):
+    """
+    Switches merchant environment between sandbox and live.
+    KYC Gate: Cannot switch to 'live' unless kyc_status = 'verified'.
+    Sandbox switch is always allowed.
+    """
+    target_env = env_in.environment
+    current_env = current_merchant.environment
+
+    if target_env == current_env:
+        return current_merchant
+
+    # KYC Gate: live requires verified KYC
+    if target_env == "live" and current_merchant.kyc_status != "verified":
+        AuditService.log_event(
+            db=db,
+            actor_type="merchant",
+            actor_id=str(current_merchant.id),
+            action="environment_switch_denied",
+            input={"target_environment": target_env, "current_kyc_status": current_merchant.kyc_status},
+            decision="DENIED",
+            reasoning=f"Environment switch to 'live' denied: KYC status is '{current_merchant.kyc_status}', must be 'verified'.",
+            merchant_id=current_merchant.id
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Cannot switch to live environment: KYC status must be 'verified' (current: '{current_merchant.kyc_status}'). Complete KYC verification first."
+        )
+
+    # Allow switch
+    current_merchant.environment = target_env
+    db.commit()
+    db.refresh(current_merchant)
+
+    AuditService.log_event(
+        db=db,
+        actor_type="merchant",
+        actor_id=str(current_merchant.id),
+        action="environment_switched",
+        input={"from_environment": current_env, "to_environment": target_env, "kyc_status": current_merchant.kyc_status},
+        decision="SWITCHED",
+        reasoning=f"Merchant environment switched from '{current_env}' to '{target_env}'.",
         merchant_id=current_merchant.id
     )
 

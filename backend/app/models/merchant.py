@@ -14,6 +14,7 @@ class Merchant(Base):
     razorpay_key_id = Column(String(255), nullable=True)
     limits_config = Column(JSONB, nullable=False, server_default='{}')
     environment = Column(String(50), nullable=False, default="sandbox")
+    kyc_status = Column(String(20), nullable=False, default="unverified")
 
     # Relationships
     agents = relationship("Agent", back_populates="merchant", cascade="all, delete-orphan")
