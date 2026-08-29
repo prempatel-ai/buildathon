@@ -216,6 +216,19 @@ export async function bulkImportCatalogItems(merchantId: string, items: CreateCa
   return res.json();
 }
 
+export async function syncShopifyCatalog(merchantId: string, storeUrl: string): Promise<CatalogItem[]> {
+  const res = await fetch(`${API_BASE_URL}/catalog/shopify-sync?merchant_id=${merchantId}&store_url=${encodeURIComponent(storeUrl)}`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ detail: 'Failed to sync Shopify store catalog' }));
+    throw new Error(typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail));
+  }
+  return res.json();
+}
+
+
 
 export async function updateCatalogItem(itemId: string, payload: UpdateCatalogItemPayload): Promise<CatalogItem> {
   const res = await fetch(`${API_BASE_URL}/catalog/items/${itemId}`, {
