@@ -41,14 +41,14 @@ export default function Home() {
           </Link>
 
           <Link
-            href="/onboarding"
+            href="/login"
             className="flex flex-col items-center justify-center p-6 bg-white hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-2xl shadow-sm transition-all group"
           >
             <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 font-bold mb-3 group-hover:scale-105 transition-transform">
               🏪
             </div>
             <span className="text-base font-bold">I'm a Merchant</span>
-            <span className="text-xs text-slate-500 mt-1">Onboard store & configure policy rules</span>
+            <span className="text-xs text-slate-500 mt-1">Manage catalog, policy rules & API keys</span>
           </Link>
         </div>
 

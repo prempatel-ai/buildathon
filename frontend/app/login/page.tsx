@@ -15,6 +15,14 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const fillDemoMerchant = (demoEmail: string, demoName: string) => {
+    setIsRegister(false);
+    setEmail(demoEmail);
+    setPassword('DemoStore123!');
+    setName(demoName);
+    setError(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -28,40 +36,96 @@ export default function LoginPage() {
       }
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Authentication failed. Please check your credentials.');
+      setError(err.message || 'Authentication failed. Please verify credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-slate-200">
       <Navigation />
 
-      <main className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-teal-400 bg-clip-text text-transparent">
-              {isRegister ? 'Register Merchant Account' : 'Merchant Portal Login'}
+      <main className="flex-1 flex flex-col items-center justify-center p-6 my-8">
+        {/* Quick Demo Merchant Pill Box */}
+        <div className="mb-6 max-w-md w-full bg-white border border-slate-200/90 rounded-2xl p-4 text-center shadow-xs">
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2.5">
+            ⚡ 1-Click Quick Demo Store Sign In
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={() => fillDemoMerchant('boat@demo.com', 'boAt Official Store')}
+              className="py-2 px-2 bg-slate-100 hover:bg-slate-200/70 text-slate-800 rounded-xl text-xs font-semibold border border-slate-200 transition-colors"
+            >
+              🎧 boAt Store
+            </button>
+            <button
+              onClick={() => fillDemoMerchant('jbl@demo.com', 'JBL Audio India')}
+              className="py-2 px-2 bg-slate-100 hover:bg-slate-200/70 text-slate-800 rounded-xl text-xs font-semibold border border-slate-200 transition-colors"
+            >
+              🎵 JBL Store
+            </button>
+            <button
+              onClick={() => fillDemoMerchant('sony@demo.com', 'Sony Store Official')}
+              className="py-2 px-2 bg-slate-100 hover:bg-slate-200/70 text-slate-800 rounded-xl text-xs font-semibold border border-slate-200 transition-colors"
+            >
+              🔊 Sony Store
+            </button>
+          </div>
+        </div>
+
+        {/* Auth Card */}
+        <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-3xl p-8 shadow-xl shadow-slate-200/40">
+          {/* Segmented Tab Switcher */}
+          <div className="flex p-1 bg-slate-100 rounded-2xl mb-6 border border-slate-200/60">
+            <button
+              type="button"
+              onClick={() => {
+                setIsRegister(false);
+                setError(null);
+              }}
+              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
+                !isRegister ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Sign In to Dashboard
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsRegister(true);
+                setError(null);
+              }}
+              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
+                isRegister ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Register New Store
+            </button>
+          </div>
+
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
+              {isRegister ? 'Register Merchant Account' : 'Merchant Portal Sign In'}
             </h1>
-            <p className="text-sm text-slate-400 mt-2">
+            <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
               {isRegister
-                ? 'Create a secure merchant account to manage your AI agent commerce store.'
-                : 'Log in with your merchant credentials to manage policies, catalog, and audit trail.'}
+                ? 'Create a secure merchant account to sell products via AI buyer agents.'
+                : 'Access your product catalog, policy rules, agent keys, and audit logs.'}
             </p>
           </div>
 
           {error && (
-            <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+            <div className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {isRegister && (
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                  Store / Merchant Name
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Store / Merchant Name *
                 </label>
                 <input
                   type="text"
@@ -69,14 +133,14 @@ export default function LoginPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Apex Electronics & Gear"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 transition"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-xs focus:outline-none focus:bg-white focus:border-slate-400 transition"
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                Merchant Email
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                Merchant Email *
               </label>
               <input
                 type="email"
@@ -84,13 +148,13 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="merchant@store.com"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-xs focus:outline-none focus:bg-white focus:border-slate-400 transition"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                Password
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                Password *
               </label>
               <input
                 type="password"
@@ -98,21 +162,21 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-xs focus:outline-none focus:bg-white focus:border-slate-400 transition"
               />
             </div>
 
             {isRegister && (
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                  Razorpay Test Key ID (Optional)
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Razorpay Key ID (Optional Test Key)
                 </label>
                 <input
                   type="text"
                   value={razorpayKeyId}
                   onChange={(e) => setRazorpayKeyId(e.target.value)}
                   placeholder="rzp_test_..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 transition"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-xs focus:outline-none focus:bg-white focus:border-slate-400 transition font-mono"
                 />
               </div>
             )}
@@ -120,26 +184,11 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-semibold rounded-xl text-white shadow-lg transition duration-200 disabled:opacity-50"
+              className="w-full mt-2 py-3 px-4 bg-slate-900 hover:bg-slate-800 font-bold rounded-xl text-white text-xs shadow-md transition duration-200 disabled:opacity-50"
             >
-              {loading ? 'Processing...' : isRegister ? 'Create Merchant Account' : 'Sign In'}
+              {loading ? 'Authenticating...' : isRegister ? 'Create Merchant Store' : 'Sign In to Dashboard'}
             </button>
           </form>
-
-          <div className="mt-8 pt-6 border-t border-slate-800/80 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsRegister(!isRegister);
-                setError(null);
-              }}
-              className="text-sm text-indigo-400 hover:text-indigo-300 transition"
-            >
-              {isRegister
-                ? 'Already have an account? Sign in'
-                : "Don't have a merchant account? Register now"}
-            </button>
-          </div>
         </div>
       </main>
     </div>

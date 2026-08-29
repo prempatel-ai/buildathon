@@ -39,24 +39,23 @@ export default function Navigation() {
   if (isCustomerContext) {
     navItems = [
       { href: '/customer/chat', label: 'Consumer Chat AI' },
-      { href: '/customer/dashboard', label: 'My Spend Authorization' },
+      { href: '/customer/dashboard', label: 'Spend Authorization' },
     ];
   } else if (isMerchantContext) {
     navItems = [
-      { href: '/dashboard', label: 'Dashboard' },
-      { href: '/onboarding', label: 'Onboarding' },
+      { href: '/dashboard', label: 'Catalog & Store' },
       { href: '/settings', label: 'Policy Rules' },
-      { href: '/agents-list', label: 'Agents' },
+      { href: '/agents-list', label: 'Agent Keys' },
       { href: '/audit', label: 'Audit Trail' },
       { href: '/webhooks', label: 'Webhooks' },
+      { href: '/usage', label: 'Analytics' },
     ];
   } else {
-    // Logged Out / Home Context
+    // Logged Out / Public Context
     navItems = [
       { href: '/customer/chat', label: 'Consumer Chat AI' },
+      { href: '/login', label: 'Merchant Sign In' },
       { href: '/customer/dashboard', label: 'Consumer Portal' },
-      { href: '/onboarding', label: 'Merchant Onboarding' },
-      { href: '/dashboard', label: 'Merchant Dashboard' },
     ];
   }
 
