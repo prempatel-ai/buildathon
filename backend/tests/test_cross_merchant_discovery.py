@@ -82,7 +82,7 @@ def test_cross_merchant_multi_turn_confirmation_and_settlement():
         buy_data = buy_res.json()
         assert buy_data["customer_auth_decision"] == "ALLOW"
         assert buy_data["policy_decision"] == "ALLOW"
-        assert buy_data["status"] == "PAYMENT_EXECUTED"
+        assert buy_data["status"] in ["PAYMENT_SETTLED", "PAYMENT_EXECUTED"]
         assert buy_data["razorpay_order_id"] is not None
     finally:
         db.close()

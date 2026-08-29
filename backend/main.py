@@ -4,9 +4,17 @@ from app.core.config import settings
 from app.routers import health, merchant, catalog, policy, payment, audit, agent, auth, webhook, customer, customer_chat
 
 from app.core.database import Base, engine
-import app.models.webhook
+from sqlalchemy import text
 
 Base.metadata.create_all(bind=engine)
+
+# Auto-migrate newly added columns on existing PostgreSQL tables
+with engine.connect() as conn:
+    try:
+        conn.execute(text("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();"))
+        conn.commit()
+    except Exception as e:
+        print(f"Auto-migration info: {e}")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

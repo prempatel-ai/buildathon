@@ -17,6 +17,8 @@ class AgentGraphState(TypedDict, total=False):
     reasoning: Optional[str]
     transaction_id: Optional[str]
     razorpay_order_id: Optional[str]
+    razorpay_payment_id: Optional[str]
+    payment_link_url: Optional[str]
     pending_approval_id: Optional[str]
     catalog_results: Optional[List[Dict[str, Any]]]
     search_results: Optional[List[Dict[str, Any]]]
@@ -27,7 +29,9 @@ class AgentGraphState(TypedDict, total=False):
 checkpointer = MemorySaver()
 
 def route_after_llm(state: AgentGraphState) -> str:
-    """Routes to search_and_compare_node if discovery tool, else customer_auth_node."""
+    """Routes to search_and_compare_node if discovery tool, END if greeting, else customer_auth_node."""
+    if state.get("proposed_tool") == "conversational_greeting":
+        return END
     if state.get("proposed_tool") == "search_and_compare":
         return "search_and_compare_node"
     return "customer_auth_node"
@@ -55,7 +59,8 @@ def build_agent_graph():
         route_after_llm,
         {
             "search_and_compare_node": "search_and_compare_node",
-            "customer_auth_node": "customer_auth_node"
+            "customer_auth_node": "customer_auth_node",
+            END: END
         }
     )
     builder.add_edge("search_and_compare_node", END)
@@ -93,6 +98,10 @@ def run_agent_workflow(
         "customer_auth_decision": None,
         "policy_decision": None,
         "reasoning": None,
+        "transaction_id": None,
+        "razorpay_order_id": None,
+        "razorpay_payment_id": None,
+        "payment_link_url": None,
         "status": "INITIALIZED"
     }
 

@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getMerchantAgents, createMerchantAgent, rotateAgentKey, getAuthToken, removeAuthToken, MerchantAgentItem } from '@/lib/api';
 
+import Navigation from '@/components/Navigation';
+
 export default function AgentsListPage() {
   const router = useRouter();
   const [agents, setAgents] = useState<MerchantAgentItem[]>([]);
@@ -81,42 +83,8 @@ export default function AgentsListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
-      {/* Navigation Header */}
-      <header className="border-b border-slate-200 bg-white sticky top-0 z-10 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-mono font-bold text-sm">
-              AP
-            </div>
-            <span className="font-semibold text-slate-900 tracking-tight text-lg">Agentpay</span>
-            <span className="px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded text-xs font-mono">
-              Agent Roster
-            </span>
-          </div>
-
-          <nav className="flex items-center space-x-2 text-xs font-medium">
-            <Link href="/" className="px-3 py-1.5 hover:bg-slate-100 rounded text-slate-600 transition-colors">
-              Dashboard
-            </Link>
-            <Link href="/agents-list" className="px-3 py-1.5 bg-slate-100 text-slate-900 rounded font-semibold transition-colors">
-              AI Agents
-            </Link>
-            <Link href="/usage" className="px-3 py-1.5 hover:bg-slate-100 rounded text-slate-600 transition-colors">
-              Usage & Billing
-            </Link>
-            <Link href="/settings" className="px-3 py-1.5 hover:bg-slate-100 rounded text-slate-600 transition-colors">
-              Settings
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="px-3 py-1.5 border border-slate-200 hover:bg-red-50 hover:text-red-600 rounded text-slate-600 transition-colors"
-            >
-              Sign Out
-            </button>
-          </nav>
-        </div>
-      </header>
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-slate-200">
+      <Navigation />
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-8">
