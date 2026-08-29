@@ -2,7 +2,7 @@ import uuid
 from typing import Dict, Any, Optional, List, TypedDict
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
-from app.agents.nodes import llm_node, customer_auth_node, policy_node, execute_node
+from app.agents.nodes import llm_node, search_and_compare_node, customer_auth_node, policy_node, execute_node
 
 class AgentGraphState(TypedDict, total=False):
     merchant_id: str
@@ -19,28 +19,46 @@ class AgentGraphState(TypedDict, total=False):
     razorpay_order_id: Optional[str]
     pending_approval_id: Optional[str]
     catalog_results: Optional[List[Dict[str, Any]]]
+    search_results: Optional[List[Dict[str, Any]]]
     status: str
     response_message: Optional[str]
 
 # Global LangGraph MemorySaver Checkpointer
 checkpointer = MemorySaver()
 
+def route_after_llm(state: AgentGraphState) -> str:
+    """Routes to search_and_compare_node if discovery tool, else customer_auth_node."""
+    if state.get("proposed_tool") == "search_and_compare":
+        return "search_and_compare_node"
+    return "customer_auth_node"
+
 def build_agent_graph():
     """
     Builds the Agent Orchestration LangGraph compiled with MemorySaver checkpointer:
-    LLM Node (Groq) -> Customer Auth Node -> Policy Engine Node (Real evaluate()) -> Execute Node (Real PaymentService / CatalogService).
+    Conditional Routing after LLM Node:
+    - search_and_compare -> search_and_compare_node -> END
+    - propose_order / get_catalog -> customer_auth_node -> policy_node -> execute_node -> END
     """
     builder = StateGraph(AgentGraphState)
 
     # Add Nodes
     builder.add_node("llm_node", llm_node)
+    builder.add_node("search_and_compare_node", search_and_compare_node)
     builder.add_node("customer_auth_node", customer_auth_node)
     builder.add_node("policy_node", policy_node)
     builder.add_node("execute_node", execute_node)
 
     # Add Edges
     builder.set_entry_point("llm_node")
-    builder.add_edge("llm_node", "customer_auth_node")
+    builder.add_conditional_edges(
+        "llm_node",
+        route_after_llm,
+        {
+            "search_and_compare_node": "search_and_compare_node",
+            "customer_auth_node": "customer_auth_node"
+        }
+    )
+    builder.add_edge("search_and_compare_node", END)
     builder.add_edge("customer_auth_node", "policy_node")
     builder.add_edge("policy_node", "execute_node")
     builder.add_edge("execute_node", END)

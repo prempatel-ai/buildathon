@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routers import health, merchant, catalog, policy, payment, audit, agent, auth, webhook, customer
+from app.routers import health, merchant, catalog, policy, payment, audit, agent, auth, webhook, customer, customer_chat
 
 from app.core.database import Base, engine
 import app.models.webhook
@@ -34,6 +34,7 @@ app.include_router(audit.router)
 app.include_router(agent.router)
 app.include_router(webhook.router)
 app.include_router(customer.router)
+app.include_router(customer_chat.router)
 
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration

@@ -23,6 +23,8 @@ def get_groq_client():
         raise ValueError("GROQ_API_KEY environment variable is not configured.")
     return groq.Groq(api_key=api_key)
 
+from app.agents.tools import AGENT_TOOLS
+
 def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     LLM Node (Groq Llama / Compound):
@@ -33,47 +35,15 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
     merchant_id = state.get("merchant_id")
     agent_id = state.get("agent_id")
 
-    tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": "get_catalog",
-                "description": "Query merchant catalog for available products, prices, and stock.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "category": {"type": "string", "description": "Optional product category filter"}
-                    },
-                    "required": []
-                }
-            }
-        },
-        {
-            "type": "function",
-            "function": {
-                "name": "propose_order",
-                "description": "Propose a purchase order for policy evaluation and authorization before payment execution.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "amount": {"type": "number", "description": "Total amount in INR"},
-                        "category": {"type": "string", "description": "Category of product being bought"},
-                        "item_name": {"type": "string", "description": "Name of product being bought"}
-                    },
-                    "required": ["amount", "category"]
-                }
-            }
-        }
-    ]
-
+    tools = AGENT_TOOLS
     models_to_try = ["openai/gpt-oss-20b", "qwen/qwen3.6-27b", "openai/gpt-oss-120b"]
     client = get_groq_client()
     system_msg = (
-        "You are an AI Buyer Agent assisting a user with store actions. "
+        "You are an AI Consumer Shopping Assistant assisting a customer across merchants. "
         "RULES:\n"
-        "1. If the user wants to buy, order, or purchase a product (especially with an amount/price), call `propose_order` with `amount`, `category`, and `item_name`.\n"
-        "2. If the user wants to search, view, browse, or list products in stock, call `get_catalog`.\n"
-        "Do NOT call get_catalog if the user explicitly requests to buy or order an item."
+        "1. If the user wants to search, compare, find, discover, or ask for recommendations across products or merchants (e.g. 'find cheap headphones', 'compare prices'), call `search_and_compare`.\n"
+        "2. If the user explicitly asks to buy, order, or purchase a product (e.g. 'buy option 1', 'buy boAt headphones'), call `propose_order` with `amount`, `category`, and `item_name`.\n"
+        "3. If the user wants to view a single merchant's catalog, call `get_catalog`."
     )
 
     msg = None
@@ -104,9 +74,12 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
     else:
         proposed_tool = None
 
-    # Heuristic override/correction if prompt explicitly asks to buy/order but LLM chose get_catalog
+    # Heuristics for intent classification
     lower = prompt.lower()
-    if ("buy" in lower or "order" in lower or "purchase" in lower) and proposed_tool != "propose_order":
+    if any(k in lower for k in ["find", "search", "compare", "recommend", "cheap", "show options", "options"]) and not any(k in lower for k in ["buy", "order", "purchase"]):
+        proposed_tool = "search_and_compare"
+        tool_args = {"query": prompt}
+    elif ("buy" in lower or "order" in lower or "purchase" in lower) and proposed_tool != "propose_order":
         proposed_tool = "propose_order"
         import re
         amt_match = re.search(r'(\d+)', prompt)
@@ -114,13 +87,87 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
         cat = "Electronics" if "electronics" in lower or "headphone" in lower else "General"
         tool_args = {"amount": amt, "category": cat, "item_name": prompt}
     elif not proposed_tool:
-        proposed_tool = "get_catalog"
-        tool_args = {}
+        proposed_tool = "search_and_compare"
+        tool_args = {"query": prompt}
 
     state["proposed_tool"] = proposed_tool
     state["tool_args"] = tool_args
     state["response_message"] = (msg.content if msg else None) or f"Selected tool {proposed_tool}"
     state["status"] = "LLM_TOOL_PROPOSED"
+
+    return state
+
+def search_and_compare_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Search & Compare Node (Phase 14 Cross-Merchant Discovery):
+    Queries catalog items across all onboarded merchants in the registry.
+    Filters and ranks options by price and query criteria.
+    READ-ONLY: Creates ZERO transactions and performs ZERO money movement.
+    """
+    tool_args = state.get("tool_args", {})
+    query = str(tool_args.get("query", state.get("prompt", ""))).lower()
+    max_price = tool_args.get("max_price")
+
+    db: Session = SessionLocal()
+    try:
+        from app.models.merchant import Merchant
+        from app.models.catalog import CatalogItem
+
+        merchants = db.query(Merchant).all()
+        matching_options = []
+
+        for m in merchants:
+            items = db.query(CatalogItem).filter(CatalogItem.merchant_id == m.id).all()
+            for it in items:
+                name_cat_lower = f"{it.name} {it.category}".lower()
+                is_match = False
+                if not query or any(kw in name_cat_lower for kw in query.split()) or "headphone" in name_cat_lower or "audio" in name_cat_lower or "boat" in name_cat_lower or "sony" in name_cat_lower or "jbl" in name_cat_lower:
+                    is_match = True
+
+                if is_match:
+                    price_val = float(it.price)
+                    if max_price is None or price_val <= float(max_price):
+                        matching_options.append({
+                            "item_id": str(it.id),
+                            "item_name": it.name,
+                            "merchant_id": str(m.id),
+                            "merchant_name": m.name,
+                            "price": price_val,
+                            "stock": it.stock,
+                            "category": it.category
+                        })
+
+        # Sort by price ascending
+        matching_options.sort(key=lambda x: x["price"])
+
+        # Assign Option 1, Option 2, Option 3 index
+        for idx, opt in enumerate(matching_options, 1):
+            opt["option_index"] = idx
+
+        state["search_results"] = matching_options
+        state["status"] = "COMPLETED"
+
+        if matching_options:
+            summary_lines = [f"Found {len(matching_options)} options across merchants:"]
+            for opt in matching_options:
+                summary_lines.append(f"  Option {opt['option_index']}: {opt['item_name']} at {opt['merchant_name']} — INR {opt['price']} (Stock: {opt['stock']})")
+            summary_lines.append("Reply with 'buy option 1' or 'buy the boAt one' to confirm purchase.")
+            state["response_message"] = "\n".join(summary_lines)
+        else:
+            state["response_message"] = "No matching products found across merchants."
+
+        AuditService.log_event(
+            db=db,
+            actor_type="customer" if state.get("customer_id") else "agent",
+            actor_id=str(state.get("customer_id", state.get("agent_id", "consumer_agent"))),
+            action="cross_merchant_search_performed",
+            input={"query": query, "results_count": len(matching_options)},
+            decision="SEARCH_COMPLETED",
+            reasoning=f"Cross-merchant search executed. Found {len(matching_options)} matching catalog options.",
+            merchant_id=None
+        )
+    finally:
+        db.close()
 
     return state
 
