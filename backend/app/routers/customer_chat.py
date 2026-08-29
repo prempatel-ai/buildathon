@@ -39,6 +39,8 @@ class CustomerChatResponse(BaseModel):
     policy_decision: Optional[str] = None
     transaction_id: Optional[str] = None
     razorpay_order_id: Optional[str] = None
+    razorpay_payment_id: Optional[str] = None
+    payment_link_url: Optional[str] = None
 
 # In-memory session store for cross-turn search options per thread
 session_search_memory: Dict[str, List[Dict[str, Any]]] = {}
@@ -59,7 +61,7 @@ def customer_chat(
     cached_options = session_search_memory.get(thread_id, [])
 
     # Check if prompt is an explicit purchase confirmation ("buy option 1", "buy boAt", "buy the cheaper one", etc.)
-    is_buy_confirm = any(k in prompt_lower for k in ["buy", "purchase", "confirm", "order"]) and not any(k in lower_w for lower_w in ["find", "search", "compare"] for k in [prompt_lower])
+    is_buy_confirm = any(k in prompt_lower for k in ["buy", "purchase", "confirm", "order"]) and not any(k in prompt_lower for k in ["find", "search", "compare", "recommend", "show options"])
 
     if is_buy_confirm and cached_options:
         # Resolve target option from memory
@@ -95,7 +97,9 @@ def customer_chat(
             customer_auth_decision=final_state.get("customer_auth_decision"),
             policy_decision=final_state.get("policy_decision"),
             transaction_id=final_state.get("transaction_id"),
-            razorpay_order_id=final_state.get("razorpay_order_id")
+            razorpay_order_id=final_state.get("razorpay_order_id"),
+            razorpay_payment_id=final_state.get("razorpay_payment_id"),
+            payment_link_url=final_state.get("payment_link_url")
         )
 
     # Discovery / Search Flow

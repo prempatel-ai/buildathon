@@ -25,6 +25,8 @@ interface ChatMessage {
   policyDecision?: string;
   transactionId?: string;
   razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  paymentLinkUrl?: string;
   timestamp: string;
 }
 
@@ -114,6 +116,8 @@ export default function ConsumerChatPage() {
         policyDecision: data.policy_decision,
         transactionId: data.transaction_id,
         razorpayOrderId: data.razorpay_order_id,
+        razorpayPaymentId: data.razorpay_payment_id,
+        paymentLinkUrl: data.payment_link_url,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
@@ -197,6 +201,24 @@ export default function ConsumerChatPage() {
                     )}
                     {msg.razorpayOrderId && (
                       <div className="text-emerald-700">Razorpay Order ID: <span className="font-bold">{msg.razorpayOrderId}</span></div>
+                    )}
+                    {msg.razorpayPaymentId && (
+                      <div className="text-emerald-700">Razorpay Payment Capture ID: <span className="font-bold">{msg.razorpayPaymentId}</span></div>
+                    )}
+                    {msg.paymentLinkUrl && (
+                      <div className="mt-2 pt-2 border-t border-slate-200/80">
+                        <a
+                          href={msg.paymentLinkUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-lg shadow-sm transition-all transform hover:-translate-y-0.5"
+                        >
+                          <span>Pay Live on Razorpay Checkout 💳</span>
+                          <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                            <path d="M14 3h7v7h-2V6.414l-9.293 9.293-1.414-1.414L17.586 5H14V3zM5 5h6v2H5v12h12v-6h2v7a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1z"/>
+                          </svg>
+                        </a>
+                      </div>
                     )}
                   </div>
                 )}
