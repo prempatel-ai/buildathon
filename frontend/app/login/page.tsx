@@ -31,10 +31,11 @@ export default function LoginPage() {
     try {
       if (isRegister) {
         await registerMerchant(name, email, password, razorpayKeyId || undefined);
+        router.push('/onboarding');
       } else {
         await loginMerchant(email, password);
+        router.push('/dashboard');
       }
-      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Authentication failed. Please verify credentials.');
     } finally {
