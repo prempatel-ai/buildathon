@@ -1,35 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React from 'react';
 import Navigation from '@/components/Navigation';
 import { Hero } from '@/components/ui/hero-1';
 
 export default function Home() {
-  const router = useRouter();
-  const [checkingAuth, setCheckingAuth] = useState(true);
-
-  useEffect(() => {
-    const merchToken = localStorage.getItem('agentpay_auth_token') || localStorage.getItem('access_token');
-    const custToken = localStorage.getItem('customer_token');
-
-    if (merchToken) {
-      router.replace('/dashboard');
-    } else if (custToken) {
-      router.replace('/customer/chat');
-    } else {
-      setCheckingAuth(false);
-    }
-  }, [router]);
-
-  if (checkingAuth) {
-    return (
-      <div className="flex flex-col min-h-screen bg-slate-50 font-sans items-center justify-center">
-        <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 font-sans">
       <Navigation />
