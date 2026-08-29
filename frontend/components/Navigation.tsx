@@ -4,14 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  Menubar,
-  MenubarContent,
-  MenubarItem,
-  MenubarMenu,
-  MenubarSeparator,
-  MenubarTrigger,
-} from '@/components/ui/menubar';
-import {
   IconStoreCatalog,
   IconGovernance,
   IconAnalytics,
@@ -21,13 +13,19 @@ import {
   IconDashboard,
   IconSignOut
 } from '@/components/ui/custom-icons';
-import { removeAuthToken } from '@/lib/api';
+import CommandSearchModal from '@/components/CommandSearchModal';
+import { removeAuthToken, getMerchantMe, Merchant } from '@/lib/api';
+import { ChevronDown, Search, ExternalLink, ShieldCheck, User, LogOut, Check } from 'lucide-react';
 
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const [isCustomerContext, setIsCustomerContext] = useState(false);
   const [isMerchantContext, setIsMerchantContext] = useState(false);
+  const [merchant, setMerchant] = useState<Merchant | null>(null);
+  const [storeMenuOpen, setStoreMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     const custToken = localStorage.getItem('customer_token');
@@ -47,11 +45,26 @@ export default function Navigation() {
     ) {
       setIsMerchantContext(true);
       setIsCustomerContext(false);
+      if (merchToken) {
+        getMerchantMe().then(setMerchant).catch(() => {});
+      }
     } else {
       setIsCustomerContext(Boolean(custToken && !merchToken));
       setIsMerchantContext(Boolean(merchToken));
     }
   }, [pathname]);
+
+  // Global ⌘K / Ctrl+K keyboard shortcut listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleLogout = () => {
     removeAuthToken();
@@ -59,127 +72,179 @@ export default function Navigation() {
     router.push('/login');
   };
 
+  const merchantTabs = [
+    { label: 'Overview', href: '/dashboard', icon: IconDashboard },
+    { label: 'Policy & Governance', href: '/settings', icon: IconGovernance },
+    { label: 'AI Agent Keys', href: '/agents-list', icon: IconAgentKey },
+    { label: 'Analytics', href: '/usage', icon: IconAnalytics },
+    { label: 'Audit Trail', href: '/audit', icon: IconAudit },
+    { label: 'Webhooks', href: '/webhooks', icon: IconWebhook },
+  ];
+
   return (
-    <header className="border-b border-slate-200 bg-white sticky top-0 z-40 shadow-2xs">
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Brand Header */}
-        <div className="flex items-center space-x-3">
-          <Link href="/" className="flex items-center space-x-3 group">
-            <div className="w-8.5 h-8.5 rounded-xl bg-slate-900 flex items-center justify-center font-bold text-white text-sm group-hover:bg-indigo-600 transition-colors shadow-2xs">
-              AP
-            </div>
-            <span className="font-bold text-slate-900 tracking-tight text-base">Agentpay</span>
-            <span className="text-slate-300">/</span>
-            <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">
-              {isCustomerContext
-                ? 'Consumer Portal'
-                : isMerchantContext
-                ? 'Merchant Admin'
-                : 'Razorpay AI Protocol'}
-            </span>
-          </Link>
+    <>
+      <header className="sticky top-0 z-40 bg-white border-b border-slate-200/90 shadow-2xs">
+        {/* Tier 1: Main Global Header */}
+        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+          {/* Brand & Organization Selector */}
+          <div className="flex items-center space-x-3">
+            <Link href="/" className="flex items-center space-x-2.5 group">
+              <div className="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center font-black text-white text-xs group-hover:bg-indigo-600 transition-colors shadow-2xs font-mono">
+                AP
+              </div>
+              <span className="font-black text-slate-900 tracking-tight text-sm">Agentpay</span>
+            </Link>
+
+            <span className="text-slate-300 font-mono text-xs">/</span>
+
+            {isMerchantContext ? (
+              <div className="relative">
+                <button
+                  onClick={() => setStoreMenuOpen(!storeMenuOpen)}
+                  className="flex items-center space-x-2 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200/80 text-xs font-semibold text-slate-800 transition-colors select-none"
+                >
+                  <div className="w-4 h-4 rounded bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-bold font-mono">
+                    {merchant?.name ? merchant.name[0].toUpperCase() : 'M'}
+                  </div>
+                  <span className="truncate max-w-[130px] font-semibold">{merchant?.name || 'Merchant Store'}</span>
+                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 uppercase tracking-wider">
+                    LIVE API
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+
+                {storeMenuOpen && (
+                  <div className="absolute left-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-xl py-1 z-50 text-xs">
+                    <div className="px-3 py-2 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                      Switch Merchant Store
+                    </div>
+                    <button
+                      onClick={() => setStoreMenuOpen(false)}
+                      className="w-full px-3 py-2 text-left flex items-center justify-between bg-indigo-50/60 text-indigo-900 font-bold"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4.5 h-4.5 rounded bg-indigo-600 text-white flex items-center justify-center text-[10px] font-mono">
+                          {merchant?.name ? merchant.name[0].toUpperCase() : 'M'}
+                        </div>
+                        <span className="truncate font-bold">{merchant?.name || 'Current Store'}</span>
+                      </div>
+                      <Check className="w-3.5 h-3.5 text-indigo-600" />
+                    </button>
+                    <div className="border-t border-slate-100 mt-1 pt-1">
+                      <Link
+                        href="/onboarding"
+                        onClick={() => setStoreMenuOpen(false)}
+                        className="block px-3 py-2 text-slate-700 hover:bg-slate-50 font-semibold text-xs"
+                      >
+                        + Register New Store
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">
+                {isCustomerContext ? 'Consumer Portal' : 'Razorpay AI Protocol'}
+              </span>
+            )}
+          </div>
+
+          {/* Global Action Utilities */}
+          <div className="flex items-center space-x-3">
+            {/* Interactive Search Bar Button */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center space-x-2 px-3 py-1.5 bg-slate-100/90 hover:bg-slate-200/80 active:scale-95 border border-slate-200/80 rounded-xl text-slate-600 text-xs font-medium select-none transition-all shadow-2xs"
+            >
+              <Search className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+              <span className="font-semibold text-slate-700 hidden sm:inline">Search app...</span>
+              <kbd className="px-1.5 py-0.5 bg-white border border-slate-200/90 rounded text-[10px] text-slate-500 font-mono shadow-2xs font-bold">
+                ⌘K
+              </kbd>
+            </button>
+
+            {isMerchantContext ? (
+              <div className="relative">
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="w-8 h-8 rounded-full bg-slate-900 text-white font-mono font-bold text-xs flex items-center justify-center border-2 border-white shadow-2xs hover:bg-indigo-600 transition-colors"
+                >
+                  {merchant?.name ? merchant.name[0].toUpperCase() : 'A'}
+                </button>
+
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-xl py-1 z-50 text-xs">
+                    <div className="px-3 py-2.5 border-b border-slate-100">
+                      <p className="font-extrabold text-slate-900 truncate text-xs">{merchant?.name || 'Merchant Admin'}</p>
+                      <p className="text-[10px] text-slate-400 font-mono mt-0.5">HMAC Authorized Token</p>
+                    </div>
+                    <Link
+                      href="/settings"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center space-x-2 px-3 py-2 text-slate-700 hover:bg-slate-50 font-semibold"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Store Governance</span>
+                    </Link>
+                    <div className="border-t border-slate-100 my-1" />
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left flex items-center space-x-2 px-3 py-2 text-red-600 hover:bg-red-50 font-bold"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <nav className="flex items-center space-x-2">
+                <Link
+                  href="/customer/chat"
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-2xs"
+                >
+                  Consumer Chat AI
+                </Link>
+                <Link
+                  href="/login"
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 border border-slate-200"
+                >
+                  Sign In
+                </Link>
+              </nav>
+            )}
+          </div>
         </div>
 
-        {/* Custom SVG Duotone Icon Menubar Navigation */}
-        {isMerchantContext ? (
-          <div className="flex items-center space-x-3">
-            <Menubar className="border-slate-200 bg-slate-50/70 shadow-2xs">
-              {/* Menu 1: Store & Catalog */}
-              <MenubarMenu>
-                <MenubarTrigger className="text-xs font-bold cursor-pointer">
-                  <IconStoreCatalog size={15} className="mr-2 text-indigo-600" />
-                  Store & Catalog
-                </MenubarTrigger>
-                <MenubarContent className="bg-white border border-slate-200 shadow-lg text-xs font-sans">
-                  <MenubarItem onClick={() => router.push('/dashboard')} className="cursor-pointer font-semibold">
-                    <IconDashboard size={14} className="mr-2 text-slate-600" />
-                    Dashboard & Products
-                  </MenubarItem>
-                  <MenubarItem onClick={() => router.push('/dashboard')} className="cursor-pointer">
-                    <IconStoreCatalog size={14} className="mr-2 text-slate-400" />
-                    Agent JSON-LD Schema
-                  </MenubarItem>
-                </MenubarContent>
-              </MenubarMenu>
-
-              {/* Menu 2: Governance & Security */}
-              <MenubarMenu>
-                <MenubarTrigger className="text-xs font-bold cursor-pointer">
-                  <IconGovernance size={15} className="mr-2 text-emerald-600" />
-                  Governance
-                </MenubarTrigger>
-                <MenubarContent className="bg-white border border-slate-200 shadow-lg text-xs font-sans">
-                  <MenubarItem onClick={() => router.push('/settings')} className="cursor-pointer font-semibold">
-                    <IconGovernance size={14} className="mr-2 text-slate-600" />
-                    Policy Rules & Limits
-                  </MenubarItem>
-                  <MenubarItem onClick={() => router.push('/agents-list')} className="cursor-pointer">
-                    <IconAgentKey size={14} className="mr-2 text-slate-500" />
-                    AI Agent API Keys
-                  </MenubarItem>
-                  <MenubarSeparator />
-                  <MenubarItem onClick={() => router.push('/audit')} className="cursor-pointer">
-                    <IconAudit size={14} className="mr-2 text-slate-500" />
-                    Immutable Audit Log
-                  </MenubarItem>
-                </MenubarContent>
-              </MenubarMenu>
-
-              {/* Menu 3: Analytics & Hooks */}
-              <MenubarMenu>
-                <MenubarTrigger className="text-xs font-bold cursor-pointer">
-                  <IconAnalytics size={15} className="mr-2 text-amber-600" />
-                  Analytics & Hooks
-                </MenubarTrigger>
-                <MenubarContent className="bg-white border border-slate-200 shadow-lg text-xs font-sans">
-                  <MenubarItem onClick={() => router.push('/usage')} className="cursor-pointer font-semibold">
-                    <IconAnalytics size={14} className="mr-2 text-slate-600" />
-                    Executive Analytics
-                  </MenubarItem>
-                  <MenubarItem onClick={() => router.push('/webhooks')} className="cursor-pointer">
-                    <IconWebhook size={14} className="mr-2 text-slate-500" />
-                    Webhooks & Notifications
-                  </MenubarItem>
-                </MenubarContent>
-              </MenubarMenu>
-            </Menubar>
-
-            <button
-              onClick={handleLogout}
-              className="px-3.5 py-1.5 border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-slate-600 rounded-xl text-xs font-bold transition-colors flex items-center space-x-1.5"
-            >
-              <IconSignOut size={14} />
-              <span>Sign Out</span>
-            </button>
+        {/* Tier 2: Horizontal Sub-Navigation Strip */}
+        {isMerchantContext && (
+          <div className="border-t border-slate-100 bg-white">
+            <div className="max-w-7xl mx-auto px-6 flex items-center space-x-7 overflow-x-auto no-scrollbar">
+              {merchantTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = pathname === tab.href;
+                return (
+                  <Link
+                    key={tab.href}
+                    href={tab.href}
+                    className={`py-2.5 text-xs flex items-center space-x-2 border-b-2 transition-all shrink-0 select-none tracking-tight ${
+                      isActive
+                        ? 'border-indigo-600 text-indigo-600 font-extrabold'
+                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300 font-semibold'
+                    }`}
+                  >
+                    <Icon size={14} className={isActive ? 'text-indigo-600' : 'text-slate-400'} />
+                    <span>{tab.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-        ) : (
-          /* Standard Customer / Public Nav */
-          <nav className="flex items-center space-x-2">
-            <Link
-              href="/customer/chat"
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                pathname === '/customer/chat'
-                  ? 'bg-slate-900 text-white shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200/80 bg-slate-50/50'
-              }`}
-            >
-              Consumer Chat AI
-            </Link>
-            <Link
-              href="/login"
-              className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200/80 bg-slate-50/50"
-            >
-              Merchant Sign In
-            </Link>
-            <Link
-              href="/customer/dashboard"
-              className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200/80 bg-slate-50/50 flex items-center space-x-1"
-            >
-              <span>Consumer Portal</span>
-            </Link>
-          </nav>
         )}
-      </div>
-    </header>
+      </header>
+
+      {/* Command Search Modal Overlay */}
+      <CommandSearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+    </>
   );
 }

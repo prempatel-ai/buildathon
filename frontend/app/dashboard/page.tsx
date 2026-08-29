@@ -16,6 +16,13 @@ import {
 } from '@/lib/api';
 
 import Navigation from '@/components/Navigation';
+import PageHeader from '@/components/PageHeader';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { MetricCard } from '@/components/ui/metric-card';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Plus, Edit2, Trash2, Code, Package, Store } from 'lucide-react';
 
 function DashboardContent() {
   const router = useRouter();
@@ -161,83 +168,89 @@ function DashboardContent() {
         )}
 
         {/* Store Header Banner */}
-        {merchant && (
-          <div className="mb-6 bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm">
-                  🏪
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-                    {merchant.name}
-                  </h1>
-                  <p className="text-xs text-slate-500 font-mono">
-                    ID: {merchant.id} &bull; {merchant.email || 'Merchant Store'}
-                  </p>
-                </div>
+        {loading ? (
+          <div className="mb-6 bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Skeleton className="w-10 h-10 rounded-2xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-3 w-60" />
               </div>
             </div>
-
-            <div className="flex items-center space-x-2 border-t md:border-t-0 pt-4 md:pt-0 border-slate-100">
-              <button
-                onClick={() => setActiveTab('catalog')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'catalog'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
-                }`}
-              >
-                Catalog Table ({items.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('schema')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'schema'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
-                }`}
-              >
-                Agent JSON-LD Schema
-              </button>
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-9 w-28 rounded-xl" />
+              <Skeleton className="h-9 w-36 rounded-xl" />
             </div>
           </div>
+        ) : (
+          merchant && (
+            <div className="mb-6 bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm">
+                    <Store className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+                      {merchant.name}
+                    </h1>
+                    <p className="text-xs text-slate-500 font-mono">
+                      ID: {merchant.id} &bull; {merchant.email || 'Merchant Store'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2 border-t md:border-t-0 pt-4 md:pt-0 border-slate-100">
+                <Button
+                  variant={activeTab === 'catalog' ? 'default' : 'secondary'}
+                  size="sm"
+                  onClick={() => setActiveTab('catalog')}
+                >
+                  <Package className="w-3.5 h-3.5 mr-1.5" />
+                  Catalog ({items.length})
+                </Button>
+                <Button
+                  variant={activeTab === 'schema' ? 'default' : 'secondary'}
+                  size="sm"
+                  onClick={() => setActiveTab('schema')}
+                >
+                  <Code className="w-3.5 h-3.5 mr-1.5" />
+                  Agent JSON-LD Schema
+                </Button>
+              </div>
+            </div>
+          )
         )}
 
         {/* Overview Metric Cards */}
-        {merchant && (
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Products</p>
-              <p className="text-2xl font-extrabold text-slate-900 mt-1">{items.length}</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">Discoverable by AI agents</p>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Max Order Cap</p>
-              <p className="text-2xl font-extrabold text-slate-900 mt-1">
-                ₹{limitsConfig.max_transaction_amount ? Number(limitsConfig.max_transaction_amount).toLocaleString('en-IN') : '10,000'}
-              </p>
-              <p className="text-[10px] text-slate-400 mt-0.5">Policy Engine limit</p>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Daily Spend Cap</p>
-              <p className="text-2xl font-extrabold text-slate-900 mt-1">
-                ₹{limitsConfig.daily_spend_limit ? Number(limitsConfig.daily_spend_limit).toLocaleString('en-IN') : '50,000'}
-              </p>
-              <p className="text-[10px] text-slate-400 mt-0.5">24h velocity window</p>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Razorpay Key ID</p>
-              <p className="text-xs font-mono font-bold text-emerald-700 mt-2 truncate">
-                {merchant.razorpay_key_id ? merchant.razorpay_key_id : 'Default Sandbox Key'}
-              </p>
-              <p className="text-[10px] text-slate-400 mt-1">Razorpay Live API Connected</p>
-            </div>
-          </div>
-        )}
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+          <MetricCard
+            title="Total Products"
+            value={items.length}
+            unit="items"
+            footerRight="Discoverable by AI"
+            loading={loading}
+          />
+          <MetricCard
+            title="Max Order Cap"
+            value={`₹${limitsConfig.max_transaction_amount ? Number(limitsConfig.max_transaction_amount).toLocaleString('en-IN') : '10,000'}`}
+            footerRight="Policy Engine"
+            loading={loading}
+          />
+          <MetricCard
+            title="Daily Spend Cap"
+            value={`₹${limitsConfig.daily_spend_limit ? Number(limitsConfig.daily_spend_limit).toLocaleString('en-IN') : '50,000'}`}
+            footerRight="24h Window"
+            loading={loading}
+          />
+          <MetricCard
+            title="Razorpay Key"
+            value={merchant?.razorpay_key_id ? 'Custom Key' : 'Sandbox'}
+            footerRight="Razorpay Live API"
+            loading={loading}
+          />
+        </div>
 
         {/* Tab 1: Catalog Items Table */}
         {activeTab === 'catalog' && (
@@ -247,26 +260,25 @@ function DashboardContent() {
                 <h2 className="text-base font-bold text-slate-900">Catalog Products</h2>
                 <p className="text-xs text-slate-500">Manage products available for autonomous AI agent transactions.</p>
               </div>
-              <button
-                onClick={handleOpenCreateModal}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors shadow-xs"
-              >
-                + Add Product
-              </button>
+              <Button variant="indigo" size="sm" onClick={handleOpenCreateModal}>
+                <Plus className="w-3.5 h-3.5 mr-1.5" />
+                Add Product
+              </Button>
             </div>
 
             {loading ? (
-              <div className="p-12 text-center text-xs text-slate-400 font-mono">Loading catalog products...</div>
+              <div className="p-6 space-y-4">
+                <Skeleton className="h-8 w-full rounded-xl" />
+                <Skeleton className="h-8 w-full rounded-xl" />
+                <Skeleton className="h-8 w-full rounded-xl" />
+              </div>
             ) : items.length === 0 ? (
               <div className="p-12 text-center">
                 <p className="text-sm font-semibold text-slate-800">No products in catalog</p>
                 <p className="text-xs text-slate-400 mt-1 mb-4">Add catalog items for AI agents to discover.</p>
-                <button
-                  onClick={handleOpenCreateModal}
-                  className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold"
-                >
+                <Button variant="default" size="sm" onClick={handleOpenCreateModal}>
                   + Add First Product
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -286,9 +298,7 @@ function DashboardContent() {
                       <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="px-6 py-4 font-bold text-slate-900">{item.name}</td>
                         <td className="px-6 py-4 text-slate-600">
-                          <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-[11px] font-semibold">
-                            {item.category}
-                          </span>
+                          <Badge variant="secondary">{item.category}</Badge>
                         </td>
                         <td className="px-6 py-4 font-mono font-bold text-slate-900 text-sm">
                           ₹{Number(item.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -301,29 +311,17 @@ function DashboardContent() {
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          {item.stock > 0 ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              Transactable
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                              Out of Stock
-                            </span>
-                          )}
+                          <StatusBadge status={item.stock > 0 ? 'Transactable' : 'Out of Stock'} />
                         </td>
-                        <td className="px-6 py-4 text-right space-x-3">
-                          <button
-                            onClick={() => handleOpenEditModal(item)}
-                            className="text-slate-700 hover:text-slate-900 font-bold"
-                          >
+                        <td className="px-6 py-4 text-right space-x-2">
+                          <Button variant="ghost" size="xs" onClick={() => handleOpenEditModal(item)}>
+                            <Edit2 className="w-3 h-3 mr-1" />
                             Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteItem(item.id)}
-                            className="text-red-600 hover:text-red-800 font-bold"
-                          >
+                          </Button>
+                          <Button variant="destructive" size="xs" onClick={() => handleDeleteItem(item.id)}>
+                            <Trash2 className="w-3 h-3 mr-1" />
                             Delete
-                          </button>
+                          </Button>
                         </td>
                       </tr>
                     ))}
@@ -356,7 +354,9 @@ function DashboardContent() {
               )}
             </div>
 
-            {agentSchema ? (
+            {loading ? (
+              <Skeleton className="h-64 w-full rounded-2xl" />
+            ) : agentSchema ? (
               <pre className="p-4 bg-slate-900 text-slate-100 rounded-2xl text-xs font-mono overflow-x-auto max-h-[500px] leading-relaxed">
                 {JSON.stringify(agentSchema, null, 2)}
               </pre>
@@ -438,20 +438,12 @@ function DashboardContent() {
               </div>
 
               <div className="pt-3 flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold"
-                >
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowModal(false)}>
                   Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={formLoading}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold disabled:opacity-50"
-                >
-                  {formLoading ? 'Saving...' : 'Save Product'}
-                </button>
+                </Button>
+                <Button type="submit" variant="default" size="sm" loading={formLoading}>
+                  Save Product
+                </Button>
               </div>
             </form>
           </div>

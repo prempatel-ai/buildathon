@@ -16,25 +16,15 @@ import {
   AuditEvent
 } from '@/lib/api';
 import Navigation from '@/components/Navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import PageHeader from '@/components/PageHeader';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { MetricCard } from '@/components/ui/metric-card';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/line-charts-9';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  TrendingUp,
-  Activity,
-  ArrowUpRight,
-  ShieldCheck,
-  Zap,
-  RefreshCw,
-  PieChart as PieIcon,
-  BarChart2,
-  Clock,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  Key,
-  Bot
-} from 'lucide-react';
+import { Activity, ShieldCheck, RefreshCw, Bot } from 'lucide-react';
 import {
   CartesianGrid,
   ComposedChart,
@@ -63,10 +53,8 @@ export default function UsagePage() {
   const [chartLoading, setChartLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Interactive Range Switcher with Day by Day (1d) option
+  // Interactive Range Switcher
   const [activeRange, setActiveRange] = useState<'1d' | '7d' | '30d' | '90d'>('7d');
-
-  // Dynamic Hover Cursor Tracker State
   const [activeHoverData, setActiveHoverData] = useState<{ date: string; value: number; change: number } | null>(null);
 
   useEffect(() => {
@@ -106,7 +94,6 @@ export default function UsagePage() {
     }
   }
 
-  // Handle Range Switcher Click
   const handleRangeChange = async (newRange: '1d' | '7d' | '30d' | '90d') => {
     setActiveRange(newRange);
     setChartLoading(true);
@@ -120,7 +107,6 @@ export default function UsagePage() {
     }
   };
 
-  // Real Database Metrics
   const totalVol = usage ? Number(usage.total_settled_volume) : 32400;
   const settledCount = usage ? usage.settled_transactions : 27;
   const totalCount = usage ? usage.total_transactions : 35;
@@ -128,55 +114,7 @@ export default function UsagePage() {
   const successRate = totalCount > 0 ? Math.round((settledCount / totalCount) * 100) : 77;
   const velocityLimit = merchant?.limits_config?.velocity_limit || 5;
 
-  // RANGE-SPECIFIC FALLBACK GENERATOR (IF BACKEND RETURNS NULL)
-  function getRangeFallback(range: '1d' | '7d' | '30d' | '90d') {
-    if (range === '1d') {
-      const points = [
-        { label: '00:00', pct: 0.05 },
-        { label: '04:00', pct: 0.02 },
-        { label: '08:00', pct: 0.18 },
-        { label: '12:00', pct: 0.35 },
-        { label: '16:00', pct: 0.25 },
-        { label: '20:00', pct: 0.10 },
-        { label: '23:59', pct: 0.05 },
-      ];
-      return points.map((p, i, arr) => {
-        const value = Math.round(totalVol * p.pct);
-        const prevVal = i > 0 ? Math.round(totalVol * arr[i - 1].pct) : 0;
-        const change = prevVal > 0 ? Math.round(((value - prevVal) / prevVal) * 100) : 0;
-        return { date: p.label, value, change };
-      });
-    } else if (range === '7d') {
-      const days = ['Jan 23', 'Jan 24', 'Jan 25', 'Jan 26', 'Jan 27', 'Jan 28', 'Jan 29'];
-      const pcts = [0.05, 0.08, 0.12, 0.18, 0.22, 0.15, 0.20];
-      return days.map((d, i, arr) => {
-        const value = Math.round(totalVol * pcts[i]);
-        const prevVal = i > 0 ? Math.round(totalVol * pcts[i - 1]) : 0;
-        const change = prevVal > 0 ? Math.round(((value - prevVal) / prevVal) * 100) : 0;
-        return { date: d, value, change };
-      });
-    } else if (range === '30d') {
-      const buckets = ['Jan 01', 'Jan 05', 'Jan 10', 'Jan 15', 'Jan 20', 'Jan 25', 'Jan 30'];
-      const pcts = [0.08, 0.12, 0.18, 0.22, 0.15, 0.10, 0.15];
-      return buckets.map((b, i, arr) => {
-        const value = Math.round(totalVol * pcts[i]);
-        const prevVal = i > 0 ? Math.round(totalVol * pcts[i - 1]) : 0;
-        const change = prevVal > 0 ? Math.round(((value - prevVal) / prevVal) * 100) : 0;
-        return { date: b, value, change };
-      });
-    } else {
-      const weeks = ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4', 'Wk 5', 'Wk 6', 'Wk 7', 'Wk 8', 'Wk 9', 'Wk 10', 'Wk 11', 'Wk 12'];
-      const pcts = [0.02, 0.03, 0.05, 0.06, 0.08, 0.09, 0.10, 0.11, 0.12, 0.10, 0.11, 0.13];
-      return weeks.map((w, i, arr) => {
-        const value = Math.round(totalVol * pcts[i]);
-        const prevVal = i > 0 ? Math.round(totalVol * pcts[i - 1]) : 0;
-        const change = prevVal > 0 ? Math.round(((value - prevVal) / prevVal) * 100) : 0;
-        return { date: w, value, change };
-      });
-    }
-  }
-
-  const activeTimelineData = timelineData.length > 0 ? timelineData : getRangeFallback(activeRange);
+  const activeTimelineData = timelineData;
 
   const chartConfig = {
     value: {
@@ -185,10 +123,6 @@ export default function UsagePage() {
     },
   } satisfies ChartConfig;
 
-  const highValue = activeTimelineData.length > 0 ? Math.max(...activeTimelineData.map((d) => d.value)) : 0;
-  const lowValue = activeTimelineData.length > 0 ? Math.min(...activeTimelineData.map((d) => d.value)) : 0;
-
-  // Light Mode Dynamic Tooltip
   const DynamicTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -203,13 +137,9 @@ export default function UsagePage() {
               ₹{Number(data.value).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </div>
             {data.change !== 0 && (
-              <span
-                className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold font-mono ${
-                  isPositive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
-                }`}
-              >
+              <Badge variant={isPositive ? 'emerald' : 'destructive'}>
                 {isPositive ? `+${data.change}%` : `${data.change}%`}
-              </span>
+              </Badge>
             )}
           </div>
         </div>
@@ -223,39 +153,17 @@ export default function UsagePage() {
       <Navigation />
 
       <main className="max-w-6xl mx-auto px-6 py-8">
-        {/* Top Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 mb-8 border-b border-slate-200/80 gap-4">
-          <div>
-            <div className="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-1 tracking-wider uppercase font-mono">
-              <span>Merchant Admin</span>
-              <span>&bull;</span>
-              <span className="text-indigo-600">Analytics Suite</span>
-            </div>
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-3">
-              <span>Executive Performance Dashboard</span>
-              {loading ? (
-                <Skeleton className="h-6 w-32 rounded-full" />
-              ) : (
-                merchant?.name && (
-                  <span className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-full text-xs font-bold shadow-2xs">
-                    {merchant.name}
-                  </span>
-                )
-              )}
-            </h1>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={loadData}
-              disabled={loading}
-              className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold shadow-2xs transition-colors flex items-center space-x-1.5 disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${loading ? 'animate-spin' : ''}`} />
-              <span>Sync Metrics</span>
-            </button>
-          </div>
-        </div>
+        <PageHeader
+          category="Analytics Suite"
+          title="Executive Performance Dashboard"
+          badge={merchant?.name}
+          actions={
+            <Button variant="outline" size="sm" onClick={loadData} loading={loading}>
+              <RefreshCw className="w-3.5 h-3.5 text-indigo-600 mr-1.5" />
+              Sync Metrics
+            </Button>
+          }
+        />
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-xs font-medium">
@@ -264,89 +172,41 @@ export default function UsagePage() {
         )}
 
         <div className="space-y-8">
-          {/* ========================================================================= */}
-          {/* 1. TOP KPI CARDS WITH SHADCN SKELETON LOADERS                            */}
-          {/* ========================================================================= */}
+          {/* Reusable MetricCards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {loading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
-                  <Skeleton className="h-3 w-28" />
-                  <Skeleton className="h-8 w-36" />
-                  <Skeleton className="h-4 w-full pt-2" />
-                </div>
-              ))
-            ) : (
-              <>
-                <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
-                  <div>
-                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono mb-2">
-                      Gross Settled Volume
-                    </div>
-                    <div className="text-3xl font-black font-mono text-slate-900 tracking-tight">
-                      ₹{totalVol.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <span className="font-bold text-emerald-700 flex items-center space-x-1">
-                      <ArrowUpRight className="w-4 h-4" />
-                      <span>+100% Captured</span>
-                    </span>
-                    <span className="text-slate-400 text-[11px] font-mono">Razorpay API</span>
-                  </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
-                  <div>
-                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono mb-2">
-                      Settled Orders
-                    </div>
-                    <div className="text-3xl font-black font-mono text-slate-900 tracking-tight">
-                      {settledCount} <span className="text-xs font-sans text-slate-400 font-normal">orders</span>
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <span className="font-bold text-indigo-600">100% HMAC Signed</span>
-                    <span className="text-slate-400 text-[11px] font-mono">Verified</span>
-                  </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
-                  <div>
-                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono mb-2">
-                      Gate Approval Rate
-                    </div>
-                    <div className="text-3xl font-black font-mono text-slate-900 tracking-tight">
-                      {successRate}%
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold">
-                    <span className="text-slate-700">{settledCount} Approved</span>
-                    <span className="text-amber-600">{failedCount} Gated</span>
-                  </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
-                  <div>
-                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono mb-2">
-                      Velocity Guard
-                    </div>
-                    <div className="text-3xl font-black font-mono text-slate-900 tracking-tight">
-                      {velocityLimit} <span className="text-xs font-sans text-slate-400 font-normal">req/min</span>
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <span className="font-bold text-emerald-700">Redis Limiter</span>
-                    <span className="text-slate-400 text-[11px] font-mono">0 Throttled</span>
-                  </div>
-                </div>
-              </>
-            )}
+            <MetricCard
+              title="Gross Settled Volume"
+              value={`₹${totalVol.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
+              footerLeft="+100% Captured"
+              footerRight="Razorpay API"
+              loading={loading}
+            />
+            <MetricCard
+              title="Settled Orders"
+              value={settledCount}
+              unit="orders"
+              footerLeft="100% HMAC Signed"
+              footerRight="Verified"
+              loading={loading}
+            />
+            <MetricCard
+              title="Gate Approval Rate"
+              value={`${successRate}%`}
+              footerLeft={`${settledCount} Approved`}
+              footerRight={`${failedCount} Gated`}
+              loading={loading}
+            />
+            <MetricCard
+              title="Velocity Guard"
+              value={velocityLimit}
+              unit="req/min"
+              footerLeft="Redis Limiter"
+              footerRight="0 Throttled"
+              loading={loading}
+            />
           </div>
 
-          {/* ========================================================================= */}
-          {/* 2. RECHARTS CARD WITH RANGE SWITCHER & SKELETON LOADING                   */}
-          {/* ========================================================================= */}
+          {/* Volume Chart Card */}
           <Card className="w-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
             <CardContent className="flex flex-col items-stretch gap-6 p-0">
               <div className="flex items-center justify-between flex-wrap gap-4 text-xs border-b border-slate-100 pb-4">
@@ -362,41 +222,35 @@ export default function UsagePage() {
                 </div>
 
                 {/* Range Switcher Buttons */}
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center p-1 bg-slate-50 border border-slate-200/90 rounded-xl text-xs font-semibold shadow-2xs">
-                    <button
-                      onClick={() => handleRangeChange('1d')}
-                      className={`px-3 py-1.5 rounded-lg transition-all ${
-                        activeRange === '1d' ? 'bg-slate-900 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      Day by Day
-                    </button>
-                    <button
-                      onClick={() => handleRangeChange('7d')}
-                      className={`px-3 py-1.5 rounded-lg transition-all ${
-                        activeRange === '7d' ? 'bg-slate-900 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      7 Days
-                    </button>
-                    <button
-                      onClick={() => handleRangeChange('30d')}
-                      className={`px-3 py-1.5 rounded-lg transition-all ${
-                        activeRange === '30d' ? 'bg-slate-900 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      30 Days
-                    </button>
-                    <button
-                      onClick={() => handleRangeChange('90d')}
-                      className={`px-3 py-1.5 rounded-lg transition-all ${
-                        activeRange === '90d' ? 'bg-slate-900 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      Quarterly
-                    </button>
-                  </div>
+                <div className="flex items-center space-x-1 p-1 bg-slate-50 border border-slate-200/90 rounded-xl text-xs font-semibold shadow-2xs">
+                  <Button
+                    size="xs"
+                    variant={activeRange === '1d' ? 'default' : 'ghost'}
+                    onClick={() => handleRangeChange('1d')}
+                  >
+                    Day by Day
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant={activeRange === '7d' ? 'default' : 'ghost'}
+                    onClick={() => handleRangeChange('7d')}
+                  >
+                    7 Days
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant={activeRange === '30d' ? 'default' : 'ghost'}
+                    onClick={() => handleRangeChange('30d')}
+                  >
+                    30 Days
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant={activeRange === '90d' ? 'default' : 'ghost'}
+                    onClick={() => handleRangeChange('90d')}
+                  >
+                    Quarterly
+                  </Button>
                 </div>
               </div>
 
@@ -455,20 +309,14 @@ export default function UsagePage() {
             </CardContent>
           </Card>
 
-          {/* ========================================================================= */}
-          {/* 3. AI AGENT SHARE (PIE) & DECISIONS (BAR) WITH SKELETONS                  */}
-          {/* ========================================================================= */}
+          {/* AI Agent Share & Policy Decisions */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* AI Agent Volume Distribution */}
             <Card className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
               <CardHeader className="p-0 mb-4 pb-3 border-b border-slate-100">
-                <CardTitle className="text-sm font-extrabold text-slate-900 flex items-center justify-between">
-                  <span className="flex items-center space-x-2">
-                    <Bot className="w-4 h-4 text-indigo-600" />
-                    <span>AI Agent Volume Distribution</span>
-                  </span>
-                  <span className="text-xs font-mono text-slate-400 font-normal">Real DB Query</span>
-                </CardTitle>
+                <div className="flex items-center space-x-2">
+                  <Bot className="w-4 h-4 text-indigo-600 shrink-0" />
+                  <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">AI Agent Volume Distribution</h3>
+                </div>
               </CardHeader>
               <CardContent className="p-0 flex flex-col sm:flex-row items-center justify-between gap-6">
                 {loading ? (
@@ -541,16 +389,12 @@ export default function UsagePage() {
               </CardContent>
             </Card>
 
-            {/* Policy Evaluation Breakdown */}
             <Card className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
               <CardHeader className="p-0 mb-4 pb-3 border-b border-slate-100">
-                <CardTitle className="text-sm font-extrabold text-slate-900 flex items-center justify-between">
-                  <span className="flex items-center space-x-2">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Policy Evaluation Breakdown</span>
-                  </span>
-                  <span className="text-xs font-mono text-slate-400 font-normal">Real DB Query</span>
-                </CardTitle>
+                <div className="flex items-center space-x-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">Policy Evaluation Breakdown</h3>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 {loading ? (
@@ -591,20 +435,18 @@ export default function UsagePage() {
             </Card>
           </div>
 
-          {/* ========================================================================= */}
-          {/* 4. LIVE AUDIT ACTIVITY TRAIL TABLE WITH SKELETONS                         */}
-          {/* ========================================================================= */}
+          {/* Audit Event Table */}
           <Card className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
             <CardHeader className="p-0 mb-4 pb-3 border-b border-slate-100">
-              <CardTitle className="text-sm font-extrabold text-slate-900 flex items-center justify-between">
-                <span className="flex items-center space-x-2">
-                  <Activity className="w-4 h-4 text-indigo-600" />
-                  <span>Real-Time Audit Trail Events</span>
-                </span>
-                <Link href="/audit" className="text-xs text-indigo-600 hover:text-indigo-800 font-bold font-mono">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center space-x-2">
+                  <Activity className="w-4 h-4 text-indigo-600 shrink-0" />
+                  <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">Real-Time Audit Trail Events</h3>
+                </div>
+                <Button variant="link" size="xs" onClick={() => router.push('/audit')}>
                   View Full Audit Log &rarr;
-                </Link>
-              </CardTitle>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               {loading ? (
@@ -631,24 +473,12 @@ export default function UsagePage() {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {auditEvents.slice(0, 5).map((ev) => {
-                        const isSettled = ev.decision === 'SETTLED' || ev.decision === 'ALLOW' || ev.action === 'payment_settled';
-                        const isGated = ev.decision === 'GATED' || ev.decision === 'DENIED';
                         return (
                           <tr key={ev.id} className="hover:bg-slate-50/80 transition-colors">
                             <td className="py-3 font-mono font-bold text-slate-900">{ev.action}</td>
                             <td className="py-3 text-slate-600 font-mono text-[11px]">{ev.actor_type}</td>
                             <td className="py-3">
-                              <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold font-mono ${
-                                  isSettled
-                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                    : isGated
-                                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                    : 'bg-red-50 text-red-700 border border-red-200'
-                                }`}
-                              >
-                                {ev.decision || 'EVALUATED'}
-                              </span>
+                              <StatusBadge status={ev.decision || 'SETTLED'} />
                             </td>
                             <td className="py-3 font-mono font-bold text-slate-900">
                               ₹{ev.input?.amount ? Number(ev.input.amount).toLocaleString('en-IN') : '1,200'}

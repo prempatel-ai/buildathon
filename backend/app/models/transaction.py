@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Numeric, ForeignKey
+from sqlalchemy import Column, String, Numeric, DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -17,6 +17,7 @@ class Transaction(Base):
     razorpay_signature = Column(String(255), nullable=True)
     idempotency_key = Column(String(255), nullable=True, unique=True, index=True)
     error_details = Column(JSONB, server_default='{}', nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=True, index=True)
 
     # Relationships
     merchant = relationship("Merchant", back_populates="transactions")
