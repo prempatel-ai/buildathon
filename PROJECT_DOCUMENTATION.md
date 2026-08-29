@@ -111,12 +111,12 @@ These phases are **out of scope for the hackathon submission** and should not be
 - [ ] A thin client SDK, if warranted by adoption
 **Exit criteria:** an external developer, given only the public docs, can integrate an agent against a sandboxed merchant without support from this team.
 
-### Phase 12 — Razorpay Live-Mode & Compliance Readiness
+### Phase 12 — Razorpay Live-Mode & Compliance Readiness — **DONE**
 **Goal:** the system is ready to move from Razorpay test mode to real, live-mode transactions.
-- [ ] KYC tie-in for merchants moving from test to live Razorpay keys
-- [ ] PCI-relevant review of anything touching card data, even indirectly
-- [ ] Data retention policy for `audit_events` and `transactions`
+- [x] KYC tie-in for merchants moving from test to live Razorpay keys
+- [x] PCI-relevant review of anything touching card data, even indirectly
+- [x] Data retention policy for `audit_events` and `transactions`
 **Exit criteria:** legal/compliance sign-off (internal or advisory) that live-mode transactions can run within Razorpay's and applicable regulatory requirements.
 
 ## 8. Current status
-Phase: **Phases 0 through 8 completed — all core build phases, failure handling, UX polish, submission prep, and Phase 8 security & multi-tenant hardening (JWT auth, agent key rotation/scoping, Redis rate limiting) are 100% finished and verified.** Phases 9–12 are a documented post-submission roadmap only.
+Phase: **Phases 0 through 12 completed — all core build phases, failure handling, UX polish, submission prep, Phase 8 security & multi-tenant hardening (JWT auth, agent key rotation/scoping, Redis rate limiting), and Phase 12 Razorpay Live-Mode & Compliance Readiness (KYC gate, PCI self-review, data retention policy) are 100% finished and verified.** Phases 9–11 are a documented post-submission roadmap only.

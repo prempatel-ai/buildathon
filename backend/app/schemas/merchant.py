@@ -1,5 +1,5 @@
 from uuid import UUID
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Literal
 from pydantic import BaseModel, Field, ConfigDict
 
 class MerchantBase(BaseModel):
@@ -17,8 +17,13 @@ class MerchantUpdate(BaseModel):
 
 class MerchantRead(MerchantBase):
     id: UUID
+    environment: str
+    kyc_status: str
 
     model_config = ConfigDict(from_attributes=True)
+
+class MerchantEnvironmentSwitch(BaseModel):
+    environment: Literal["sandbox", "live"] = Field(..., description="Target environment")
 
 class MerchantSettingsUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
