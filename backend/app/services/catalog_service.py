@@ -224,17 +224,23 @@ class CatalogService:
         return created_items
 
     @staticmethod
-    def sync_shopify_catalog(db: Session, merchant_id: UUID, store_url: str) -> List[CatalogItem]:
+    def sync_shopify_catalog(db: Session, merchant_id: UUID, store_url: str, access_token: Optional[str] = None) -> List[CatalogItem]:
         clean_url = store_url.strip().rstrip('/')
         if not clean_url.startswith('http'):
             clean_url = f"https://{clean_url}"
         
-        endpoint = f"{clean_url}/products.json"
+        # Shopify standard public endpoint or Admin REST API endpoint
+        if access_token:
+            endpoint = f"{clean_url}/admin/api/2024-01/products.json"
+            headers = {"X-Shopify-Access-Token": access_token}
+        else:
+            endpoint = f"{clean_url}/products.json"
+            headers = {"User-Agent": "Agentpay-Shopify-Sync/1.0"}
         
         fetched_products = []
         try:
             import httpx
-            resp = httpx.get(endpoint, timeout=5.0)
+            resp = httpx.get(endpoint, headers=headers, timeout=8.0, follow_redirects=True)
             if resp.status_code == 200:
                 data = resp.json()
                 for prod in data.get('products', []):
@@ -249,9 +255,10 @@ class CatalogService:
                         "stock": max(stock, 10),
                         "category": category
                     })
-        except Exception:
+        except Exception as e:
             pass
 
+        # Fallback to realistic demo Shopify catalog if store URL is offline or unauthenticated
         if not fetched_products:
             fetched_products = [
                 {"name": "Shopify: Wireless Noise-Cancelling Headphones", "price": 4999.0, "stock": 50, "category": "Audio"},
@@ -271,5 +278,6 @@ class CatalogService:
             for p in fetched_products
         ]
         return CatalogService.bulk_import_catalog_items(db, merchant_id=merchant_id, items_data=items_in)
+
 
 
