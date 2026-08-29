@@ -318,8 +318,8 @@ export default function CustomerDashboardPage() {
                 <input
                   type="number"
                   required
-                  min="1"
-                  step="100"
+                  min="0"
+                  step="any"
                   value={spendLimit}
                   onChange={(e) => setSpendLimit(e.target.value)}
                   placeholder="5000"
