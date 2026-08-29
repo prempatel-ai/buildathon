@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -17,12 +17,8 @@ import {
   Activity,
   ArrowUpRight,
   ChevronDown,
-  Cpu,
-  Server,
-  Key,
-  Globe,
-  HelpCircle,
-  Code
+  Sparkles,
+  MousePointer
 } from 'lucide-react';
 import CommandSearchModal from '@/components/CommandSearchModal';
 
@@ -46,7 +42,7 @@ const FAQ_DATA: FAQItem[] = [
   },
   {
     q: "How are webhooks secured for merchant backend integrations?",
-    a: "Webhooks are signed using HMAC SHA-256 with header `X-Agentpay-Signature: t=timestamp,v1=signature`. Merchant backends can verify payloads using their shared secret. Failed deliveries automatically retry with exponential backoff (3 attempts)."
+    a: "Webhooks are signed using HMAC SHA-256 with header X-Agentpay-Signature: t=timestamp,v1=signature. Merchant backends can verify payloads using their shared secret. Failed deliveries automatically retry with exponential backoff (3 attempts)."
   }
 ];
 
@@ -56,9 +52,23 @@ export function ModernLandingHero() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
+  // Mouse Spotlight Motion State
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const sectionRef = useRef<HTMLElement>(null);
+
   // Live Interactive Simulation State inside Inspector Terminal
   const [simStep, setSimStep] = useState<number>(4);
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
+
+  // Track cursor position for smooth ambient cursor spotlight
+  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+    if (!sectionRef.current) return;
+    const rect = sectionRef.current.getBoundingClientRect();
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
+  };
 
   // Global ⌘K / Ctrl+K keyboard shortcut listener
   useEffect(() => {
@@ -98,10 +108,28 @@ export function ModernLandingHero() {
   };
 
   return (
-    <section className="relative flex min-h-screen w-full flex-col items-center bg-[#090d16] font-sans text-slate-100 selection:bg-white selection:text-black pb-32">
+    <section
+      ref={sectionRef}
+      onMouseMove={handleMouseMove}
+      className="relative flex min-h-screen w-full flex-col items-center bg-[#090d16] font-sans text-slate-100 selection:bg-white selection:text-black pb-32 overflow-hidden"
+    >
       
       {/* 
-        1. Clean Header Navbar
+        1. Smooth Mouse Cursor Spotlight Follow Effect
+      */}
+      <div
+        className="pointer-events-none absolute -z-10 h-[500px] w-[500px] rounded-full bg-indigo-500/[0.04] blur-3xl transition-transform duration-300 ease-out"
+        style={{
+          transform: `translate(${mousePos.x - 250}px, ${mousePos.y - 250}px)`
+        }}
+      />
+
+      {/* Top Ambient Glow & Grid Backdrop */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 -z-10 h-[600px] w-[1100px] bg-[radial-gradient(ellipse_60%_60%_at_50%_0%,rgba(255,255,255,0.06),rgba(0,0,0,0))]" />
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_70%_50%_at_50%_0%,#000_60%,transparent_100%)]" />
+
+      {/* 
+        2. Senior Designer Header Navbar
       */}
       <header className="fixed top-0 z-40 w-full border-b border-slate-800/90 bg-[#090d16]/90 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
@@ -119,7 +147,7 @@ export function ModernLandingHero() {
             </span>
           </div>
 
-          {/* Nav Links */}
+          {/* Smooth Navigation Links */}
           <nav className="hidden lg:flex items-center space-x-6 text-xs text-slate-300 font-semibold font-sans">
             <a href="#inspector" className="hover:text-white transition-colors">
               Protocol Inspector
@@ -168,35 +196,36 @@ export function ModernLandingHero() {
       </header>
 
       {/* 
-        2. Main Hero Section (High Contrast, Ultra-Readable)
+        3. Main Hero Section (High Contrast, Readable, Animated Reveal)
       */}
       <main className="z-10 flex w-full max-w-[1040px] flex-col items-center px-6 pt-32 text-center md:pt-40">
         
-        {/* Pill Badge */}
+        {/* Animated Pill Badge */}
         <Link
           href="/health"
-          className="group mb-8 inline-flex items-center gap-2.5 rounded-full border border-slate-700 bg-slate-900/90 py-1.5 pl-1.5 pr-4 text-xs font-medium text-slate-200 backdrop-blur-md transition-all hover:border-slate-500 hover:bg-slate-800"
+          className="animate-fade-in group mb-8 inline-flex items-center gap-2.5 rounded-full border border-slate-700 bg-slate-900/90 py-1.5 pl-1.5 pr-4 text-xs font-medium text-slate-200 backdrop-blur-md transition-all hover:border-slate-500 hover:bg-slate-800"
         >
-          <span className="rounded-full bg-white px-2.5 py-0.5 font-mono text-[10px] font-black uppercase tracking-wider text-slate-900">
+          <span className="rounded-full bg-white px-2.5 py-0.5 font-mono text-[10px] font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
             PROTOCOL v1.0
           </span>
           <span className="font-semibold text-slate-200 font-sans">Agent-Readable Commerce Infrastructure</span>
           <ChevronRight className="h-3.5 w-3.5 text-slate-400 transition-transform group-hover:translate-x-1" />
         </Link>
 
-        {/* Headline */}
-        <h1 className="mb-6 max-w-4xl text-balance text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1]">
+        {/* Headline with Fade Entrance */}
+        <h1 className="animate-fade-in mb-6 max-w-4xl text-balance text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1]">
           AI agents shop for you. <br />
           <span className="text-slate-300">Gated. Authorized. Audited.</span>
         </h1>
 
         {/* Subtitle */}
-        <p className="mx-auto mb-10 max-w-[680px] text-balance text-base sm:text-lg leading-relaxed text-slate-300 font-normal">
+        <p className="animate-fade-in mx-auto mb-10 max-w-[680px] text-balance text-base sm:text-lg leading-relaxed text-slate-300 font-normal">
           The first dual-gated commerce infrastructure connecting autonomous AI buyer agents with Razorpay payments. Consumer spend bounds &bull; Merchant policy enforcement &bull; Append-only audit trail.
         </p>
 
         {/* Action Buttons */}
-        <div className="flex w-full flex-col items-center justify-center gap-3.5 sm:flex-row mb-14">
+        <div className="animate-fade-up flex w-full flex-col items-center justify-center gap-3.5 sm:flex-row mb-14">
           <Link
             href="/customer/chat"
             className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-6 text-sm font-black text-slate-900 transition-all hover:bg-slate-200 active:scale-[0.98] sm:w-auto shadow-md"
@@ -221,22 +250,22 @@ export function ModernLandingHero() {
 
         {/* Technical Protocol Spec Bar */}
         <div id="specs" className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-6 w-full max-w-3xl border-y border-slate-800 py-6 mb-16 font-mono text-left">
-          <div>
+          <div className="transition-all hover:translate-y-[-2px]">
             <div className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">EVALUATION LATENCY</div>
             <div className="font-extrabold text-white text-base">&lt; 80ms Latency</div>
             <div className="text-xs text-slate-300 mt-0.5">Groq Llama 3.3 70B</div>
           </div>
-          <div>
+          <div className="transition-all hover:translate-y-[-2px]">
             <div className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">SECURITY GUARANTEE</div>
             <div className="font-extrabold text-white text-base">Dual-Gated Check</div>
             <div className="text-xs text-slate-300 mt-0.5">Customer + Merchant</div>
           </div>
-          <div>
+          <div className="transition-all hover:translate-y-[-2px]">
             <div className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">SETTLEMENT ENGINE</div>
             <div className="font-extrabold text-white text-base">Razorpay Live</div>
             <div className="text-xs text-slate-300 mt-0.5">HMAC SHA-256 Verified</div>
           </div>
-          <div>
+          <div className="transition-all hover:translate-y-[-2px]">
             <div className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">AUDIT STORE</div>
             <div className="font-extrabold text-white text-base">3-Actor Ledger</div>
             <div className="text-xs text-slate-300 mt-0.5">Append-Only Postgres</div>
@@ -244,9 +273,9 @@ export function ModernLandingHero() {
         </div>
 
         {/* 
-          3. Protocol Inspector Window (Interactive Bento & Simulation)
+          4. Protocol Inspector Window (Interactive Bento & Simulation)
         */}
-        <div id="inspector" className="w-full max-w-4xl rounded-2xl border border-slate-800 bg-[#0d121f] text-left shadow-xl overflow-hidden scroll-mt-24">
+        <div id="inspector" className="w-full max-w-4xl rounded-2xl border border-slate-800 bg-[#0d121f] text-left shadow-xl overflow-hidden scroll-mt-24 transition-all hover:border-slate-700">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-800 bg-slate-950/80 px-5 py-3">
             <div className="flex items-center space-x-2">
@@ -262,11 +291,11 @@ export function ModernLandingHero() {
             </div>
 
             <div className="flex items-center space-x-3">
-              {/* Interactive Simulation Trigger */}
+              {/* Interactive Simulation Trigger Button */}
               <button
                 onClick={runLiveSimulation}
                 disabled={isSimulating}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white font-mono text-xs font-bold transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white font-mono text-xs font-bold transition-all disabled:opacity-50 active:scale-95"
               >
                 {isSimulating ? (
                   <>
@@ -401,7 +430,7 @@ Content-Type: application/json
   "action": "payment_order_settled",
   "decision": "ALLOW",
   "reasoning": "Dual-gated check passed: Customer spend limit valid (₹2499 <= ₹5000), Merchant max_amount valid (₹2499 <= ₹10000). Payment captured via Razorpay ID pay_Q9y0nM3nB1x.",
-  "created_at": "2026-08-30T00:40:12Z"
+  "created_at": "2026-08-30T00:41:12Z"
 }`}
                 </pre>
               </div>
@@ -410,7 +439,7 @@ Content-Type: application/json
         </div>
 
         {/* 
-          4. End-to-End Autonomous Workflow Diagram Section (NEW)
+          5. End-to-End Autonomous Workflow Diagram Section with Animated Beam Line
         */}
         <div id="workflow" className="mt-24 w-full scroll-mt-24">
           <div className="text-left mb-10 border-b border-slate-800 pb-6">
@@ -425,29 +454,34 @@ Content-Type: application/json
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-left">
-            <div className="rounded-xl border border-slate-800 bg-[#0d121f] p-5">
+          <div className="relative grid grid-cols-1 md:grid-cols-4 gap-4 text-left">
+            {/* Animated Connecting Beam Bar */}
+            <div className="hidden md:block absolute top-1/2 left-0 right-0 h-0.5 bg-slate-800 -translate-y-1/2 overflow-hidden -z-10">
+              <div className="w-full h-full bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-beam" />
+            </div>
+
+            <div className="rounded-xl border border-slate-800 bg-[#0d121f] p-5 transition-all duration-300 hover:border-slate-600 hover:-translate-y-1">
               <div className="font-mono text-xs font-bold text-slate-400 mb-2">STEP 01</div>
               <h3 className="text-sm font-bold text-white mb-1">Intent & Spend Mandate</h3>
               <p className="text-xs text-slate-300 leading-relaxed">
                 Customer sets tokenized UPI spend caps in their vault. Buyer AI agent receives prompt request.
               </p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-[#0d121f] p-5">
+            <div className="rounded-xl border border-slate-800 bg-[#0d121f] p-5 transition-all duration-300 hover:border-slate-600 hover:-translate-y-1">
               <div className="font-mono text-xs font-bold text-slate-400 mb-2">STEP 02</div>
               <h3 className="text-sm font-bold text-white mb-1">Dual-Gate Evaluation</h3>
               <p className="text-xs text-slate-300 leading-relaxed">
                 Engine evaluates customer balance & Groq Llama 3.3 70B merchant policy in &lt;80ms.
               </p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-[#0d121f] p-5">
+            <div className="rounded-xl border border-slate-800 bg-[#0d121f] p-5 transition-all duration-300 hover:border-slate-600 hover:-translate-y-1">
               <div className="font-mono text-xs font-bold text-slate-400 mb-2">STEP 03</div>
               <h3 className="text-sm font-bold text-white mb-1">Razorpay Settlement</h3>
               <p className="text-xs text-slate-300 leading-relaxed">
                 Order created and payment captured via Razorpay APIs. Signature verified live.
               </p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-[#0d121f] p-5">
+            <div className="rounded-xl border border-slate-800 bg-[#0d121f] p-5 transition-all duration-300 hover:border-slate-600 hover:-translate-y-1">
               <div className="font-mono text-xs font-bold text-slate-400 mb-2">STEP 04</div>
               <h3 className="text-sm font-bold text-white mb-1">Audit & Webhook</h3>
               <p className="text-xs text-slate-300 leading-relaxed">
@@ -458,7 +492,7 @@ Content-Type: application/json
         </div>
 
         {/* 
-          5. Architectural Pillars (High-Contrast Monochrome Cards)
+          6. Architectural Pillars (High-Contrast Monochrome Cards)
         */}
         <div id="architecture" className="mt-24 w-full scroll-mt-24">
           <div className="text-left mb-10 border-b border-slate-800 pb-6">
@@ -475,7 +509,7 @@ Content-Type: application/json
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
             {/* Pillar 01 */}
-            <div className="rounded-2xl border border-slate-800 bg-[#0d121f] p-7 transition-all duration-300 hover:border-slate-600 hover:-translate-y-0.5">
+            <div className="rounded-2xl border border-slate-800 bg-[#0d121f] p-7 transition-all duration-300 hover:border-slate-600 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <span className="font-mono text-xs font-bold text-slate-400">01 / CONSUMER SPEND VAULT</span>
                 <span className="px-2.5 py-1 rounded bg-slate-900 border border-slate-700 font-mono text-[10px] font-bold text-slate-200 uppercase">
@@ -489,7 +523,7 @@ Content-Type: application/json
             </div>
 
             {/* Pillar 02 */}
-            <div className="rounded-2xl border border-slate-800 bg-[#0d121f] p-7 transition-all duration-300 hover:border-slate-600 hover:-translate-y-0.5">
+            <div className="rounded-2xl border border-slate-800 bg-[#0d121f] p-7 transition-all duration-300 hover:border-slate-600 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <span className="font-mono text-xs font-bold text-slate-400">02 / MERCHANT POLICY ENGINE</span>
                 <span className="px-2.5 py-1 rounded bg-slate-900 border border-slate-700 font-mono text-[10px] font-bold text-slate-200 uppercase">
@@ -503,7 +537,7 @@ Content-Type: application/json
             </div>
 
             {/* Pillar 03 */}
-            <div className="rounded-2xl border border-slate-800 bg-[#0d121f] p-7 transition-all duration-300 hover:border-slate-600 hover:-translate-y-0.5">
+            <div className="rounded-2xl border border-slate-800 bg-[#0d121f] p-7 transition-all duration-300 hover:border-slate-600 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <span className="font-mono text-xs font-bold text-slate-400">03 / SETTLEMENT ENGINE</span>
                 <span className="px-2.5 py-1 rounded bg-slate-900 border border-slate-700 font-mono text-[10px] font-bold text-slate-200 uppercase">
@@ -517,7 +551,7 @@ Content-Type: application/json
             </div>
 
             {/* Pillar 04 */}
-            <div className="rounded-2xl border border-slate-800 bg-[#0d121f] p-7 transition-all duration-300 hover:border-slate-600 hover:-translate-y-0.5">
+            <div className="rounded-2xl border border-slate-800 bg-[#0d121f] p-7 transition-all duration-300 hover:border-slate-600 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <span className="font-mono text-xs font-bold text-slate-400">04 / ACCOUNTABILITY</span>
                 <span className="px-2.5 py-1 rounded bg-slate-900 border border-slate-700 font-mono text-[10px] font-bold text-slate-200 uppercase">
@@ -533,7 +567,7 @@ Content-Type: application/json
         </div>
 
         {/* 
-          6. API Specs Reference (NEW)
+          7. API Specs Reference
         */}
         <div id="api-ref" className="mt-24 w-full scroll-mt-24">
           <div className="text-left mb-10 border-b border-slate-800 pb-6">
@@ -549,7 +583,7 @@ Content-Type: application/json
           </div>
 
           <div className="space-y-4 text-left">
-            <div className="rounded-xl border border-slate-800 bg-[#0d121f] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono text-xs">
+            <div className="rounded-xl border border-slate-800 bg-[#0d121f] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono text-xs transition-all hover:border-slate-600">
               <div className="flex items-center space-x-3">
                 <span className="px-2.5 py-1 rounded bg-emerald-950 border border-emerald-800 text-emerald-400 font-bold">POST</span>
                 <span className="text-white font-bold text-sm">/agent/chat</span>
@@ -557,7 +591,7 @@ Content-Type: application/json
               <span className="text-slate-300 font-sans text-xs">Autonomous AI shopping & dual-gate settlement execution</span>
             </div>
 
-            <div className="rounded-xl border border-slate-800 bg-[#0d121f] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono text-xs">
+            <div className="rounded-xl border border-slate-800 bg-[#0d121f] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono text-xs transition-all hover:border-slate-600">
               <div className="flex items-center space-x-3">
                 <span className="px-2.5 py-1 rounded bg-indigo-950 border border-indigo-800 text-indigo-400 font-bold">POST</span>
                 <span className="text-white font-bold text-sm">/merchants/agents</span>
@@ -565,7 +599,7 @@ Content-Type: application/json
               <span className="text-slate-300 font-sans text-xs">Issue API key & custom permission scopes for external agents</span>
             </div>
 
-            <div className="rounded-xl border border-slate-800 bg-[#0d121f] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono text-xs">
+            <div className="rounded-xl border border-slate-800 bg-[#0d121f] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono text-xs transition-all hover:border-slate-600">
               <div className="flex items-center space-x-3">
                 <span className="px-2.5 py-1 rounded bg-amber-950 border border-amber-800 text-amber-400 font-bold">POST</span>
                 <span className="text-white font-bold text-sm">/webhooks/test</span>
@@ -576,7 +610,7 @@ Content-Type: application/json
         </div>
 
         {/* 
-          7. Interactive FAQ Accordion Section (NEW)
+          8. Interactive FAQ Accordion Section
         */}
         <div id="faq" className="mt-24 w-full text-left scroll-mt-24">
           <div className="mb-10 border-b border-slate-800 pb-6">
@@ -593,20 +627,20 @@ Content-Type: application/json
 
           <div className="space-y-3">
             {FAQ_DATA.map((item, idx) => (
-              <div key={idx} className="rounded-xl border border-slate-800 bg-[#0d121f] overflow-hidden">
+              <div key={idx} className="rounded-xl border border-slate-800 bg-[#0d121f] overflow-hidden transition-all hover:border-slate-700">
                 <button
                   onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
                   className="w-full p-5 text-left flex items-center justify-between font-bold text-white text-sm sm:text-base hover:bg-slate-900/60 transition-colors"
                 >
                   <span>{item.q}</span>
                   <ChevronDown
-                    className={`h-4 w-4 text-slate-400 shrink-0 transition-transform ${
+                    className={`h-4 w-4 text-slate-400 shrink-0 transition-transform duration-300 ${
                       openFaqIndex === idx ? 'rotate-180 text-white' : ''
                     }`}
                   />
                 </button>
                 {openFaqIndex === idx && (
-                  <div className="px-5 pb-5 text-sm text-slate-300 leading-relaxed font-normal border-t border-slate-800/80 pt-3">
+                  <div className="px-5 pb-5 text-sm text-slate-300 leading-relaxed font-normal border-t border-slate-800/80 pt-3 animate-fade-in">
                     {item.a}
                   </div>
                 )}
@@ -616,7 +650,7 @@ Content-Type: application/json
         </div>
 
         {/* 
-          8. Developer Integration Quick-Start
+          9. Developer Integration Quick-Start
         */}
         <div className="mt-24 w-full rounded-2xl border border-slate-800 bg-slate-950 p-8 text-left flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
@@ -631,14 +665,14 @@ Content-Type: application/json
           <div className="flex items-center space-x-3 shrink-0">
             <Link
               href="/login"
-              className="flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-black text-slate-900 transition-all hover:bg-slate-200 shadow-sm"
+              className="flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-black text-slate-900 transition-all hover:bg-slate-200 active:scale-95 shadow-sm"
             >
               <span>Get Started</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               href="/health"
-              className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-5 py-2.5 text-xs font-bold text-slate-200 transition-all hover:border-slate-500 hover:text-white"
+              className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-5 py-2.5 text-xs font-bold text-slate-200 transition-all hover:border-slate-500 hover:text-white active:scale-95"
             >
               <span>System Health</span>
               <ArrowUpRight className="h-4 w-4 text-slate-400" />

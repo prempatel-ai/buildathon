@@ -64,21 +64,30 @@ body {
 
 @keyframes pulse-glow {
   0%, 100% {
-    opacity: 0.3;
-    transform: scale(1) translate(-50%, -50%);
+    opacity: 0.25;
+    transform: scale(1);
   }
   50% {
-    opacity: 0.6;
-    transform: scale(1.08) translate(-46%, -48%);
+    opacity: 0.55;
+    transform: scale(1.06);
   }
 }
 
-@keyframes shimmer {
+@keyframes beam-flow {
   0% {
-    background-position: -200% 0;
+    transform: translateX(-100%);
   }
   100% {
-    background-position: 200% 0;
+    transform: translateX(100%);
+  }
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
   }
 }
 
@@ -94,10 +103,12 @@ body {
   animation: pulse-glow 6s ease-in-out infinite;
 }
 
-.animate-shimmer {
-  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0) 100%);
-  background-size: 200% 100%;
-  animation: shimmer 3s infinite;
+.animate-beam {
+  animation: beam-flow 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-float {
+  animation: float-slow 4s ease-in-out infinite;
 }
 
 /* Custom scrollbar */
