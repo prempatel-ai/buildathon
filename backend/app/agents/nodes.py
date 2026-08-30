@@ -1,5 +1,12 @@
 import json
 import uuid
+import re
+import requests
+import hmac
+import hashlib
+import time
+import urllib.parse
+import razorpay as _razorpay
 from decimal import Decimal
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
@@ -677,8 +684,11 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     if pid_match:
                         real_pay_id = pid_match.group(0)
 
+                    cb_url = None
+                    action1_match = re.search(r'<form[^>]*action=["\']([^"\']+)["\']', r1.text)
+                    form1_match = re.search(r'<form[^>]*name=["\']form1["\'][^>]*>(.*?)</form>', r1.text, re.DOTALL)
+
                     if action1_match and form1_match:
-                        import urllib.parse
                         form_action = action1_match.group(1)
                         if not form_action.startswith("http"):
                             form_action = urllib.parse.urljoin("https://api.razorpay.com", form_action)
@@ -691,7 +701,10 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                             real_pay_id = f"pay_{pid}" if not pid.startswith("pay_") else pid
 
                         # Post to gateway
-                        r2 = session.post(form_action, data=form_data, headers=headers, timeout=10, allow_redirects=True)
+                        try:
+                            session.post(form_action, data=form_data, headers=headers, timeout=10, allow_redirects=True)
+                        except Exception as gw_err:
+                            print(f"[GATEWAY_POST_NOTICE]: {gw_err}")
 
                     if not cb_url and cb_direct_match:
                         cb_url = cb_direct_match.group(0)
@@ -699,7 +712,10 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     # Direct submit mock bank authorization with redirect following to callback URL
                     if cb_url:
                         submit_url = f"https://api.razorpay.com/v1/gateway/mocksharp/payment/submit?key_id={settings.RAZORPAY_KEY_ID}"
-                        session.post(submit_url, data={"callback_url": cb_url, "language_code": "en", "success": "S"}, headers=headers, timeout=10, allow_redirects=True)
+                        try:
+                            session.post(submit_url, data={"callback_url": cb_url, "language_code": "en", "success": "S"}, headers=headers, timeout=10, allow_redirects=True)
+                        except Exception as sub_err:
+                            print(f"[SUBMIT_AUTH_NOTICE]: {sub_err}")
 
                     # Verify actual capture on Razorpay's live API with propagation wait
                     import time
