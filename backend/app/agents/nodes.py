@@ -114,12 +114,13 @@ def search_and_compare_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     Search & Compare Node (Phase 14 Cross-Merchant Discovery):
     Queries catalog items across all onboarded merchants in the registry.
-    Filters and ranks options by price and query criteria.
+    Filters and ranks options by price, user budget constraints, and active Customer Spend Authorization limit.
     READ-ONLY: Creates ZERO transactions and performs ZERO money movement.
     """
     tool_args = state.get("tool_args", {})
     query = str(tool_args.get("query", state.get("prompt", ""))).lower()
-    max_price = tool_args.get("max_price")
+    prompt_max_price = tool_args.get("max_price")
+    customer_id = state.get("customer_id")
 
     stop_words = {"find", "search", "compare", "show", "me", "cheap", "cheapest", "best", "better", "good", "a", "an", "the", "for", "in", "with", "buy", "order", "get", "options", "option", "buddy", "hi", "hello", "hey"}
     query_words = [w for w in query.split() if w not in stop_words and len(w) > 1]
@@ -128,6 +129,30 @@ def search_and_compare_node(state: Dict[str, Any]) -> Dict[str, Any]:
     try:
         from app.models.merchant import Merchant
         from app.models.catalog import CatalogItem
+        from app.models.spend_authorization import SpendAuthorization
+
+        # Fetch Customer Active Spend Limit if available
+        customer_limit: Optional[float] = None
+        if customer_id:
+            try:
+                cust_uuid = uuid.UUID(str(customer_id))
+                auth = db.query(SpendAuthorization).filter(
+                    SpendAuthorization.customer_id == cust_uuid,
+                    SpendAuthorization.status == "active"
+                ).first()
+                if auth:
+                    customer_limit = float(auth.remaining_limit)
+            except Exception:
+                pass
+
+        # Determine effective maximum price cap (lower of prompt max price or active customer spend limit)
+        effective_max_price: Optional[float] = None
+        if prompt_max_price is not None and customer_limit is not None:
+            effective_max_price = min(float(prompt_max_price), customer_limit)
+        elif prompt_max_price is not None:
+            effective_max_price = float(prompt_max_price)
+        elif customer_limit is not None:
+            effective_max_price = customer_limit
 
         merchants = db.query(Merchant).all()
         matching_options = []
@@ -144,7 +169,7 @@ def search_and_compare_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
                 if is_match:
                     price_val = float(it.price)
-                    if max_price is None or price_val <= float(max_price):
+                    if effective_max_price is None or price_val <= effective_max_price:
                         matching_options.append({
                             "item_id": str(it.id),
                             "item_name": it.name,
@@ -166,22 +191,37 @@ def search_and_compare_node(state: Dict[str, Any]) -> Dict[str, Any]:
         state["status"] = "COMPLETED"
 
         if matching_options:
-            summary_lines = [f"Found {len(matching_options)} options across merchants:"]
+            limit_info = ""
+            if customer_limit is not None and prompt_max_price is not None:
+                limit_info = f" (Filtered by max budget ₹{prompt_max_price:.0f} and Spend Limit ₹{customer_limit:.0f})"
+            elif customer_limit is not None:
+                limit_info = f" (Within active Spend Limit ₹{customer_limit:.0f})"
+            elif prompt_max_price is not None:
+                limit_info = f" (Under ₹{prompt_max_price:.0f})"
+
+            summary_lines = [f"Found {len(matching_options)} options across merchants{limit_info}:"]
             for opt in matching_options:
                 summary_lines.append(f"  Option {opt['option_index']}: {opt['item_name']} at {opt['merchant_name']} — INR {opt['price']} (Stock: {opt['stock']})")
             summary_lines.append("Reply with 'buy option 1' or 'buy the boAt one' to confirm purchase.")
             state["response_message"] = "\n".join(summary_lines)
         else:
-            price_msg = f" under ₹{max_price:.0f}" if max_price is not None else ""
+            price_msg = f" under ₹{effective_max_price:.0f}" if effective_max_price is not None else ""
             query_msg = f" matching '{' '.join(query_words)}'" if query_words else ""
-            state["response_message"] = f"Sorry, no items found{query_msg}{price_msg} across any merchant. Try a higher budget or a different search term."
+            cust_info = f" (Your active Spend Authorization limit is ₹{customer_limit:.0f})" if customer_limit is not None else ""
+            state["response_message"] = f"Sorry, no items found{query_msg}{price_msg} across any merchant.{cust_info} Try adjusting your search or raising your spend authorization limit."
 
         AuditService.log_event(
             db=db,
             actor_type="customer" if state.get("customer_id") else "agent",
             actor_id=str(state.get("customer_id", state.get("agent_id", "consumer_agent"))),
             action="cross_merchant_search_performed",
-            input={"query": query, "results_count": len(matching_options)},
+            input={
+                "query": query,
+                "prompt_max_price": prompt_max_price,
+                "customer_limit": customer_limit,
+                "effective_max_price": effective_max_price,
+                "results_count": len(matching_options)
+            },
             decision="SEARCH_COMPLETED",
             reasoning=f"Cross-merchant search executed. Found {len(matching_options)} matching catalog options.",
             merchant_id=None
