@@ -108,4 +108,10 @@ def run_agent_workflow(
     config = {"configurable": {"thread_id": thread_id}}
     final_state = agent_app.invoke(initial_state, config=config)
     final_state["thread_id"] = thread_id
+
+    # Persist turn to thread context window memory for full conversational continuity
+    from app.agents.nodes import update_thread_history
+    resp_msg = final_state.get("response_message") or ""
+    update_thread_history(thread_id, prompt, resp_msg)
+
     return final_state

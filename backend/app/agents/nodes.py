@@ -25,15 +25,34 @@ def get_groq_client():
 
 from app.agents.tools import AGENT_TOOLS
 
+# Global Thread Context Window Store (thread_id -> conversation history)
+thread_context_store: Dict[str, List[Dict[str, str]]] = {}
+
+def update_thread_history(thread_id: str, user_prompt: str, assistant_response: str):
+    """Appends turn to in-memory context window history for multi-turn conversational AI continuity."""
+    if not thread_id:
+        return
+    if thread_id not in thread_context_store:
+        thread_context_store[thread_id] = []
+
+    thread_context_store[thread_id].append({"role": "user", "content": user_prompt})
+    if assistant_response:
+        thread_context_store[thread_id].append({"role": "assistant", "content": assistant_response})
+
+    # Keep latest 20 messages (10 context turns)
+    if len(thread_context_store[thread_id]) > 20:
+        thread_context_store[thread_id] = thread_context_store[thread_id][-20:]
+
 def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
-    LLM Node (Groq Native Tool Calling):
-    Parses user prompt and natively proposes a tool call via Groq LLM function calling API.
+    LLM Node (Groq Native Tool Calling with Multi-Turn Context Window):
+    Parses user prompt alongside past conversation history context for full thread continuity.
     IMPORTANT: Generates text/schema proposals ONLY. Does NOT execute payments or mutate database.
     """
     prompt = state.get("prompt", "")
     merchant_id = state.get("merchant_id")
     agent_id = state.get("agent_id")
+    thread_id = state.get("thread_id") or "default_thread"
 
     tools = AGENT_TOOLS
     models_to_try = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b"]
@@ -51,15 +70,21 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
         "4. ONLY if the user is saying a pure greeting ('hi', 'hello', 'hi buddy') or asking general non-product questions, do not call any tool and respond conversationally."
     )
 
+    # Build full multi-turn messages payload including previous context window
+    history = thread_context_store.get(thread_id, [])
+    recent_history = history[-10:] if len(history) > 10 else history
+
+    messages_payload: List[Dict[str, str]] = [{"role": "system", "content": system_msg}]
+    for h in recent_history:
+        messages_payload.append({"role": h["role"], "content": h["content"]})
+    messages_payload.append({"role": "user", "content": prompt})
+
     msg = None
     for model_id in models_to_try:
         try:
             response = client.chat.completions.create(
                 model=model_id,
-                messages=[
-                    {"role": "system", "content": system_msg},
-                    {"role": "user", "content": prompt}
-                ],
+                messages=messages_payload,
                 tools=tools,
                 tool_choice="auto",
                 temperature=0.0
