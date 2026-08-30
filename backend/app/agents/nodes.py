@@ -683,24 +683,32 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                         inputs = re.findall(r'<input[^>]*name=["\']([^"\']+)["\'][^>]*value=["\']([^"\']*)["\']', form1_match.group(1))
                         form_data = {name: val for name, val in inputs}
                         pid = form_data.get("payment_id")
+                        cb_url = form_data.get("callback_url")
                         if pid:
                             real_pay_id = f"pay_{pid}" if not pid.startswith("pay_") else pid
 
+                        # Step A: Post to gateway
                         r2 = session.post(form_action, data=form_data, headers=headers, timeout=10)
-                        submit_match = re.search(r'<form[^>]*action=["\']([^"\']+)["\']', r2.text)
-                        cb_match = re.search(r'name=["\']callback_url["\']\s*value=["\']([^"\']+)["\']', r2.text)
 
-                        if submit_match and cb_match:
-                            submit_url = submit_match.group(1)
-                            if not submit_url.startswith("http"):
-                                submit_url = urllib.parse.urljoin("https://api.razorpay.com", submit_url)
-                            cb_url = cb_match.group(1)
+                        # Step B: Direct submit mock bank authorization
+                        submit_url = f"https://api.razorpay.com/v1/gateway/mocksharp/payment/submit?key_id={settings.RAZORPAY_KEY_ID}"
+                        if cb_url:
                             submit_payload = {
                                 "callback_url": cb_url,
                                 "language_code": "en",
                                 "success": "S"
                             }
                             session.post(submit_url, data=submit_payload, headers=headers, timeout=10)
+
+                        # Check if r2 returned a dynamic submit action
+                        submit_match = re.search(r'<form[^>]*action=["\']([^"\']+)["\']', r2.text)
+                        cb_match = re.search(r'name=["\']callback_url["\']\s*value=["\']([^"\']+)["\']', r2.text)
+                        if submit_match and cb_match:
+                            dyn_submit = submit_match.group(1)
+                            if not dyn_submit.startswith("http"):
+                                dyn_submit = urllib.parse.urljoin("https://api.razorpay.com", dyn_submit)
+                            dyn_cb = cb_match.group(1)
+                            session.post(dyn_submit, data={"callback_url": dyn_cb, "language_code": "en", "success": "S"}, headers=headers, timeout=10)
 
                     # Verify actual capture on Razorpay's live API with propagation wait
                     import time
