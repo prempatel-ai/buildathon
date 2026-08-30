@@ -674,16 +674,17 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                             print(f"[AUTONOMOUS_RAZORPAY_SETTLEMENT_NOTICE]: {auto_err}")
 
                     if not real_pay_id:
-                        if settings.RAZORPAY_KEY_ID and settings.RAZORPAY_KEY_SECRET:
+                        if settings.RAZORPAY_KEY_ID and settings.RAZORPAY_KEY_SECRET and tx.razorpay_order_id:
                             try:
                                 rzp_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
-                                payments_resp = rzp_client.payment.all({"count": 10})
-                                for p in payments_resp.get("items", []):
-                                    if p.get("status") == "captured":
-                                        real_pay_id = p["id"]
-                                        break
+                                order_payments = rzp_client.order.payments(tx.razorpay_order_id)
+                                if order_payments and order_payments.get("items"):
+                                    for p in order_payments["items"]:
+                                        if p.get("status") in ("captured", "authorized"):
+                                            real_pay_id = p["id"]
+                                            break
                             except Exception as e:
-                                print(f"[RAZORPAY_PAYMENT_FETCH_ERROR]: {e}")
+                                print(f"[RAZORPAY_ORDER_PAYMENT_FETCH_NOTICE]: {e}")
 
                     if not real_pay_id:
                         real_pay_id = f"pay_TV{uuid.uuid4().hex[:12]}"
