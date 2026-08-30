@@ -712,18 +712,25 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
                     # Verify actual capture on Razorpay's live API with propagation wait
                     import time
-                    time.sleep(0.5)
                     rzp_client = _razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
-                    order_payments = rzp_client.order.payments(tx.razorpay_order_id)
-                    if order_payments and order_payments.get("items"):
-                        for p in order_payments["items"]:
-                            real_pay_id = p["id"]
-                            if p.get("status") != "captured":
-                                try:
-                                    rzp_client.payment.capture(real_pay_id, int(amount * 100), {"currency": "INR"})
-                                except Exception:
-                                    pass
-                            break
+                    for _ in range(3):
+                        time.sleep(0.5)
+                        order_payments = rzp_client.order.payments(tx.razorpay_order_id)
+                        if order_payments and order_payments.get("items"):
+                            for p in order_payments["items"]:
+                                real_pay_id = p["id"]
+                                if p.get("status") != "captured":
+                                    try:
+                                        rzp_client.payment.capture(real_pay_id, int(amount * 100), {"currency": "INR"})
+                                    except Exception:
+                                        pass
+                                break
+                        try:
+                            order_status_check = rzp_client.order.fetch(tx.razorpay_order_id)
+                            if order_status_check.get("status") == "paid":
+                                break
+                        except Exception:
+                            pass
 
                     if not real_pay_id:
                         real_pay_id = f"pay_{uuid.uuid4().hex[:14]}"
