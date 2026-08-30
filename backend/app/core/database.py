@@ -5,18 +5,15 @@ from app.core.config import settings
 
 def create_db_engine():
     db_url = settings.sync_database_url
-    try:
-        if "sqlite" in db_url:
-            eng = create_engine(db_url, connect_args={"check_same_thread": False})
-        else:
-            eng = create_engine(db_url, pool_pre_ping=True, pool_size=10, max_overflow=20, echo=False)
-        # Test connection immediately
-        with eng.connect() as conn:
-            conn.execute(text("SELECT 1"))
-        return eng
-    except Exception as e:
-        print(f"Warning: Primary DB connection failed ({e}). Falling back to SQLite database.")
-        return create_engine("sqlite:///./agentpay.db", connect_args={"check_same_thread": False})
+    print(f"Connecting to database host: {db_url.split('@')[-1].split('/')[0] if '@' in db_url else 'local'}")
+    engine = create_engine(
+        db_url,
+        pool_pre_ping=True,
+        pool_size=5,
+        max_overflow=10,
+        echo=False
+    )
+    return engine
 
 engine = create_db_engine()
 
