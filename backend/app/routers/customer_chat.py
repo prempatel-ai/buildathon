@@ -77,7 +77,7 @@ def customer_chat(
 
         # Execute purchase proposal through full dual-gate chain
         merchant_id = target_opt["merchant_id"]
-        order_prompt = f"Please order {target_opt['item_name']} for {target_opt['price']} INR"
+        order_prompt = f"Please order {target_opt['item_name']} for price {target_opt['price']} INR"
 
         final_state = run_agent_workflow(
             merchant_id=merchant_id,
