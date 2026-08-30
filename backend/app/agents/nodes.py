@@ -66,7 +66,7 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
         "2. If the user wants to search, compare, find, or get recommendations for products or prices across stores ('find cheap headphones', 'show smart watches'), call `search_and_compare`.\n"
         "   - ALWAYS extract a `max_price` number if the user mentions any price/budget (e.g. 'under 500', 'below 1000', 'less than 40', 'under 40 INR', '40 rupees max'). Set `max_price` to that number.\n"
         "   - Extract a meaningful `query` keyword (e.g. 'headphones', 'earbuds', 'watch').\n"
-        "3. If the user explicitly asks to buy or order a product ('buy option 1', 'buy boAt headphones', 'order headphones for 1200 INR'), call `propose_order` with `amount`, `category`, and `item_name`.\n"
+        "3. If the user explicitly asks to buy or order a product ('buy boAt Rockerz', 'purchase Sony headphones'), call `propose_order` with `item_name` and `category`.\n"
         "4. ONLY if the user is saying a pure greeting ('hi', 'hello', 'hi buddy') or asking general non-product questions, do not call any tool and respond conversationally."
     )
 
@@ -106,7 +106,7 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
             import re
             raw_item_arg = tool_args.get("item_name") or prompt
             # Clean prompt prefix artifacts (e.g. "buy option 1 - ", "order", "purchase")
-            clean_item_name = re.sub(r'^(?:buy|order|purchase|confirm)\s*(?:option\s*\d+\s*[-:]?\s*)?', '', raw_item_arg, flags=re.IGNORECASE).strip()
+            clean_item_name = re.sub(r'^(?:buy|order|purchase|confirm|checkout|pay\s+for)\s*(?:option\s*\d+\s*[-:]?\s*)?', '', raw_item_arg, flags=re.IGNORECASE).strip()
             if not clean_item_name:
                 clean_item_name = raw_item_arg
 
@@ -115,20 +115,39 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
             try:
                 from app.models.catalog import CatalogItem
                 cat_item = None
-                if merchant_id:
+                
+                # Try direct ilike lookup
+                if clean_item_name:
                     cat_item = db_temp.query(CatalogItem).filter(
-                        CatalogItem.merchant_id == merchant_id,
                         CatalogItem.name.ilike(f"%{clean_item_name}%")
                     ).first()
+
+                # If not found, try matching individual keywords
                 if not cat_item and clean_item_name:
-                    cat_item = db_temp.query(CatalogItem).filter(
-                        CatalogItem.name.ilike(f"%{clean_item_name}%")
-                    ).first()
+                    keywords = [w for w in re.findall(r'\w+', clean_item_name) if len(w) > 2]
+                    for kw in keywords:
+                        cat_item = db_temp.query(CatalogItem).filter(
+                            CatalogItem.name.ilike(f"%{kw}%")
+                        ).first()
+                        if cat_item:
+                            break
+
+                # If still not found, search across the prompt
+                if not cat_item:
+                    prompt_keywords = [w for w in re.findall(r'\w+', prompt) if len(w) > 2 and w.lower() not in ["buy", "order", "purchase", "want", "please", "item", "option"]]
+                    for pkw in prompt_keywords:
+                        cat_item = db_temp.query(CatalogItem).filter(
+                            CatalogItem.name.ilike(f"%{pkw}%")
+                        ).first()
+                        if cat_item:
+                            break
 
                 if cat_item:
                     tool_args["amount"] = float(cat_item.price)
                     tool_args["item_name"] = cat_item.name
                     tool_args["category"] = cat_item.category
+                    if cat_item.merchant_id:
+                        state["merchant_id"] = str(cat_item.merchant_id)
             except Exception as cat_err:
                 print(f"[CATALOG_PRICE_LOOKUP_NOTICE]: {cat_err}")
             finally:
@@ -153,6 +172,7 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
         proposed_tool = "conversational_greeting"
         tool_args = {}
         response_msg = (msg.content if msg else None) or "Hello! I am your AI Consumer Shopping Assistant. Ask me to find or compare products across merchants!"
+
 
     # ── Regex fallback: extract max_price if LLM missed it ──────────────────────
     if proposed_tool == "search_and_compare" and not tool_args.get("max_price"):

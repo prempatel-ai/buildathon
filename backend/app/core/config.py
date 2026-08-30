@@ -1,5 +1,16 @@
 import os
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Resolve absolute paths to backend/.env and root/.env
+BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
+ROOT_DIR = BACKEND_DIR.parent
+
+ENV_FILES = [
+    str(BACKEND_DIR / ".env"),
+    str(ROOT_DIR / ".env"),
+    ".env"
+]
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Agentpay API"
@@ -27,9 +38,10 @@ class Settings(BaseSettings):
         return url
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILES,
         env_file_encoding="utf-8",
         extra="ignore"
     )
 
 settings = Settings()
+
