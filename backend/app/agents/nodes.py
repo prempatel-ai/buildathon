@@ -45,6 +45,8 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
         "RULES:\n"
         "1. If the user asks what items are in stock, what is available in store, or asks to view a store catalog (e.g. 'What items are in stock?', 'show catalog'), YOU MUST CALL `get_catalog`.\n"
         "2. If the user wants to search, compare, find, or get recommendations for products or prices across stores ('find cheap headphones', 'show smart watches'), call `search_and_compare`.\n"
+        "   - ALWAYS extract a `max_price` number if the user mentions any price/budget (e.g. 'under 500', 'below 1000', 'less than 40', 'under 40 INR', '40 rupees max'). Set `max_price` to that number.\n"
+        "   - Extract a meaningful `query` keyword (e.g. 'headphones', 'earbuds', 'watch').\n"
         "3. If the user explicitly asks to buy or order a product ('buy option 1', 'buy boAt headphones', 'order headphones for 1200 INR'), call `propose_order` with `amount`, `category`, and `item_name`.\n"
         "4. ONLY if the user is saying a pure greeting ('hi', 'hello', 'hi buddy') or asking general non-product questions, do not call any tool and respond conversationally."
     )
@@ -90,6 +92,16 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
         proposed_tool = "conversational_greeting"
         tool_args = {}
         response_msg = (msg.content if msg else None) or "Hello! I am your AI Consumer Shopping Assistant. Ask me to find or compare products across merchants!"
+
+    # ── Regex fallback: extract max_price if LLM missed it ──────────────────────
+    if proposed_tool == "search_and_compare" and not tool_args.get("max_price"):
+        import re
+        price_match = re.search(
+            r'(?:under|below|less\s+than|max|upto|up\s+to|within|budget\s+of)?\s*(?:rs\.?|inr|₹)?\s*(\d+(?:\.\d+)?)\s*(?:rs\.?|inr|rupees?|/-)?',
+            prompt.lower()
+        )
+        if price_match:
+            tool_args["max_price"] = float(price_match.group(1))
 
     state["proposed_tool"] = proposed_tool
     state["tool_args"] = tool_args
@@ -160,7 +172,9 @@ def search_and_compare_node(state: Dict[str, Any]) -> Dict[str, Any]:
             summary_lines.append("Reply with 'buy option 1' or 'buy the boAt one' to confirm purchase.")
             state["response_message"] = "\n".join(summary_lines)
         else:
-            state["response_message"] = "No matching products found across merchants."
+            price_msg = f" under ₹{max_price:.0f}" if max_price is not None else ""
+            query_msg = f" matching '{' '.join(query_words)}'" if query_words else ""
+            state["response_message"] = f"Sorry, no items found{query_msg}{price_msg} across any merchant. Try a higher budget or a different search term."
 
         AuditService.log_event(
             db=db,
