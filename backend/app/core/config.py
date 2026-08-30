@@ -19,6 +19,13 @@ class Settings(BaseSettings):
     # Observability & Monitoring
     SENTRY_DSN: str | None = None
 
+    @property
+    def sync_database_url(self) -> str:
+        url = self.DATABASE_URL
+        if url.startswith("postgres://"):
+            return url.replace("postgres://", "postgresql://", 1)
+        return url
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
