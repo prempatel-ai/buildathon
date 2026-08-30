@@ -20,7 +20,9 @@ def get_audit_events(
 ):
     """
     Fetches paginated, filterable audit events in chronological order.
+    Auto-seeds demo audit events if database has < 3 events.
     """
+    AuditService.seed_demo_audit_events(db)
     items, total = AuditService.list_audit_events(
         db=db,
         merchant_id=merchant_id,

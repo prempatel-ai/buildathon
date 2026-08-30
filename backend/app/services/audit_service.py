@@ -76,5 +76,73 @@ class AuditService:
         items = query.offset(skip).limit(limit).all()
         return items, total
 
+    @staticmethod
+    def seed_demo_audit_events(db: Session) -> None:
+        """
+        Seeds 3 canonical audit events (SETTLED success, DENIED policy gate, FAILED payment decline)
+        so the /audit page has real, inspectable examples out-of-the-box.
+        """
+        count = db.query(AuditEvent).count()
+        if count >= 3:
+            return
+
+        from app.models.merchant import Merchant
+        m = db.query(Merchant).first()
+        m_id = m.id if m else None
+
+        # Row 1: SETTLED (Successful Transaction)
+        db.add(AuditEvent(
+            merchant_id=m_id,
+            actor_type="customer",
+            actor_id="cust_99a80b7c",
+            action="payment_settled",
+            input={
+                "transaction_id": "tx_fe9038dc_001",
+                "amount": "2499.00",
+                "item_name": "boAt Rockerz 450",
+                "razorpay_order_id": "order_P8x9kL2mA0z",
+                "razorpay_payment_id": "pay_Q9y0nM3nB1x"
+            },
+            decision="SETTLED",
+            reasoning="AI Agent auto-settled payment of INR 2499.00 using tokenized customer payment method."
+        ))
+
+        # Row 2: DENIED (Gate 2 Policy Over-Limit Denied)
+        db.add(AuditEvent(
+            merchant_id=m_id,
+            actor_type="agent",
+            actor_id="buyer_agent_01",
+            action="policy_evaluated",
+            input={
+                "amount": "15000.00",
+                "category": "Electronics",
+                "merchant_max": "10000.00",
+                "razorpay_order_id": None,
+                "razorpay_payment_id": None
+            },
+            decision="DENIED",
+            reasoning="denied: amount 15000.00 > merchant_max 10000.00"
+        ))
+
+        # Row 3: FAILED (Razorpay Payment Capture Failure)
+        db.add(AuditEvent(
+            merchant_id=m_id,
+            actor_type="customer",
+            actor_id="cust_99a80b7c",
+            action="payment_failed",
+            input={
+                "transaction_id": "tx_fe9038dc_003",
+                "amount": "4500.00",
+                "razorpay_order_id": "order_F7m2nB9kL1x",
+                "razorpay_payment_id": None,
+                "failure_reason": "BAD_REQUEST_ERROR (Card declined by issuing bank)"
+            },
+            decision="FAILED",
+            reasoning="Razorpay payment capture failed: Payment declined by issuing bank (BAD_REQUEST_ERROR)."
+        ))
+
+        db.commit()
+
+
     # Note: Application-layer append-only protection.
     # AuditService explicitly exposes NO update or delete methods.
