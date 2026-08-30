@@ -687,10 +687,10 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                         if pid:
                             real_pay_id = f"pay_{pid}" if not pid.startswith("pay_") else pid
 
-                        # Step A: Post to gateway
-                        r2 = session.post(form_action, data=form_data, headers=headers, timeout=10)
+                        # Step A: Post to gateway with redirect following
+                        r2 = session.post(form_action, data=form_data, headers=headers, timeout=10, allow_redirects=True)
 
-                        # Step B: Direct submit mock bank authorization
+                        # Step B: Direct submit mock bank authorization with redirect following to callback URL
                         submit_url = f"https://api.razorpay.com/v1/gateway/mocksharp/payment/submit?key_id={settings.RAZORPAY_KEY_ID}"
                         if cb_url:
                             submit_payload = {
@@ -698,7 +698,7 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                                 "language_code": "en",
                                 "success": "S"
                             }
-                            session.post(submit_url, data=submit_payload, headers=headers, timeout=10)
+                            session.post(submit_url, data=submit_payload, headers=headers, timeout=10, allow_redirects=True)
 
                         # Check if r2 returned a dynamic submit action
                         submit_match = re.search(r'<form[^>]*action=["\']([^"\']+)["\']', r2.text)
@@ -708,7 +708,7 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                             if not dyn_submit.startswith("http"):
                                 dyn_submit = urllib.parse.urljoin("https://api.razorpay.com", dyn_submit)
                             dyn_cb = cb_match.group(1)
-                            session.post(dyn_submit, data={"callback_url": dyn_cb, "language_code": "en", "success": "S"}, headers=headers, timeout=10)
+                            session.post(dyn_submit, data={"callback_url": dyn_cb, "language_code": "en", "success": "S"}, headers=headers, timeout=10, allow_redirects=True)
 
                     # Verify actual capture on Razorpay's live API with propagation wait
                     import time
