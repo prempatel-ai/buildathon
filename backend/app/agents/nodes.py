@@ -104,9 +104,44 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         if proposed_tool == "propose_order":
             import re
+            item_name_arg = tool_args.get("item_name") or prompt
+
+            # 1. DB Lookup: Fetch exact catalog price from Database if item match exists
+            db_temp: Session = SessionLocal()
+            try:
+                from app.models.catalog import CatalogItem
+                cat_item = None
+                if merchant_id:
+                    cat_item = db_temp.query(CatalogItem).filter(
+                        CatalogItem.merchant_id == merchant_id,
+                        CatalogItem.name.ilike(f"%{item_name_arg}%")
+                    ).first()
+                if not cat_item and item_name_arg:
+                    cat_item = db_temp.query(CatalogItem).filter(
+                        CatalogItem.name.ilike(f"%{item_name_arg}%")
+                    ).first()
+
+                if cat_item:
+                    tool_args["amount"] = float(cat_item.price)
+                    tool_args["item_name"] = cat_item.name
+                    tool_args["category"] = cat_item.category
+            except Exception as cat_err:
+                print(f"[CATALOG_PRICE_LOOKUP_NOTICE]: {cat_err}")
+            finally:
+                db_temp.close()
+
+            # 2. Regex fallback for price suffix if DB lookup didn't set amount
             if "amount" not in tool_args or not tool_args["amount"]:
-                amt_match = re.search(r'(\d+)', prompt)
-                tool_args["amount"] = float(amt_match.group(1)) if amt_match else 450.0
+                price_match = (
+                    re.search(r'(?:for|price|inr|rs\.?|₹|amount)\s*:?\s*(\d+(?:\.\d+)?)', prompt, re.IGNORECASE) or
+                    re.search(r'(\d+(?:\.\d+)?)\s*(?:inr|rs\.?|rupees?)', prompt, re.IGNORECASE)
+                )
+                if price_match:
+                    tool_args["amount"] = float(price_match.group(1))
+                else:
+                    amt_match = re.search(r'(\d+)', prompt)
+                    tool_args["amount"] = float(amt_match.group(1)) if amt_match else 450.0
+
             if "category" not in tool_args or not tool_args["category"]:
                 tool_args["category"] = "Electronics" if "electronics" in prompt.lower() or "headphone" in prompt.lower() else "General"
             if "item_name" not in tool_args or not tool_args["item_name"]:
