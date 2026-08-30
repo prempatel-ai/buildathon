@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Sans, JetBrains_Mono } from 'next/font/google';
+import { Providers } from './providers';
 import './globals.css';
 
 const ibmPlexSans = IBM_Plex_Sans({
@@ -29,7 +30,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={`${ibmPlexSans.variable} ${jetbrainsMono.variable}`}>
       <body suppressHydrationWarning className="min-h-screen bg-[#0a0e1a] text-slate-100 font-sans antialiased selection:bg-slate-200 selection:text-slate-900 tracking-normal leading-normal">
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
