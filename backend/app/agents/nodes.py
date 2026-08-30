@@ -104,9 +104,13 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         if proposed_tool == "propose_order":
             import re
-            item_name_arg = tool_args.get("item_name") or prompt
+            raw_item_arg = tool_args.get("item_name") or prompt
+            # Clean prompt prefix artifacts (e.g. "buy option 1 - ", "order", "purchase")
+            clean_item_name = re.sub(r'^(?:buy|order|purchase|confirm)\s*(?:option\s*\d+\s*[-:]?\s*)?', '', raw_item_arg, flags=re.IGNORECASE).strip()
+            if not clean_item_name:
+                clean_item_name = raw_item_arg
 
-            # 1. DB Lookup: Fetch exact catalog price from Database if item match exists
+            # 1. DB Lookup: Fetch exact catalog price from Database using cleaned item name
             db_temp: Session = SessionLocal()
             try:
                 from app.models.catalog import CatalogItem
@@ -114,11 +118,11 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 if merchant_id:
                     cat_item = db_temp.query(CatalogItem).filter(
                         CatalogItem.merchant_id == merchant_id,
-                        CatalogItem.name.ilike(f"%{item_name_arg}%")
+                        CatalogItem.name.ilike(f"%{clean_item_name}%")
                     ).first()
-                if not cat_item and item_name_arg:
+                if not cat_item and clean_item_name:
                     cat_item = db_temp.query(CatalogItem).filter(
-                        CatalogItem.name.ilike(f"%{item_name_arg}%")
+                        CatalogItem.name.ilike(f"%{clean_item_name}%")
                     ).first()
 
                 if cat_item:
@@ -138,14 +142,11 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 )
                 if price_match:
                     tool_args["amount"] = float(price_match.group(1))
-                else:
-                    amt_match = re.search(r'(\d+)', prompt)
-                    tool_args["amount"] = float(amt_match.group(1)) if amt_match else 450.0
 
             if "category" not in tool_args or not tool_args["category"]:
-                tool_args["category"] = "Electronics" if "electronics" in prompt.lower() or "headphone" in prompt.lower() else "General"
+                tool_args["category"] = "Electronics" if "electronics" in prompt.lower() or "headphone" in prompt.lower() or "watch" in prompt.lower() else "General"
             if "item_name" not in tool_args or not tool_args["item_name"]:
-                tool_args["item_name"] = prompt
+                tool_args["item_name"] = clean_item_name or prompt
 
         response_msg = msg.content or f"Selected tool '{proposed_tool}'"
     else:
