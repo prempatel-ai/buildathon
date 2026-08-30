@@ -165,7 +165,9 @@ def get_customer_dashboard(
     customer: Customer = Depends(get_current_customer),
     db: Session = Depends(get_db)
 ):
-    """Returns authenticated consumer's current authorization, remaining balance, and activity."""
+    """Returns authenticated consumer's current authorization, remaining balance, and real activity."""
+    from app.models.merchant import Merchant
+
     active_auth = db.query(SpendAuthorization).filter(
         SpendAuthorization.customer_id == customer.id,
         SpendAuthorization.status == "active"
@@ -187,6 +189,49 @@ def get_customer_dashboard(
         for ev in audit_events
     ]
 
+    # Query real customer purchases from AuditEvent table
+    purchase_events = db.query(AuditEvent).filter(
+        AuditEvent.actor_id == str(customer.id),
+        AuditEvent.action.in_(["payment_settled", "payment_order_created"])
+    ).order_by(AuditEvent.created_at.desc()).limit(10).all()
+
+    recent_purchases = []
+    for ev in purchase_events:
+        inp = ev.input or {}
+        item_name = inp.get("item_name") or "Purchased Product"
+        merchant_name = "Merchant Store"
+        if ev.merchant_id:
+            m = db.query(Merchant).filter(Merchant.id == ev.merchant_id).first()
+            if m:
+                merchant_name = m.name
+
+        recent_purchases.append({
+            "id": str(ev.id),
+            "item_name": item_name,
+            "merchant_name": merchant_name,
+            "price": float(inp.get("amount", 0)),
+            "date": ev.created_at.strftime("%b %d, %H:%M") if ev.created_at else "Recently"
+        })
+
+    # Query real customer searches from AuditEvent table
+    search_events = db.query(AuditEvent).filter(
+        AuditEvent.actor_id == str(customer.id),
+        AuditEvent.action == "cross_merchant_search_performed"
+    ).order_by(AuditEvent.created_at.desc()).limit(10).all()
+
+    recent_searches = []
+    seen_queries = set()
+    for ev in search_events:
+        inp = ev.input or {}
+        q = str(inp.get("query", "")).strip()
+        if q and q not in seen_queries:
+            seen_queries.add(q)
+            recent_searches.append({
+                "id": str(ev.id),
+                "title": q.title(),
+                "timestamp": ev.created_at.strftime("%b %d, %H:%M") if ev.created_at else "Recently"
+            })
+
     return CustomerDashboardResponse(
         customer={
             "id": str(customer.id),
@@ -195,7 +240,9 @@ def get_customer_dashboard(
             "created_at": customer.created_at.isoformat() if customer.created_at else None
         },
         active_authorization=active_auth,
-        recent_transactions=recent_txs
+        recent_transactions=recent_txs,
+        recent_purchases=recent_purchases,
+        recent_searches=recent_searches
     )
 
 @router.delete("/authorizations/{authorization_id}")

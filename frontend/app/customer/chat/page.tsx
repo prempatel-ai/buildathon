@@ -33,7 +33,10 @@ import {
   Cpu,
   Lock,
   Compass,
-  FileText
+  FileText,
+  ShoppingBag,
+  ArrowRight,
+  CheckCircle2
 } from 'lucide-react';
 
 interface ProductCard {
@@ -114,6 +117,16 @@ export default function ConsumerChatPage() {
   const [remainingLimit, setRemainingLimit] = useState<number>(3800);
   const [cardLast4, setCardLast4] = useState<string>('4242');
 
+  interface RecentPurchase {
+    id: string;
+    item_name: string;
+    merchant_name: string;
+    price: number;
+    date: string;
+  }
+
+  const [recentPurchases, setRecentPurchases] = useState<RecentPurchase[]>([]);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -128,7 +141,7 @@ export default function ConsumerChatPage() {
     setCustomerName(name);
     setCustomerEmail(email);
 
-    // Fetch Spend Limit Info
+    // Fetch Spend Limit & Realtime DB Activity
     fetchAuthLimit(token);
   }, [router]);
 
@@ -142,6 +155,21 @@ export default function ConsumerChatPage() {
         if (data.initial_limit) setSpendLimit(data.initial_limit);
         if (data.remaining_limit !== undefined) setRemainingLimit(data.remaining_limit);
         if (data.card_last4) setCardLast4(data.card_last4);
+
+        // Live Real-Time Database Fetched Purchases
+        if (data.recent_purchases && Array.isArray(data.recent_purchases)) {
+          setRecentPurchases(data.recent_purchases);
+        }
+
+        // Live Real-Time Database Fetched Searches
+        if (data.recent_searches && Array.isArray(data.recent_searches) && data.recent_searches.length > 0) {
+          setHistoryThreads(data.recent_searches.map((s: any) => ({
+            id: s.id,
+            title: s.title,
+            timestamp: s.timestamp,
+            messages: []
+          })));
+        }
       }
     } catch (e) {
       console.log('Error fetching limit info:', e);
@@ -306,10 +334,40 @@ export default function ConsumerChatPage() {
           </button>
         </div>
 
-        {/* Recent Shopping Threads List */}
-        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
+        {/* Recent Shopping Threads & Purchased Items */}
+        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-5">
+          {/* RECENTLY BOUGHT SECTION */}
           <div>
-            <h3 className="px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+            <div className="px-3 flex items-center justify-between mb-2">
+              <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                Recently Bought
+              </h3>
+              <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
+            </div>
+            <div className="space-y-1.5">
+              {recentPurchases.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => handleSendMessage(`check order details for ${item.item_name}`)}
+                  className="w-full text-left p-2.5 bg-white hover:bg-slate-100/90 border border-slate-200/80 rounded-xl transition-all shadow-2xs group flex items-center justify-between"
+                >
+                  <div className="truncate pr-2">
+                    <p className="font-bold text-slate-900 truncate text-[11px] group-hover:text-indigo-600 transition-colors">
+                      {item.item_name}
+                    </p>
+                    <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">{item.merchant_name} • {item.date}</p>
+                  </div>
+                  <span className="shrink-0 px-2 py-0.5 bg-emerald-50 text-emerald-700 font-mono font-extrabold text-[10px] rounded-lg border border-emerald-200/60">
+                    ₹{item.price.toLocaleString('en-IN')}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* RECENT SEARCHES SECTION */}
+          <div>
+            <h3 className="px-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">
               Recent Searches
             </h3>
             <div className="space-y-0.5">
@@ -317,10 +375,10 @@ export default function ConsumerChatPage() {
                 <button
                   key={item.id}
                   onClick={() => handleSendMessage(item.title)}
-                  className="w-full flex items-center space-x-2.5 px-3 py-2 hover:bg-slate-200/60 rounded-lg text-xs text-slate-700 hover:text-slate-900 transition-colors text-left group truncate"
+                  className="w-full flex items-center space-x-2.5 px-3 py-2 hover:bg-slate-200/60 rounded-xl text-xs text-slate-700 hover:text-slate-900 transition-colors text-left group truncate"
                 >
-                  <MessageSquare className="w-3.5 h-3.5 text-slate-400 shrink-0 group-hover:text-slate-600" />
-                  <span className="truncate flex-1">{item.title}</span>
+                  <MessageSquare className="w-3.5 h-3.5 text-slate-400 shrink-0 group-hover:text-indigo-600 transition-colors" />
+                  <span className="truncate flex-1 font-medium">{item.title}</span>
                 </button>
               ))}
             </div>
@@ -577,10 +635,11 @@ export default function ConsumerChatPage() {
 
                             <button
                               onClick={() => handleBuyOption(card)}
-                              className="mt-3 w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition-colors shadow-2xs flex items-center justify-center space-x-1.5"
+                              className="mt-3 w-full py-2.5 px-3.5 rounded-xl bg-slate-900 hover:bg-indigo-600 active:scale-[0.98] text-white font-bold text-xs transition-all shadow-xs flex items-center justify-center space-x-2 group/btn"
                             >
+                              <ShoppingBag className="w-3.5 h-3.5 text-indigo-300 group-hover/btn:text-white transition-colors" />
                               <span>Confirm & Buy</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
+                              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover/btn:text-white group-hover/btn:translate-x-0.5 transition-all" />
                             </button>
                           </div>
                         ))}

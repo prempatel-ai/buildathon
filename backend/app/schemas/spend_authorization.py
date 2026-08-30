@@ -34,3 +34,5 @@ class CustomerDashboardResponse(BaseModel):
     customer: dict
     active_authorization: Optional[SpendAuthorizationRead]
     recent_transactions: list
+    recent_purchases: Optional[list] = []
+    recent_searches: Optional[list] = []
