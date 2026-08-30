@@ -407,7 +407,7 @@ function DashboardContent() {
               </div>
               {merchant?.id && (
                 <a
-                  href={`http://localhost:8000/catalog/agent-schema?merchant_id=${merchant.id}`}
+                  href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/catalog/agent-schema?merchant_id=${merchant.id}`}
                   target="_blank"
                   rel="noreferrer"
                   className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200/80 text-slate-800 rounded-xl text-xs font-mono font-bold transition-colors"

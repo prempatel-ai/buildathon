@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { API_BASE_URL } from '@/lib/api';
 import Navigation from '@/components/Navigation';
 
 interface SpendAuth {
@@ -44,7 +45,7 @@ export default function CustomerDashboardPage() {
     }
 
     try {
-      const res = await fetch('http://localhost:8000/customer/authorizations/me', {
+      const res = await fetch(`${API_BASE_URL}/customer/authorizations/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -88,7 +89,7 @@ export default function CustomerDashboardPage() {
 
     const token = localStorage.getItem('customer_token');
     try {
-      const res = await fetch('http://localhost:8000/customer/authorizations', {
+      const res = await fetch(`${API_BASE_URL}/customer/authorizations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
