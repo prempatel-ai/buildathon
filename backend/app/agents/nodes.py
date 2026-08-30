@@ -675,7 +675,11 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     form1_match = re.search(r'<form[^>]*name=["\']form1["\'][^>]*>(.*?)</form>', r1.text, re.DOTALL)
 
                     if action1_match and form1_match:
+                        import urllib.parse
                         form_action = action1_match.group(1)
+                        if not form_action.startswith("http"):
+                            form_action = urllib.parse.urljoin("https://api.razorpay.com", form_action)
+
                         inputs = re.findall(r'<input[^>]*name=["\']([^"\']+)["\'][^>]*value=["\']([^"\']*)["\']', form1_match.group(1))
                         form_data = {name: val for name, val in inputs}
                         pid = form_data.get("payment_id")
@@ -688,6 +692,8 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
                         if submit_match and cb_match:
                             submit_url = submit_match.group(1)
+                            if not submit_url.startswith("http"):
+                                submit_url = urllib.parse.urljoin("https://api.razorpay.com", submit_url)
                             cb_url = cb_match.group(1)
                             submit_payload = {
                                 "callback_url": cb_url,
@@ -696,7 +702,9 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                             }
                             session.post(submit_url, data=submit_payload, headers=headers, timeout=10)
 
-                    # Verify actual capture on Razorpay's live API
+                    # Verify actual capture on Razorpay's live API with propagation wait
+                    import time
+                    time.sleep(0.5)
                     rzp_client = _razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
                     order_payments = rzp_client.order.payments(tx.razorpay_order_id)
                     if order_payments and order_payments.get("items"):
