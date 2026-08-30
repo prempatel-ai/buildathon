@@ -115,3 +115,64 @@ def run_agent_workflow(
     update_thread_history(thread_id, prompt, resp_msg)
 
     return final_state
+
+
+def run_direct_purchase_workflow(
+    merchant_id: str,
+    item_name: str,
+    amount: float,
+    category: str,
+    customer_id: Optional[str] = None,
+    thread_id: Optional[str] = None,
+    agent_id: str = "consumer_shopping_agent",
+) -> Dict[str, Any]:
+    """
+    DIRECT Purchase Workflow: Bypasses llm_node entirely.
+
+    Used when the exact item, price, and merchant are already known from cached search results
+    (e.g. user says 'buy option 1'). Pre-populates tool_args with the EXACT price from the
+    search result to prevent the LLM catalog re-lookup from corrupting the amount.
+
+    Pipeline: customer_auth_node -> policy_node -> execute_node -> END
+    """
+    if not thread_id:
+        thread_id = f"thread_{uuid.uuid4().hex[:12]}"
+
+    from app.agents.nodes import customer_auth_node, policy_node, execute_node
+
+    direct_state: AgentGraphState = {
+        "merchant_id": merchant_id,
+        "agent_id": agent_id,
+        "customer_id": customer_id,
+        "thread_id": thread_id,
+        "prompt": f"Buy {item_name} for {amount} INR",
+        # Pre-set proposed_tool and tool_args — the LLM is NEVER called
+        "proposed_tool": "propose_order",
+        "tool_args": {
+            "amount": float(amount),        # EXACT price from DB search result cache
+            "item_name": item_name,
+            "category": category,
+            "quantity": 1,
+        },
+        "customer_auth_decision": None,
+        "policy_decision": None,
+        "reasoning": None,
+        "transaction_id": None,
+        "razorpay_order_id": None,
+        "razorpay_payment_id": None,
+        "payment_link_url": None,
+        "status": "INITIALIZED"
+    }
+
+    # Manually run the pipeline: customer_auth -> policy -> execute (no LLM node)
+    direct_state = customer_auth_node(direct_state)
+    direct_state = policy_node(direct_state)
+    direct_state = execute_node(direct_state)
+    direct_state["thread_id"] = thread_id
+
+    from app.agents.nodes import update_thread_history
+    resp_msg = direct_state.get("response_message") or ""
+    update_thread_history(thread_id, f"Buy {item_name}", resp_msg)
+
+    return direct_state
+
