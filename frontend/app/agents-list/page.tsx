@@ -47,16 +47,25 @@ export default function AgentsListPage() {
         getMerchantMe(),
         getMerchantAgents(),
       ]);
+      if (!merchantData || !merchantData.id) {
+        router.push('/onboarding');
+        return;
+      }
       setMerchant(merchantData);
       setAgents(agentData);
     } catch (err: any) {
-      setMsg({ type: 'error', text: err.message || 'Failed to load agents' });
+      router.push('/onboarding');
+      return;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('onboarding_in_progress') === 'true') {
+      router.push('/onboarding');
+      return;
+    }
     const token = getAuthToken();
     if (!token) {
       router.push('/login');

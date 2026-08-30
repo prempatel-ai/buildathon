@@ -24,13 +24,17 @@ export default function WebhooksPage() {
   const [showSecret, setShowSecret] = useState(false);  // P5: mask secret by default
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('onboarding_in_progress') === 'true') {
+      router.push('/onboarding');
+      return;
+    }
     const token = getAuthToken();
     if (!token) {
       router.push('/login');
       return;
     }
     loadWebhooks();
-  }, []);
+  }, [router]);
 
   async function loadWebhooks() {
     setLoading(true);
@@ -42,7 +46,8 @@ export default function WebhooksPage() {
         setSecret(res.endpoint.secret || '');
       }
     } catch (err: any) {
-      setMsg({ type: 'error', text: err.message || 'Failed to load webhooks' });
+      router.push('/onboarding');
+      return;
     } finally {
       setLoading(false);
     }

@@ -23,6 +23,12 @@ export default function OnboardingPage() {
   const [category, setCategory] = useState('Electronics');
   const [addedItemsCount, setAddedItemsCount] = useState(0);
 
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('onboarding_in_progress', 'true');
+    }
+  }, []);
+
   const handleCreateMerchant = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!merchantName.trim()) {
@@ -96,6 +102,9 @@ export default function OnboardingPage() {
     setError(null);
     try {
       const merchant = await seedDemoMerchant();
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('onboarding_in_progress');
+      }
       router.push(`/dashboard?merchant_id=${merchant.id}`);
     } catch (err: any) {
       setError(err.message || 'Failed to seed demo data');
@@ -105,19 +114,22 @@ export default function OnboardingPage() {
 
   const handleFinish = () => {
     if (createdMerchant) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('onboarding_in_progress');
+      }
       router.push(`/dashboard?merchant_id=${createdMerchant.id}`);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans justify-between selection:bg-slate-200">
       <Navigation />
 
-      {/* Main Container */}
-      <main className="max-w-xl w-full mx-auto px-6 py-12 flex-1">
-        <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
+      {/* Main Clean Onboarding Container */}
+      <main className="max-w-xl w-full mx-auto px-6 py-12 flex-1 flex items-center justify-center">
+        <div className="w-full bg-white border border-slate-200 rounded-2xl p-8 shadow-xl">
           {/* Top Banner for Quick Seed */}
-          <div className="mb-8 p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
+          <div className="mb-8 p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-900">Need instant demo setup?</p>
               <p className="text-xs text-slate-500">Seed sample merchant & catalog in 1 click.</p>
@@ -125,14 +137,14 @@ export default function OnboardingPage() {
             <button
               onClick={handleQuickSeed}
               disabled={loading}
-              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+              className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
             >
               {loading ? 'Seeding...' : '1-Click Quick Seed'}
             </button>
           </div>
 
           {error && (
-            <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs">
+            <div className="mb-6 p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-medium">
               {error}
             </div>
           )}
@@ -141,32 +153,32 @@ export default function OnboardingPage() {
           {step === 1 && (
             <form onSubmit={handleCreateMerchant} className="space-y-5">
               <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Step 1 of 2</span>
-                <h1 className="text-lg font-semibold text-slate-900 mt-1">Create Merchant Account</h1>
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-mono">Step 1 of 2</span>
+                <h1 className="text-lg font-bold text-slate-900 mt-1">Create Merchant Account</h1>
                 <p className="text-xs text-slate-500 mt-0.5">Setup store metadata for AI agent discoverability.</p>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Store / Merchant Name *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Store / Merchant Name *</label>
                   <input
                     type="text"
                     required
                     value={merchantName}
                     onChange={(e) => setMerchantName(e.target.value)}
                     placeholder="e.g. Apex Electronics & Gear"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-slate-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Razorpay Key ID (Test Mode)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Razorpay Key ID (Test Mode)</label>
                   <input
                     type="text"
                     value={razorpayKey}
                     onChange={(e) => setRazorpayKey(e.target.value)}
                     placeholder="rzp_test_..."
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none focus:bg-white focus:border-slate-400"
                   />
                 </div>
               </div>
@@ -174,7 +186,7 @@ export default function OnboardingPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50 shadow-sm"
               >
                 {loading ? 'Creating Merchant...' : 'Continue to Add Catalog Items'}
               </button>
@@ -186,31 +198,31 @@ export default function OnboardingPage() {
             <div className="space-y-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600">Step 2 of 2</span>
-                  <h1 className="text-lg font-semibold text-slate-900 mt-1">Add Catalog Products</h1>
-                  <p className="text-xs text-slate-500 mt-0.5">Merchant: <span className="font-semibold text-slate-800">{createdMerchant.name}</span></p>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 font-mono">Step 2 of 2</span>
+                  <h1 className="text-lg font-bold text-slate-900 mt-1">Add Catalog Products</h1>
+                  <p className="text-xs text-slate-500 mt-0.5">Merchant: <span className="font-bold text-slate-800">{createdMerchant.name}</span></p>
                 </div>
-                <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-medium">
+                <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold font-mono">
                   {addedItemsCount} Items Added
                 </span>
               </div>
 
               <form onSubmit={handleAddItem} className="space-y-4 pt-2 border-t border-slate-100">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Product Name *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Product Name *</label>
                   <input
                     type="text"
                     required
                     value={itemName}
                     onChange={(e) => setItemName(e.target.value)}
                     placeholder="e.g. Ergonomic Wireless Mouse"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-slate-400"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Price (INR ₹) *</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Price (INR ₹) *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -219,11 +231,11 @@ export default function OnboardingPage() {
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
                       placeholder="1499.00"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none focus:bg-white focus:border-slate-400"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Stock Quantity *</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Stock Quantity *</label>
                     <input
                       type="number"
                       min="0"
@@ -231,20 +243,20 @@ export default function OnboardingPage() {
                       value={stock}
                       onChange={(e) => setStock(e.target.value)}
                       placeholder="20"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none focus:bg-white focus:border-slate-400"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Category *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Category *</label>
                   <input
                     type="text"
                     required
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
                     placeholder="e.g. Electronics"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-slate-400"
                   />
                 </div>
 
@@ -252,14 +264,14 @@ export default function OnboardingPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                    className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50 shadow-sm"
                   >
                     {loading ? 'Adding...' : '+ Add Item'}
                   </button>
                   <button
                     type="button"
                     onClick={handleFinish}
-                    className="px-4 py-2.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium transition-colors"
+                    className="px-4 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-colors"
                   >
                     Go to Dashboard &rarr;
                   </button>

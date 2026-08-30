@@ -237,7 +237,6 @@ class CatalogService:
             endpoint = f"{clean_url}/products.json"
             headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
 
-        
         fetched_products = []
         try:
             import httpx
@@ -256,10 +255,10 @@ class CatalogService:
                         "stock": max(stock, 10),
                         "category": category
                     })
-        except Exception as e:
+        except Exception:
             pass
 
-        # Fallback to realistic demo Shopify catalog if store URL is offline or unauthenticated
+        # Fallback to realistic demo catalog if store URL is offline or unauthenticated
         if not fetched_products:
             fetched_products = [
                 {"name": "Shopify: Wireless Noise-Cancelling Headphones", "price": 4999.0, "stock": 50, "category": "Audio"},
@@ -279,6 +278,9 @@ class CatalogService:
             for p in fetched_products
         ]
         return CatalogService.bulk_import_catalog_items(db, merchant_id=merchant_id, items_data=items_in)
+
+
+
 
 
 

@@ -311,8 +311,9 @@ def customer_auth_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
 def policy_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Policy Engine Node:
-    Routes proposed tool calls directly through the REAL Phase 2 evaluate() engine.
+    Policy Engine Node (Pure Deterministic PolicyGate):
+    Routes proposed tool calls directly through PolicyGate.check().
+    Zero LLM calls occur during or after rule evaluation.
     Logs policy_evaluated audit event with agent's actor_id.
     """
     if state.get("customer_auth_decision") == "DENY":
@@ -327,7 +328,7 @@ def policy_node(state: Dict[str, Any]) -> Dict[str, Any]:
     try:
         if proposed_tool == "get_catalog":
             state["policy_decision"] = "ALLOW"
-            state["reasoning"] = "Read-only catalog query approved automatically."
+            state["reasoning"] = "allowed: read-only catalog query approved automatically"
 
             AuditService.log_event(
                 db=db,
@@ -336,34 +337,49 @@ def policy_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 action="policy_evaluated",
                 input={"merchant_id": str(merchant_id), "agent_id": agent_id, "tool": "get_catalog"},
                 decision="ALLOW",
-                reasoning="Read-only catalog query approved automatically.",
+                reasoning="allowed: read-only catalog query approved automatically",
                 merchant_id=merchant_id
             )
             return state
 
-        policies = PolicyService.list_policies(db, merchant_id)
+        from app.services.policy_gate import PolicyGate
+
+        policies_db = PolicyService.list_policies(db, merchant_id)
+        formatted_policies = [
+            {"rule_type": p.rule_type, "config": p.config} for p in policies_db
+        ]
+
         redis_client = None
         try:
             redis_client = get_redis_client()
         except Exception:
             pass
 
-        amount = Decimal(str(tool_args.get("amount", 0)))
-        category = tool_args.get("category", "General")
-        item_name = tool_args.get("item_name", "Requested Item")
+        intent = {
+            "amount": tool_args.get("amount", 0),
+            "category": tool_args.get("category", "General"),
+            "quantity": tool_args.get("quantity", 1),
+            "item_name": tool_args.get("item_name", "Requested Item"),
+            "stock": tool_args.get("stock")
+        }
 
-        action = ProposedAction(
-            merchant_id=merchant_id,
-            agent_id=agent_id,
-            amount=amount,
-            category=category
+        agent_context = {
+            "merchant_id": str(merchant_id),
+            "agent_id": agent_id
+        }
+
+        gate_result = PolicyGate.check(
+            intent=intent,
+            merchant_policy=formatted_policies,
+            agent_context=agent_context,
+            redis_client=redis_client
         )
 
-        decision = evaluate(action=action, policies=policies, redis_client=redis_client)
-        dec_str = decision.decision.value if hasattr(decision.decision, "value") else str(decision.decision)
+        dec_str = gate_result["decision"]
+        reasoning_str = gate_result["reasoning"]
 
         state["policy_decision"] = dec_str
-        state["reasoning"] = decision.reasoning
+        state["reasoning"] = reasoning_str
 
         # Wire Audit Event for Agent Policy Evaluation
         AuditService.log_event(
@@ -374,12 +390,12 @@ def policy_node(state: Dict[str, Any]) -> Dict[str, Any]:
             input={
                 "merchant_id": str(merchant_id),
                 "agent_id": agent_id,
-                "amount": str(amount),
-                "category": category,
-                "item_name": item_name
+                "amount": str(intent["amount"]),
+                "category": intent["category"],
+                "item_name": intent["item_name"]
             },
             decision=dec_str,
-            reasoning=decision.reasoning,
+            reasoning=reasoning_str,
             merchant_id=merchant_id
         )
     finally:

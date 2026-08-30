@@ -1,24 +1,25 @@
 import type { Metadata } from 'next';
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import { IBM_Plex_Sans, JetBrains_Mono } from 'next/font/google';
+import { Providers } from './providers';
 import './globals.css';
 
-const inter = Inter({
+const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-ibm-plex',
   display: 'swap',
-  weight: ['400', '500', '600', '700', '800', '900'],
+  weight: ['300', '400', '500', '600', '700'],
 });
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-jetbrains',
   display: 'swap',
-  weight: ['400', '500', '600', '700', '800'],
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
-  title: 'Agentpay — Merchant Dashboard',
-  description: 'Agent-ready merchant commerce platform for Razorpay AI Protocol',
+  title: 'Agentpay — Agent-Readable Commerce Infrastructure',
+  description: 'Dual-gated payment settlement and policy engine for autonomous AI buyer agents',
 };
 
 export default function RootLayout({
@@ -27,9 +28,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className="min-h-screen bg-[#fafafa] text-slate-900 font-sans antialiased selection:bg-indigo-100 selection:text-indigo-900 tracking-normal leading-normal">
-        {children}
+    <html lang="en" suppressHydrationWarning className={`${ibmPlexSans.variable} ${jetbrainsMono.variable}`}>
+      <body suppressHydrationWarning className="min-h-screen bg-[#0a0e1a] text-slate-100 font-sans antialiased selection:bg-slate-200 selection:text-slate-900 tracking-normal leading-normal">
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

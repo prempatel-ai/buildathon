@@ -230,6 +230,9 @@ export async function syncShopifyCatalog(merchantId: string, storeUrl: string): 
 
 
 
+
+
+
 export async function updateCatalogItem(itemId: string, payload: UpdateCatalogItemPayload): Promise<CatalogItem> {
   const res = await fetch(`${API_BASE_URL}/catalog/items/${itemId}`, {
     method: 'PUT',

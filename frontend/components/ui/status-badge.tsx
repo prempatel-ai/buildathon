@@ -20,24 +20,25 @@ export function StatusBadge({ status }: StatusBadgeProps) {
   }
 
   if (
-    normalized === 'GATED' ||
     normalized === 'DENIED' ||
-    normalized === 'WARNING' ||
-    normalized === 'BLOCKED'
-  ) {
-    return <Badge variant="amber">{status}</Badge>;
-  }
-
-  if (
-    normalized === 'FAILED' ||
-    normalized === 'THROTTLED' ||
-    normalized === 'REJECTED' ||
-    normalized === 'ERROR'
+    normalized === 'DENY' ||
+    normalized === 'BLOCKED' ||
+    normalized === 'REJECTED'
   ) {
     return <Badge variant="destructive">{status}</Badge>;
   }
 
   if (
+    normalized === 'FAILED' ||
+    normalized === 'ERROR' ||
+    normalized === 'THROTTLED' ||
+    normalized === 'DECLINED'
+  ) {
+    return <Badge variant="amber">{status}</Badge>;
+  }
+
+  if (
+    normalized === 'NEEDS_APPROVAL' ||
     normalized === 'PENDING' ||
     normalized === 'IN_PROGRESS' ||
     normalized === 'EVALUATING'
