@@ -596,23 +596,12 @@ export default function ConsumerChatPage() {
                           </div>
 
                           {msg.razorpayOrderId && (
-                            <div className="text-[11px] text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-1.5">
-                              <div>Razorpay Order: <span className="font-bold text-slate-900">{msg.razorpayOrderId}</span></div>
+                            <div className="text-[11px] text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-1">
+                              <div>Razorpay Order: <span className="font-mono font-bold text-slate-900">{msg.razorpayOrderId}</span></div>
                               {msg.razorpayPaymentId && (
                                 <div className="text-emerald-700 font-semibold">
-                                  Payment Capture: <span className="font-bold">{msg.razorpayPaymentId}</span>
+                                  Payment Capture: <span className="font-mono font-bold">{msg.razorpayPaymentId}</span>
                                 </div>
-                              )}
-                              {msg.paymentLinkUrl && (
-                                <a
-                                  href={msg.paymentLinkUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="mt-1.5 inline-flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-sans font-bold text-xs transition-colors shadow-2xs"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                  <span>Pay on Live Razorpay Checkout &rarr;</span>
-                                </a>
                               )}
                             </div>
                           )}
