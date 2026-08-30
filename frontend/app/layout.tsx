@@ -27,8 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${ibmPlexSans.variable} ${jetbrainsMono.variable}`}>
-      <body className="min-h-screen bg-[#0a0e1a] text-slate-100 font-sans antialiased selection:bg-slate-200 selection:text-slate-900 tracking-normal leading-normal">
+    <html lang="en" suppressHydrationWarning className={`${ibmPlexSans.variable} ${jetbrainsMono.variable}`}>
+      <body suppressHydrationWarning className="min-h-screen bg-[#0a0e1a] text-slate-100 font-sans antialiased selection:bg-slate-200 selection:text-slate-900 tracking-normal leading-normal">
         {children}
       </body>
     </html>
