@@ -167,7 +167,7 @@ def search_and_compare_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 else:
                     is_match = any(qw in name_cat_lower for qw in query_words)
 
-                if is_match:
+                if is_match and it.stock > 0:
                     price_val = float(it.price)
                     if effective_max_price is None or price_val <= effective_max_price:
                         matching_options.append({
@@ -537,6 +537,20 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
             )
             
             tx = PaymentService.create_payment_order(db, tx_create)
+            
+            # Decrement merchant catalog item stock for the purchased product
+            item_name_bought = tool_args.get("item_name")
+            qty_bought = int(tool_args.get("quantity", 1))
+            if item_name_bought:
+                from app.models.catalog import CatalogItem
+                cat_item = db.query(CatalogItem).filter(
+                    CatalogItem.merchant_id == merchant_id,
+                    CatalogItem.name.ilike(f"%{item_name_bought}%")
+                ).first()
+                if cat_item:
+                    cat_item.stock = max(0, cat_item.stock - qty_bought)
+                    db.commit()
+                    db.refresh(cat_item)
             
             # If customer spend authorization is attached, auto-settle the order with real Razorpay payment capture ID & decrement limit
             customer_id = state.get("customer_id")
