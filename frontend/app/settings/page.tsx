@@ -26,13 +26,17 @@ export default function SettingsPage() {
   const [velocityLimit, setVelocityLimit] = useState<number | ''>('');
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('onboarding_in_progress') === 'true') {
+      router.push('/onboarding');
+      return;
+    }
     const token = getAuthToken();
     if (!token) {
       router.push('/login');
       return;
     }
     loadProfile();
-  }, []);
+  }, [router]);
 
   async function loadProfile() {
     setLoading(true);

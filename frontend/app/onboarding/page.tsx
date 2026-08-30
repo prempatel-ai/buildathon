@@ -23,6 +23,12 @@ export default function OnboardingPage() {
   const [category, setCategory] = useState('Electronics');
   const [addedItemsCount, setAddedItemsCount] = useState(0);
 
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('onboarding_in_progress', 'true');
+    }
+  }, []);
+
   const handleCreateMerchant = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!merchantName.trim()) {
@@ -96,6 +102,9 @@ export default function OnboardingPage() {
     setError(null);
     try {
       const merchant = await seedDemoMerchant();
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('onboarding_in_progress');
+      }
       router.push(`/dashboard?merchant_id=${merchant.id}`);
     } catch (err: any) {
       setError(err.message || 'Failed to seed demo data');
@@ -105,6 +114,9 @@ export default function OnboardingPage() {
 
   const handleFinish = () => {
     if (createdMerchant) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('onboarding_in_progress');
+      }
       router.push(`/dashboard?merchant_id=${createdMerchant.id}`);
     }
   };

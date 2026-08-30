@@ -58,6 +58,10 @@ export default function UsagePage() {
   const [activeHoverData, setActiveHoverData] = useState<{ date: string; value: number; change: number } | null>(null);
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('onboarding_in_progress') === 'true') {
+      router.push('/onboarding');
+      return;
+    }
     const token = getAuthToken();
     if (!token) {
       router.push('/login');

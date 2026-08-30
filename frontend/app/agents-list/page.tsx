@@ -62,6 +62,10 @@ export default function AgentsListPage() {
   }, [router]);
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('onboarding_in_progress') === 'true') {
+      router.push('/onboarding');
+      return;
+    }
     const token = getAuthToken();
     if (!token) {
       router.push('/login');
