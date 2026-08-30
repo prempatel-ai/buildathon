@@ -701,14 +701,13 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     order_payments = rzp_client.order.payments(tx.razorpay_order_id)
                     if order_payments and order_payments.get("items"):
                         for p in order_payments["items"]:
-                            if p.get("status") in ("captured", "authorized"):
-                                real_pay_id = p["id"]
-                                if p.get("status") == "authorized":
-                                    try:
-                                        rzp_client.payment.capture(real_pay_id, int(amount * 100), {"currency": "INR"})
-                                    except Exception:
-                                        pass
-                                break
+                            real_pay_id = p["id"]
+                            if p.get("status") != "captured":
+                                try:
+                                    rzp_client.payment.capture(real_pay_id, int(amount * 100), {"currency": "INR"})
+                                except Exception:
+                                    pass
+                            break
 
                     if not real_pay_id:
                         real_pay_id = f"pay_{uuid.uuid4().hex[:14]}"

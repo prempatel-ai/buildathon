@@ -177,6 +177,7 @@ class PaymentService:
                 "amount": amount_in_paise,
                 "currency": "INR",
                 "receipt": receipt,
+                "payment_capture": 1,
                 "notes": notes
             })
 
