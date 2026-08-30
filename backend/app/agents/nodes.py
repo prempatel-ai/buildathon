@@ -766,9 +766,15 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
                     state["payment_link_url"] = payment_link_url
                     state["status"] = "PAYMENT_SETTLED"
-                    state["response_message"] = (
-                        f"Order approved, charged via tokenized payment method, and settled! Razorpay Order '{settled_tx.razorpay_order_id}' and Payment Capture '{settled_tx.razorpay_payment_id}' for INR {amount}."
-                    )
+                    
+                    if payment_link_url:
+                        state["response_message"] = (
+                            f"Order placed successfully for INR {amount:,.2f}! Razorpay Order ID: '{settled_tx.razorpay_order_id}'. Click the Razorpay Checkout link below to complete payment."
+                        )
+                    else:
+                        state["response_message"] = (
+                            f"Order approved and processed for INR {amount:,.2f}! Razorpay Order ID: '{settled_tx.razorpay_order_id}'."
+                        )
                     return state
                 except Exception as ex:
                     print(f"[SETTLEMENT_AUTO_CAPTURE_ERROR]: {ex}")
@@ -777,7 +783,7 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
             state["razorpay_order_id"] = tx.razorpay_order_id
             state["status"] = "PAYMENT_EXECUTED"
             state["response_message"] = (
-                f"Order approved and executed! Razorpay Order ID '{tx.razorpay_order_id}' created for INR {amount}."
+                f"Order created successfully! Razorpay Order ID '{tx.razorpay_order_id}' generated for INR {amount:,.2f}."
             )
         finally:
             db.close()
