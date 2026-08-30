@@ -4,6 +4,7 @@ from app.core.config import settings
 from app.routers import health, merchant, catalog, policy, payment, audit, agent, auth, webhook, customer, customer_chat
 
 from app.core.database import Base, engine
+import app.models  # Ensure all models are registered in Base.metadata
 from sqlalchemy import text
 
 try:

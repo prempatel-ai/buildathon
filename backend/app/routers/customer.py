@@ -45,16 +45,19 @@ def register_customer(req: CustomerRegister, db: Session = Depends(get_db)):
     db.refresh(customer)
 
     # Log registration in Audit Store
-    AuditService.log_event(
-        db=db,
-        actor_type="customer",
-        actor_id=str(customer.id),
-        action="customer_registered",
-        input={"email": customer.email, "name": customer.name},
-        decision="REGISTERED",
-        reasoning=f"New consumer '{customer.name}' created an account.",
-        merchant_id=None
-    )
+    try:
+        AuditService.log_event(
+            db=db,
+            actor_type="customer",
+            actor_id=str(customer.id),
+            action="customer_registered",
+            input={"email": customer.email, "name": customer.name},
+            decision="REGISTERED",
+            reasoning=f"New consumer '{customer.name}' created an account.",
+            merchant_id=None
+        )
+    except Exception as e:
+        print(f"Customer audit event logging info: {e}")
 
     token = create_customer_access_token(customer_id=str(customer.id), email=customer.email)
     return CustomerAuthToken(
