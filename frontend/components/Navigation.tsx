@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/custom-icons';
 import CommandSearchModal from '@/components/CommandSearchModal';
 import { removeAuthToken, getMerchantMe, Merchant } from '@/lib/api';
-import { ChevronDown, Search, ExternalLink, ShieldCheck, User, LogOut, Check } from 'lucide-react';
+import { ChevronDown, Search, ExternalLink, ShieldCheck, User, LogOut, Check, Sparkles } from 'lucide-react';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -23,12 +23,17 @@ export default function Navigation() {
   const [isCustomerContext, setIsCustomerContext] = useState(false);
   const [isMerchantContext, setIsMerchantContext] = useState(false);
   const [merchant, setMerchant] = useState<Merchant | null>(null);
+  const [customerName, setCustomerName] = useState<string | null>(null);
+  const [customerEmail, setCustomerEmail] = useState<string | null>(null);
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [customerMenuOpen, setCustomerMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     const custToken = localStorage.getItem('customer_token');
+    const custName = localStorage.getItem('customer_name');
+    const custMail = localStorage.getItem('customer_email');
     const merchToken = localStorage.getItem('agentpay_auth_token') || localStorage.getItem('access_token');
 
     if (pathname.startsWith('/customer')) {
@@ -52,6 +57,14 @@ export default function Navigation() {
       setIsCustomerContext(Boolean(custToken && !merchToken));
       setIsMerchantContext(Boolean(merchToken));
     }
+
+    if (custToken) {
+      setCustomerName(custName || 'Consumer');
+      setCustomerEmail(custMail || '');
+    } else {
+      setCustomerName(null);
+      setCustomerEmail(null);
+    }
   }, [pathname]);
 
   // Global ⌘K / Ctrl+K keyboard shortcut listener
@@ -70,6 +83,17 @@ export default function Navigation() {
     removeAuthToken();
     localStorage.removeItem('customer_token');
     router.push('/login');
+  };
+
+  const handleCustomerLogout = () => {
+    localStorage.removeItem('customer_token');
+    localStorage.removeItem('customer_id');
+    localStorage.removeItem('customer_name');
+    localStorage.removeItem('customer_email');
+    setCustomerName(null);
+    setCustomerEmail(null);
+    setCustomerMenuOpen(false);
+    router.push('/customer/login');
   };
 
   const merchantTabs = [
@@ -203,17 +227,73 @@ export default function Navigation() {
                   </div>
                 )}
               </div>
-            ) : pathname !== '/onboarding' && (
+            ) : customerName ? (
+              <div className="flex items-center space-x-2.5">
+                {pathname !== '/customer/chat' && (
+                  <Link
+                    href="/customer/chat"
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-2xs"
+                  >
+                    Consumer Chat AI
+                  </Link>
+                )}
+                <div className="relative">
+                  <button
+                    onClick={() => setCustomerMenuOpen(!customerMenuOpen)}
+                    className="flex items-center space-x-2 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 text-xs font-semibold text-slate-800 transition-colors"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">
+                      {customerName[0].toUpperCase()}
+                    </div>
+                    <span className="truncate max-w-[100px] font-bold text-slate-900">{customerName}</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  </button>
+
+                  {customerMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-xl py-1 z-50 text-xs">
+                      <div className="px-3 py-2.5 border-b border-slate-100">
+                        <p className="font-extrabold text-slate-900 truncate text-xs">{customerName}</p>
+                        {customerEmail && <p className="text-[10px] text-slate-400 truncate mt-0.5">{customerEmail}</p>}
+                      </div>
+                      <Link
+                        href="/customer/dashboard"
+                        onClick={() => setCustomerMenuOpen(false)}
+                        className="flex items-center space-x-2 px-3 py-2 text-slate-700 hover:bg-slate-50 font-semibold"
+                      >
+                        <User className="w-3.5 h-3.5 text-slate-400" />
+                        <span>My Card & Limits</span>
+                      </Link>
+                      <Link
+                        href="/customer/chat"
+                        onClick={() => setCustomerMenuOpen(false)}
+                        className="flex items-center space-x-2 px-3 py-2 text-slate-700 hover:bg-slate-50 font-semibold"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                        <span>AI Shopping Chat</span>
+                      </Link>
+                      <div className="border-t border-slate-100 my-1" />
+                      <button
+                        onClick={handleCustomerLogout}
+                        className="w-full text-left flex items-center space-x-2 px-3 py-2 text-red-600 hover:bg-red-50 font-bold"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
               <nav className="flex items-center space-x-2">
                 <Link
                   href="/customer/chat"
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-2xs"
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-2xs"
                 >
                   Consumer Chat AI
                 </Link>
                 <Link
-                  href="/login"
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 border border-slate-200"
+                  href="/customer/login"
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 border border-slate-200 transition-colors"
                 >
                   Sign In
                 </Link>
