@@ -15,11 +15,37 @@ try:
 except Exception as e:
     print(f"Database initialization info: {e}")
 
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ── Auto-seed on first deploy if merchants table is empty ──────────────────
+    try:
+        from app.core.database import SessionLocal
+        from app.models.merchant import Merchant
+        db = SessionLocal()
+        count = db.query(Merchant).count()
+        db.close()
+        if count == 0:
+            print("No merchants found — running auto-seed...")
+            import sys, os
+            sys.path.insert(0, os.path.dirname(__file__))
+            from seed import seed
+            seed()
+            print("Auto-seed complete.")
+        else:
+            print(f"Skipping seed — {count} merchants already exist.")
+    except Exception as e:
+        print(f"Auto-seed skipped: {e}")
+    yield  # app runs here
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Agent-ready merchant commerce platform — Razorpay AI Buildathon",
     version="0.1.0",
+    lifespan=lifespan,
 )
+
 
 # Configure CORS
 app.add_middleware(
