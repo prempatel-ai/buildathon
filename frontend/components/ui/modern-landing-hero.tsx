@@ -4,23 +4,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
-  ChevronRight,
   Search,
   Check,
   Copy,
   Terminal,
   Play,
   RotateCcw,
-  Shield,
-  Lock,
-  Zap,
-  Activity,
-  ArrowUpRight,
-  ChevronDown,
-  Code,
-  FileCode2,
-  Server,
-  Globe,
   ExternalLink,
   Code2
 } from 'lucide-react';
@@ -29,6 +18,56 @@ import CommandSearchModal from '@/components/CommandSearchModal';
 interface PipelineSimulationState {
   simMode: 'valid' | 'violation';
   step: number;
+}
+
+// Scroll Reveal Component using IntersectionObserver with Reduced-Motion Compliance
+function ScrollReveal({
+  children,
+  className = '',
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+}) {
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Check if user prefers reduced motion
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      setIsVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      style={{ transitionDelay: `${delay}ms` }}
+      className={`scroll-reveal-item transition-all duration-500 ease-out ${
+        isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-[0.99]'
+      } ${className}`}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function ModernLandingHero() {
@@ -60,6 +99,14 @@ export function ModernLandingHero() {
 
   const runPipelineSim = (mode: 'valid' | 'violation') => {
     if (isSimulating) return;
+
+    // Respect reduced motion during simulation
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      setSimState({ simMode: mode, step: 3 });
+      return;
+    }
+
     setIsSimulating(true);
     setSimState({ simMode: mode, step: 0 });
 
@@ -86,7 +133,7 @@ export function ModernLandingHero() {
           {/* Brand */}
           <div className="flex items-center space-x-3">
             <Link href="/" className="flex items-center space-x-2.5 group">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#f8fafc] font-mono text-xs font-bold text-[#0a0e1a]">
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#f8fafc] font-mono text-xs font-bold text-[#0a0e1a] transition-transform group-hover:scale-105">
                 AP
               </div>
               <span className="text-sm font-bold tracking-tight text-[#f8fafc] font-mono">Agentpay</span>
@@ -117,7 +164,7 @@ export function ModernLandingHero() {
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setSearchOpen(true)}
-              className="flex items-center space-x-2 rounded-lg border border-[#1e293b] bg-[#0e1223] px-3 py-1.5 text-xs font-mono text-[#94a3b8] transition-all hover:border-slate-600 hover:text-[#f8fafc] select-none"
+              className="flex items-center space-x-2 rounded-lg border border-[#1e293b] bg-[#0e1223] px-3 py-1.5 text-xs font-mono text-[#94a3b8] transition-all hover:border-slate-500 hover:text-[#f8fafc] active:scale-[0.98] select-none"
             >
               <Search className="h-3.5 w-3.5 text-[#94a3b8]" />
               <span className="hidden sm:inline font-mono">Search API...</span>
@@ -128,13 +175,13 @@ export function ModernLandingHero() {
 
             <Link
               href="/customer/chat"
-              className="rounded-lg bg-[#f8fafc] px-3.5 py-1.5 text-xs font-mono font-bold text-[#0a0e1a] transition-all hover:bg-slate-200 active:scale-95 shadow-sm"
+              className="rounded-lg bg-[#f8fafc] px-3.5 py-1.5 text-xs font-mono font-bold text-[#0a0e1a] transition-all hover:bg-slate-200 active:scale-[0.98] shadow-sm"
             >
               Consumer Chat AI
             </Link>
             <Link
               href="/login"
-              className="rounded-lg border border-[#1e293b] bg-[#0e1223] px-3.5 py-1.5 text-xs font-mono font-semibold text-[#f8fafc] transition-all hover:border-slate-600 active:scale-95"
+              className="rounded-lg border border-[#1e293b] bg-[#0e1223] px-3.5 py-1.5 text-xs font-mono font-semibold text-[#f8fafc] transition-all hover:border-slate-500 active:scale-[0.98]"
             >
               Merchant Console
             </Link>
@@ -151,7 +198,7 @@ export function ModernLandingHero() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center w-full mb-20 text-left">
           
           {/* Left Column: Mission & Core Mechanism (7 Cols) */}
-          <div className="lg:col-span-7 space-y-6">
+          <div className="lg:col-span-7 space-y-6 animate-fade-in">
             
             {/* Pill Badge */}
             <div className="inline-flex items-center gap-2 rounded-md border border-[#1e293b] bg-[#0e1223] px-3 py-1 text-xs font-mono font-semibold text-[#94a3b8]">
@@ -174,7 +221,7 @@ export function ModernLandingHero() {
             <div className="flex flex-wrap items-center gap-3 pt-2 font-mono text-xs">
               <Link
                 href="/customer/chat"
-                className="flex h-11 items-center gap-2 rounded-lg bg-[#f8fafc] px-5 font-bold text-[#0a0e1a] transition-all hover:bg-slate-200 active:scale-95 shadow-sm"
+                className="flex h-11 items-center gap-2 rounded-lg bg-[#f8fafc] px-5 font-bold text-[#0a0e1a] transition-all hover:bg-slate-200 active:scale-[0.98] shadow-sm"
               >
                 <span>Launch Consumer Agent Demo</span>
                 <ArrowRight className="h-4 w-4" />
@@ -184,7 +231,7 @@ export function ModernLandingHero() {
                 href="https://github.com/prempatel-ai/buildathon"
                 target="_blank"
                 rel="noreferrer"
-                className="flex h-11 items-center gap-2 rounded-lg border border-[#1e293b] bg-[#0e1223] px-5 font-semibold text-[#f8fafc] transition-all hover:border-slate-600 active:scale-95"
+                className="flex h-11 items-center gap-2 rounded-lg border border-[#1e293b] bg-[#0e1223] px-5 font-semibold text-[#f8fafc] transition-all hover:border-slate-500 active:scale-[0.98]"
               >
                 <Code2 className="h-4 w-4 text-[#94a3b8]" />
                 <span>GitHub Repository</span>
@@ -192,7 +239,7 @@ export function ModernLandingHero() {
 
               <button
                 onClick={handleCopyInstall}
-                className="flex h-11 items-center gap-2 rounded-lg border border-[#1e293b] bg-[#0a0e1a] px-4 text-[#94a3b8] transition-all hover:border-slate-600 hover:text-[#f8fafc]"
+                className="flex h-11 items-center gap-2 rounded-lg border border-[#1e293b] bg-[#0a0e1a] px-4 text-[#94a3b8] transition-all hover:border-slate-500 hover:text-[#f8fafc] active:scale-[0.98]"
               >
                 {copiedCode ? <Check className="h-4 w-4 text-[#059669]" /> : <Copy className="h-4 w-4 text-[#94a3b8]" />}
                 <span>git clone buildathon</span>
@@ -201,17 +248,17 @@ export function ModernLandingHero() {
 
             {/* Specification Metrics */}
             <div className="grid grid-cols-3 gap-4 pt-6 border-t border-[#1e293b] font-mono text-xs">
-              <div>
+              <div className="transition-all hover:-translate-y-0.5">
                 <div className="text-[10px] uppercase text-[#94a3b8] font-semibold mb-0.5">EVALUATION LATENCY</div>
                 <div className="font-bold text-[#f8fafc] text-sm">&lt; 80ms</div>
                 <div className="text-[11px] text-[#94a3b8]">Groq Llama 3.3 70B</div>
               </div>
-              <div>
+              <div className="transition-all hover:-translate-y-0.5">
                 <div className="text-[10px] uppercase text-[#94a3b8] font-semibold mb-0.5">SECURITY MODEL</div>
                 <div className="font-bold text-[#f8fafc] text-sm">Dual-Gated</div>
                 <div className="text-[11px] text-[#94a3b8]">Customer + Merchant</div>
               </div>
-              <div>
+              <div className="transition-all hover:-translate-y-0.5">
                 <div className="text-[10px] uppercase text-[#94a3b8] font-semibold mb-0.5">SETTLEMENT ENGINE</div>
                 <div className="font-bold text-[#f8fafc] text-sm">Razorpay Live</div>
                 <div className="text-[11px] text-[#94a3b8]">HMAC SHA-256 Verified</div>
@@ -220,8 +267,8 @@ export function ModernLandingHero() {
           </div>
 
           {/* Right Column: Code / Schema Anchor Visual (5 Cols) */}
-          <div className="lg:col-span-5 w-full">
-            <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] overflow-hidden shadow-2xl font-mono text-xs">
+          <div className="lg:col-span-5 w-full animate-fade-in">
+            <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] overflow-hidden shadow-2xl font-mono text-xs transition-all hover:border-slate-600">
               
               {/* Code Tab Bar */}
               <div className="flex items-center justify-between border-b border-[#1e293b] bg-[#0a0e1a] px-4 py-2.5">
@@ -232,7 +279,7 @@ export function ModernLandingHero() {
                 <div className="flex space-x-1">
                   <button
                     onClick={() => setHeroTab('request')}
-                    className={`px-2.5 py-1 rounded text-[11px] transition-colors ${
+                    className={`px-2.5 py-1 rounded text-[11px] transition-all active:scale-95 ${
                       heroTab === 'request' ? 'bg-[#f8fafc] text-[#0a0e1a] font-bold' : 'text-[#94a3b8] hover:text-[#f8fafc]'
                     }`}
                   >
@@ -240,7 +287,7 @@ export function ModernLandingHero() {
                   </button>
                   <button
                     onClick={() => setHeroTab('schema')}
-                    className={`px-2.5 py-1 rounded text-[11px] transition-colors ${
+                    className={`px-2.5 py-1 rounded text-[11px] transition-all active:scale-95 ${
                       heroTab === 'schema' ? 'bg-[#f8fafc] text-[#0a0e1a] font-bold' : 'text-[#94a3b8] hover:text-[#f8fafc]'
                     }`}
                   >
@@ -304,235 +351,266 @@ export function ModernLandingHero() {
         </div>
 
         {/* 
-          3. SECTION 2: PROBLEM FRAMING (Before & After Matrix)
+          3. SECTION 2: PROBLEM FRAMING (Before & After Matrix with Staggered Reveal)
         */}
         <div id="matrix" className="w-full mt-16 scroll-mt-24">
-          <div className="border-b border-[#1e293b] pb-4 mb-8 text-left font-mono">
-            <div className="text-xs uppercase text-[#94a3b8] font-semibold mb-1">02. ARCHITECTURAL PARADIGM</div>
-            <h2 className="text-2xl font-bold text-[#f8fafc]">Traditional Checkout vs. Dual-Gated Protocol</h2>
-            <p className="text-xs text-[#94a3b8] mt-1 font-sans">
-              Why legacy payment gateways fail for autonomous AI agents and how Agentpay fixes the trust gap.
-            </p>
-          </div>
+          <ScrollReveal>
+            <div className="border-b border-[#1e293b] pb-4 mb-8 text-left font-mono">
+              <div className="text-xs uppercase text-[#94a3b8] font-semibold mb-1">02. ARCHITECTURAL PARADIGM</div>
+              <h2 className="text-2xl font-bold text-[#f8fafc]">Traditional Checkout vs. Dual-Gated Protocol</h2>
+              <p className="text-xs text-[#94a3b8] mt-1 font-sans">
+                Why legacy payment gateways fail for autonomous AI agents and how Agentpay fixes the trust gap.
+              </p>
+            </div>
+          </ScrollReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
             {/* Legacy Gateway Box */}
-            <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] p-6 space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-[#1e293b] font-mono text-xs">
-                <span className="font-bold text-[#dc2626]">LEGACY E-COMMERCE CHECKOUT</span>
-                <span className="px-2 py-0.5 rounded bg-red-950/60 text-[#dc2626] border border-red-900/50 font-bold text-[10px]">
-                  FAILS FOR AGENTS
-                </span>
-              </div>
+            <ScrollReveal delay={0}>
+              <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] p-6 space-y-4 transition-all hover:border-slate-600 hover:bg-[#0f1427] hover:-translate-y-0.5">
+                <div className="flex items-center justify-between pb-3 border-b border-[#1e293b] font-mono text-xs">
+                  <span className="font-bold text-[#dc2626]">LEGACY E-COMMERCE CHECKOUT</span>
+                  <span className="px-2 py-0.5 rounded bg-red-950/60 text-[#dc2626] border border-red-900/50 font-bold text-[10px]">
+                    FAILS FOR AGENTS
+                  </span>
+                </div>
 
-              <ul className="space-y-3 font-mono text-xs text-[#94a3b8]">
-                <li className="flex items-start gap-2">
-                  <span className="text-[#dc2626] font-bold">✕</span>
-                  <span><strong>Human 2FA Dependency</strong>: Requires interactive SMS OTPs and 3DS web frames that autonomous agents cannot answer.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#dc2626] font-bold">✕</span>
-                  <span><strong>Raw Credential Exposure</strong>: Direct card details exposed to LLM prompts, introducing prompt injection risks.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#dc2626] font-bold">✕</span>
-                  <span><strong>Unbounded Spend Cap</strong>: All-or-nothing credit limits leading to runaway automated API loops.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#dc2626] font-bold">✕</span>
-                  <span><strong>Human HTML Pages</strong>: Product catalogs rendered in HTML DOMs unreadable by AI buyers.</span>
-                </li>
-              </ul>
-            </div>
+                <ul className="space-y-3 font-mono text-xs text-[#94a3b8]">
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#dc2626] font-bold">✕</span>
+                    <span><strong>Human 2FA Dependency</strong>: Requires interactive SMS OTPs and 3DS web frames that autonomous agents cannot answer.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#dc2626] font-bold">✕</span>
+                    <span><strong>Raw Credential Exposure</strong>: Direct card details exposed to LLM prompts, introducing prompt injection risks.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#dc2626] font-bold">✕</span>
+                    <span><strong>Unbounded Spend Cap</strong>: All-or-nothing credit limits leading to runaway automated API loops.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#dc2626] font-bold">✕</span>
+                    <span><strong>Human HTML Pages</strong>: Product catalogs rendered in HTML DOMs unreadable by AI buyers.</span>
+                  </li>
+                </ul>
+              </div>
+            </ScrollReveal>
 
             {/* Agentpay Dual-Gated Box */}
-            <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] p-6 space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-[#1e293b] font-mono text-xs">
-                <span className="font-bold text-[#059669]">AGENTPAY DUAL-GATED PROTOCOL</span>
-                <span className="px-2 py-0.5 rounded bg-emerald-950/60 text-[#059669] border border-emerald-900/50 font-bold text-[10px]">
-                  DETERMINISTIC SAFE
-                </span>
-              </div>
+            <ScrollReveal delay={120}>
+              <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] p-6 space-y-4 transition-all hover:border-slate-600 hover:bg-[#0f1427] hover:-translate-y-0.5">
+                <div className="flex items-center justify-between pb-3 border-b border-[#1e293b] font-mono text-xs">
+                  <span className="font-bold text-[#059669]">AGENTPAY DUAL-GATED PROTOCOL</span>
+                  <span className="px-2 py-0.5 rounded bg-emerald-950/60 text-[#059669] border border-emerald-900/50 font-bold text-[10px]">
+                    DETERMINISTIC SAFE
+                  </span>
+                </div>
 
-              <ul className="space-y-3 font-mono text-xs text-[#94a3b8]">
-                <li className="flex items-start gap-2">
-                  <span className="text-[#059669] font-bold">✓</span>
-                  <span><strong>Tokenized Spend Vault</strong>: Pre-authorized UPI e-mandates with strict user-configured transaction caps.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#059669] font-bold">✓</span>
-                  <span><strong>LLM Proposes, Engine Disposes</strong>: Zero raw card exposure; LLM proposes intent, engine validates rules.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#059669] font-bold">✓</span>
-                  <span><strong>Merchant Policy Engine</strong>: Groq Llama 3.3 70B checks max order cap, category whitelist, and stock availability.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#059669] font-bold">✓</span>
-                  <span><strong>Schema.org JSON-LD Feed</strong>: Standardized product schemas built for LangChain, AutoGPT, and Claude agents.</span>
-                </li>
-              </ul>
-            </div>
+                <ul className="space-y-3 font-mono text-xs text-[#94a3b8]">
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#059669] font-bold">✓</span>
+                    <span><strong>Tokenized Spend Vault</strong>: Pre-authorized UPI e-mandates with strict user-configured transaction caps.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#059669] font-bold">✓</span>
+                    <span><strong>LLM Proposes, Engine Disposes</strong>: Zero raw card exposure; LLM proposes intent, engine validates rules.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#059669] font-bold">✓</span>
+                    <span><strong>Merchant Policy Engine</strong>: Groq Llama 3.3 70B checks max order cap, category whitelist, and stock availability.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#059669] font-bold">✓</span>
+                    <span><strong>Schema.org JSON-LD Feed</strong>: Standardized product schemas built for LangChain, AutoGPT, and Claude agents.</span>
+                  </li>
+                </ul>
+              </div>
+            </ScrollReveal>
           </div>
         </div>
 
         {/* 
-          4. SECTION 3: HOW IT WORKS (Horizontal 3-Gate Pipeline Diagram)
+          4. SECTION 3: HOW IT WORKS (Horizontal 3-Gate Pipeline Diagram with Animated Flow)
         */}
         <div id="pipeline" className="w-full mt-24 scroll-mt-24">
-          <div className="border-b border-[#1e293b] pb-4 mb-8 text-left font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="text-xs uppercase text-[#94a3b8] font-semibold mb-1">01. EXECUTION PIPELINE</div>
-              <h2 className="text-2xl font-bold text-[#f8fafc]">The 3-Gate Deterministic Evaluation Pipeline</h2>
-              <p className="text-xs text-[#94a3b8] mt-1 font-sans">
-                Every purchase proposal must clear all three independent gates before money moves via Razorpay.
-              </p>
-            </div>
+          <ScrollReveal>
+            <div className="border-b border-[#1e293b] pb-4 mb-8 text-left font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="text-xs uppercase text-[#94a3b8] font-semibold mb-1">01. EXECUTION PIPELINE</div>
+                <h2 className="text-2xl font-bold text-[#f8fafc]">The 3-Gate Deterministic Evaluation Pipeline</h2>
+                <p className="text-xs text-[#94a3b8] mt-1 font-sans">
+                  Every purchase proposal must clear all three independent gates before money moves via Razorpay.
+                </p>
+              </div>
 
-            {/* Simulation Controls */}
-            <div className="flex items-center space-x-2 shrink-0">
-              <button
-                onClick={() => runPipelineSim('valid')}
-                disabled={isSimulating}
-                className="px-3 py-1.5 rounded bg-emerald-950 border border-emerald-800 text-[#059669] font-bold text-xs hover:bg-emerald-900 transition-colors disabled:opacity-50"
-              >
-                Simulate Valid Order (ALLOW)
-              </button>
-              <button
-                onClick={() => runPipelineSim('violation')}
-                disabled={isSimulating}
-                className="px-3 py-1.5 rounded bg-red-950 border border-red-800 text-[#dc2626] font-bold text-xs hover:bg-red-900 transition-colors disabled:opacity-50"
-              >
-                Simulate Violation (DENY)
-              </button>
+              {/* Simulation Controls */}
+              <div className="flex items-center space-x-2 shrink-0">
+                <button
+                  onClick={() => runPipelineSim('valid')}
+                  disabled={isSimulating}
+                  className="px-3 py-1.5 rounded bg-emerald-950 border border-emerald-800 text-[#059669] font-bold text-xs hover:bg-emerald-900 active:scale-[0.98] transition-all disabled:opacity-50"
+                >
+                  Simulate Valid Order (ALLOW)
+                </button>
+                <button
+                  onClick={() => runPipelineSim('violation')}
+                  disabled={isSimulating}
+                  className="px-3 py-1.5 rounded bg-red-950 border border-red-800 text-[#dc2626] font-bold text-xs hover:bg-red-900 active:scale-[0.98] transition-all disabled:opacity-50"
+                >
+                  Simulate Violation (DENY)
+                </button>
+              </div>
             </div>
-          </div>
+          </ScrollReveal>
 
-          {/* Pipeline Horizontal Flow Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left font-mono text-xs">
+          {/* Pipeline Horizontal Flow Container */}
+          <div className="relative">
             
-            {/* GATE 1 */}
-            <div className={`rounded-xl border p-6 transition-all ${
-              simState.step >= 1
-                ? 'border-[#1e293b] bg-[#0e1223]'
-                : 'border-slate-800/40 bg-[#0a0e1a] opacity-60'
-            }`}>
-              <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#1e293b]">
-                <span className="font-bold text-[#94a3b8]">GATE 01</span>
-                {simState.step >= 1 && (
-                  <span className="px-2 py-0.5 rounded bg-emerald-950 text-[#059669] border border-emerald-800 font-bold text-[10px]">
-                    ALLOW [✓]
-                  </span>
-                )}
-              </div>
-              <h3 className="text-sm font-bold text-[#f8fafc] mb-1">Consumer Spend Vault</h3>
-              <p className="text-xs text-[#94a3b8] font-sans leading-relaxed">
-                Evaluates tokenized UPI e-mandates against user-set spend cap (e.g., ₹2,499.00 &lt;= ₹5,000.00 limit).
-              </p>
+            {/* Animated Connecting Beam Line */}
+            <div className="hidden md:block absolute top-1/2 left-4 right-4 h-0.5 bg-[#1e293b] -translate-y-1/2 overflow-hidden -z-10">
+              <div className="w-full h-full bg-gradient-to-r from-transparent via-[#059669] to-transparent animate-beam-flow" />
             </div>
 
-            {/* GATE 2 */}
-            <div className={`rounded-xl border p-6 transition-all ${
-              simState.step >= 2
-                ? simState.simMode === 'violation'
-                  ? 'border-red-900/80 bg-red-950/20'
-                  : 'border-[#1e293b] bg-[#0e1223]'
-                : 'border-slate-800/40 bg-[#0a0e1a] opacity-60'
-            }`}>
-              <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#1e293b]">
-                <span className="font-bold text-[#94a3b8]">GATE 02</span>
-                {simState.step >= 2 && (
-                  simState.simMode === 'violation' ? (
-                    <span className="px-2 py-0.5 rounded bg-red-950 text-[#dc2626] border border-red-800 font-bold text-[10px]">
-                      DENY [✕]
-                    </span>
-                  ) : (
-                    <span className="px-2 py-0.5 rounded bg-emerald-950 text-[#059669] border border-emerald-800 font-bold text-[10px]">
-                      ALLOW [✓]
-                    </span>
-                  )
-                )}
-              </div>
-              <h3 className="text-sm font-bold text-[#f8fafc] mb-1">Merchant Policy Engine</h3>
-              <p className="text-xs text-[#94a3b8] font-sans leading-relaxed">
-                {simState.simMode === 'violation' && simState.step >= 2
-                  ? 'Policy violation detected: Item amount ₹12,500 exceeds merchant max order cap (₹10,000).'
-                  : 'Groq Llama 3.3 70B verifies max item limit (₹2,499 <= ₹10,000), catalog stock, and Redis rate limit.'}
-              </p>
-            </div>
+            {/* Pipeline Horizontal Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left font-mono text-xs">
+              
+              {/* GATE 1 */}
+              <ScrollReveal delay={0}>
+                <div className={`rounded-xl border p-6 transition-all duration-300 ${
+                  simState.step >= 1
+                    ? 'border-[#1e293b] bg-[#0e1223] hover:border-slate-600'
+                    : 'border-slate-800/40 bg-[#0a0e1a] opacity-60'
+                }`}>
+                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#1e293b]">
+                    <span className="font-bold text-[#94a3b8]">GATE 01</span>
+                    {simState.step >= 1 && (
+                      <span className="px-2 py-0.5 rounded bg-emerald-950 text-[#059669] border border-emerald-800 font-bold text-[10px] animate-fade-in">
+                        ALLOW [✓]
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-sm font-bold text-[#f8fafc] mb-1">Consumer Spend Vault</h3>
+                  <p className="text-xs text-[#94a3b8] font-sans leading-relaxed">
+                    Evaluates tokenized UPI e-mandates against user-set spend cap (e.g., ₹2,499.00 &lt;= ₹5,000.00 limit).
+                  </p>
+                </div>
+              </ScrollReveal>
 
-            {/* GATE 3 */}
-            <div className={`rounded-xl border p-6 transition-all ${
-              simState.step >= 3
-                ? simState.simMode === 'violation'
-                  ? 'border-slate-800/40 bg-[#0a0e1a] opacity-40'
-                  : 'border-[#1e293b] bg-[#0e1223]'
-                : 'border-slate-800/40 bg-[#0a0e1a] opacity-60'
-            }`}>
-              <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#1e293b]">
-                <span className="font-bold text-[#94a3b8]">GATE 03</span>
-                {simState.step >= 3 && (
-                  simState.simMode === 'violation' ? (
-                    <span className="px-2 py-0.5 rounded bg-slate-900 text-[#94a3b8] border border-slate-800 font-bold text-[10px]">
-                      SKIPPED
-                    </span>
-                  ) : (
-                    <span className="px-2 py-0.5 rounded bg-emerald-950 text-[#059669] border border-emerald-800 font-bold text-[10px]">
-                      SETTLED [✓]
-                    </span>
-                  )
-                )}
-              </div>
-              <h3 className="text-sm font-bold text-[#f8fafc] mb-1">Razorpay Live Settlement</h3>
-              <p className="text-xs text-[#94a3b8] font-sans leading-relaxed">
-                Creates Razorpay Order ID, verifies payment capture signature, and fires HMAC SHA-256 webhook.
-              </p>
+              {/* GATE 2 */}
+              <ScrollReveal delay={120}>
+                <div className={`rounded-xl border p-6 transition-all duration-300 ${
+                  simState.step >= 2
+                    ? simState.simMode === 'violation'
+                      ? 'border-red-900/80 bg-red-950/20 shadow-red-950/30'
+                      : 'border-[#1e293b] bg-[#0e1223] hover:border-slate-600'
+                    : 'border-slate-800/40 bg-[#0a0e1a] opacity-60'
+                }`}>
+                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#1e293b]">
+                    <span className="font-bold text-[#94a3b8]">GATE 02</span>
+                    {simState.step >= 2 && (
+                      simState.simMode === 'violation' ? (
+                        <span className="px-2 py-0.5 rounded bg-red-950 text-[#dc2626] border border-red-800 font-bold text-[10px] animate-fade-in">
+                          DENY [✕]
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded bg-emerald-950 text-[#059669] border border-emerald-800 font-bold text-[10px] animate-fade-in">
+                          ALLOW [✓]
+                        </span>
+                      )
+                    )}
+                  </div>
+                  <h3 className="text-sm font-bold text-[#f8fafc] mb-1">Merchant Policy Engine</h3>
+                  <p className="text-xs text-[#94a3b8] font-sans leading-relaxed">
+                    {simState.simMode === 'violation' && simState.step >= 2
+                      ? 'Policy violation detected: Item amount ₹12,500 exceeds merchant max order cap (₹10,000).'
+                      : 'Groq Llama 3.3 70B verifies max item limit (₹2,499 <= ₹10,000), catalog stock, and Redis rate limit.'}
+                  </p>
+                </div>
+              </ScrollReveal>
+
+              {/* GATE 3 */}
+              <ScrollReveal delay={240}>
+                <div className={`rounded-xl border p-6 transition-all duration-300 ${
+                  simState.step >= 3
+                    ? simState.simMode === 'violation'
+                      ? 'border-slate-800/40 bg-[#0a0e1a] opacity-40'
+                      : 'border-[#1e293b] bg-[#0e1223] hover:border-slate-600'
+                    : 'border-slate-800/40 bg-[#0a0e1a] opacity-60'
+                }`}>
+                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#1e293b]">
+                    <span className="font-bold text-[#94a3b8]">GATE 03</span>
+                    {simState.step >= 3 && (
+                      simState.simMode === 'violation' ? (
+                        <span className="px-2 py-0.5 rounded bg-slate-900 text-[#94a3b8] border border-slate-800 font-bold text-[10px] animate-fade-in">
+                          SKIPPED
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded bg-emerald-950 text-[#059669] border border-emerald-800 font-bold text-[10px] animate-fade-in">
+                          SETTLED [✓]
+                        </span>
+                      )
+                    )}
+                  </div>
+                  <h3 className="text-sm font-bold text-[#f8fafc] mb-1">Razorpay Live Settlement</h3>
+                  <p className="text-xs text-[#94a3b8] font-sans leading-relaxed">
+                    Creates Razorpay Order ID, verifies payment capture signature, and fires HMAC SHA-256 webhook.
+                  </p>
+                </div>
+              </ScrollReveal>
             </div>
           </div>
         </div>
 
         {/* 
-          5. SECTION 4: PROOF & TECHNICAL CREDIBILITY
+          5. SECTION 4: PROOF & TECHNICAL CREDIBILITY (Staggered Reveals)
         */}
         <div id="credibility" className="w-full mt-24 scroll-mt-24">
-          <div className="border-b border-[#1e293b] pb-4 mb-8 text-left font-mono">
-            <div className="text-xs uppercase text-[#94a3b8] font-semibold mb-1">03. TECHNICAL SPECIFICATIONS</div>
-            <h2 className="text-2xl font-bold text-[#f8fafc]">Infrastructure Standards & Proofs</h2>
-            <p className="text-xs text-[#94a3b8] mt-1 font-sans">
-              Concrete facts and protocols built for developer transparency and zero-trust verification.
-            </p>
-          </div>
+          <ScrollReveal>
+            <div className="border-b border-[#1e293b] pb-4 mb-8 text-left font-mono">
+              <div className="text-xs uppercase text-[#94a3b8] font-semibold mb-1">03. TECHNICAL SPECIFICATIONS</div>
+              <h2 className="text-2xl font-bold text-[#f8fafc]">Infrastructure Standards & Proofs</h2>
+              <p className="text-xs text-[#94a3b8] mt-1 font-sans">
+                Concrete facts and protocols built for developer transparency and zero-trust verification.
+              </p>
+            </div>
+          </ScrollReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left font-mono text-xs">
-            <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] p-6 space-y-3">
-              <div className="px-2.5 py-1 rounded bg-[#0a0e1a] border border-[#1e293b] text-[#f8fafc] font-bold inline-block">
-                GET /catalog/agent-schema
+            <ScrollReveal delay={0}>
+              <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] p-6 space-y-3 transition-all hover:border-slate-600 hover:bg-[#0f1427] hover:-translate-y-0.5">
+                <div className="px-2.5 py-1 rounded bg-[#0a0e1a] border border-[#1e293b] text-[#f8fafc] font-bold inline-block">
+                  GET /catalog/agent-schema
+                </div>
+                <h3 className="text-sm font-bold text-[#f8fafc]">Schema.org JSON-LD Feed</h3>
+                <p className="text-xs text-[#94a3b8] font-sans leading-relaxed">
+                  Auto-generates standardized Schema.org product feeds so LangChain, AutoGPT, LlamaIndex, and Claude agents can crawl prices and stock natively.
+                </p>
               </div>
-              <h3 className="text-sm font-bold text-[#f8fafc]">Schema.org JSON-LD Feed</h3>
-              <p className="text-xs text-[#94a3b8] font-sans leading-relaxed">
-                Auto-generates standardized Schema.org product feeds so LangChain, AutoGPT, LlamaIndex, and Claude agents can crawl prices and stock natively.
-              </p>
-            </div>
+            </ScrollReveal>
 
-            <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] p-6 space-y-3">
-              <div className="px-2.5 py-1 rounded bg-[#0a0e1a] border border-[#1e293b] text-[#f8fafc] font-bold inline-block">
-                X-Agentpay-Signature
+            <ScrollReveal delay={120}>
+              <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] p-6 space-y-3 transition-all hover:border-slate-600 hover:bg-[#0f1427] hover:-translate-y-0.5">
+                <div className="px-2.5 py-1 rounded bg-[#0a0e1a] border border-[#1e293b] text-[#f8fafc] font-bold inline-block">
+                  X-Agentpay-Signature
+                </div>
+                <h3 className="text-sm font-bold text-[#f8fafc]">HMAC SHA-256 Webhook Signing</h3>
+                <p className="text-xs text-[#94a3b8] font-sans leading-relaxed">
+                  Every settlement event fires an HTTP POST webhook signed with HMAC SHA-256 header signature and 3-attempt exponential backoff retry.
+                </p>
               </div>
-              <h3 className="text-sm font-bold text-[#f8fafc]">HMAC SHA-256 Webhook Signing</h3>
-              <p className="text-xs text-[#94a3b8] font-sans leading-relaxed">
-                Every settlement event fires an HTTP POST webhook signed with HMAC SHA-256 header signature and 3-attempt exponential backoff retry.
-              </p>
-            </div>
+            </ScrollReveal>
 
-            <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] p-6 space-y-3">
-              <div className="px-2.5 py-1 rounded bg-[#0a0e1a] border border-[#1e293b] text-[#f8fafc] font-bold inline-block">
-                POST /catalog/shopify-sync
+            <ScrollReveal delay={240}>
+              <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] p-6 space-y-3 transition-all hover:border-slate-600 hover:bg-[#0f1427] hover:-translate-y-0.5">
+                <div className="px-2.5 py-1 rounded bg-[#0a0e1a] border border-[#1e293b] text-[#f8fafc] font-bold inline-block">
+                  POST /catalog/shopify-sync
+                </div>
+                <h3 className="text-sm font-bold text-[#f8fafc]">1-Click Shopify Live Crawler</h3>
+                <p className="text-xs text-[#94a3b8] font-sans leading-relaxed">
+                  Real HTTPX crawler fetches live product titles, variant pricing, inventory stock, and product types directly from any Shopify domain in &lt;2s.
+                </p>
               </div>
-              <h3 className="text-sm font-bold text-[#f8fafc]">1-Click Shopify Live Crawler</h3>
-              <p className="text-xs text-[#94a3b8] font-sans leading-relaxed">
-                Real HTTPX crawler fetches live product titles, variant pricing, inventory stock, and product types directly from any Shopify domain in &lt;2s.
-              </p>
-            </div>
+            </ScrollReveal>
           </div>
         </div>
 
@@ -540,25 +618,26 @@ export function ModernLandingHero() {
           6. SECTION 5: AUDIT TRAIL TEASER (Append-Only Postgres JSON Inspector)
         */}
         <div id="audit-ledger" className="w-full mt-24 scroll-mt-24">
-          <div className="border-b border-[#1e293b] pb-4 mb-8 text-left font-mono">
-            <div className="text-xs uppercase text-[#94a3b8] font-semibold mb-1">04. FINANCIAL EXPLAINABILITY</div>
-            <h2 className="text-2xl font-bold text-[#f8fafc]">Append-Only PostgreSQL Audit Ledger</h2>
-            <p className="text-xs text-[#94a3b8] mt-1 font-sans">
-              Every monetary action logged to an immutable PostgreSQL event store with full reasoning traces across Customer, Agent, and Merchant.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] text-left shadow-2xl overflow-hidden font-mono text-xs">
-            <div className="border-b border-[#1e293b] bg-[#0a0e1a] px-5 py-3 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#059669]" />
-                <span className="font-bold text-[#f8fafc]">Audit Event Record: evt_7f8a9b0c-1d2e-3f4a</span>
-              </div>
-              <span className="text-[#94a3b8] text-[11px]">POSTGRESQL IMMUTABLE TRIGGER</span>
+          <ScrollReveal>
+            <div className="border-b border-[#1e293b] pb-4 mb-8 text-left font-mono">
+              <div className="text-xs uppercase text-[#94a3b8] font-semibold mb-1">04. FINANCIAL EXPLAINABILITY</div>
+              <h2 className="text-2xl font-bold text-[#f8fafc]">Append-Only PostgreSQL Audit Ledger</h2>
+              <p className="text-xs text-[#94a3b8] mt-1 font-sans">
+                Every monetary action logged to an immutable PostgreSQL event store with full reasoning traces across Customer, Agent, and Merchant.
+              </p>
             </div>
 
-            <div className="p-5 bg-[#050811] overflow-x-auto text-[11px] sm:text-xs leading-relaxed text-slate-200">
-              <pre>
+            <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] text-left shadow-2xl overflow-hidden font-mono text-xs transition-all hover:border-slate-600">
+              <div className="border-b border-[#1e293b] bg-[#0a0e1a] px-5 py-3 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#059669]" />
+                  <span className="font-bold text-[#f8fafc]">Audit Event Record: evt_7f8a9b0c-1d2e-3f4a</span>
+                </div>
+                <span className="text-[#94a3b8] text-[11px]">POSTGRESQL IMMUTABLE TRIGGER</span>
+              </div>
+
+              <div className="p-5 bg-[#050811] overflow-x-auto text-[11px] sm:text-xs leading-relaxed text-slate-200">
+                <pre>
 {`{
   "audit_event_id": "evt_7f8a9b0c-1d2e-3f4a",
   "timestamp": "2026-08-30T05:34:12Z",
@@ -585,50 +664,53 @@ export function ModernLandingHero() {
     "status": "SETTLED"
   }
 }`}
-              </pre>
+                </pre>
+              </div>
             </div>
-          </div>
+          </ScrollReveal>
         </div>
 
         {/* 
           7. SECTION 6: HONEST CALL TO ACTION (CTA)
         */}
-        <div className="w-full mt-24 rounded-2xl border border-[#1e293b] bg-[#0e1223] p-10 text-center flex flex-col items-center justify-center font-mono">
-          <div className="text-xs uppercase text-[#94a3b8] font-semibold mb-2">READY FOR EVALUATION</div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#f8fafc] mb-3">
-            Inspect the Codebase & Live Interactive Demo
-          </h2>
-          <p className="text-xs sm:text-sm text-[#94a3b8] font-sans max-w-xl mb-8">
-            Explore the complete repository, test agent key generation in the merchant console, and trigger real-time AI shopping queries.
-          </p>
+        <ScrollReveal className="w-full mt-24">
+          <div className="w-full rounded-2xl border border-[#1e293b] bg-[#0e1223] p-10 text-center flex flex-col items-center justify-center font-mono transition-all hover:border-slate-600">
+            <div className="text-xs uppercase text-[#94a3b8] font-semibold mb-2">READY FOR EVALUATION</div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#f8fafc] mb-3">
+              Inspect the Codebase & Live Interactive Demo
+            </h2>
+            <p className="text-xs sm:text-sm text-[#94a3b8] font-sans max-w-xl mb-8">
+              Explore the complete repository, test agent key generation in the merchant console, and trigger real-time AI shopping queries.
+            </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/customer/chat"
-              className="flex h-11 items-center gap-2 rounded-lg bg-[#f8fafc] px-6 text-xs font-bold text-[#0a0e1a] transition-all hover:bg-slate-200 active:scale-95 shadow-sm"
-            >
-              <span>Launch Consumer Agent Demo</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/customer/chat"
+                className="flex h-11 items-center gap-2 rounded-lg bg-[#f8fafc] px-6 text-xs font-bold text-[#0a0e1a] transition-all hover:bg-slate-200 active:scale-[0.98] shadow-sm"
+              >
+                <span>Launch Consumer Agent Demo</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
 
-            <Link
-              href="/dashboard"
-              className="flex h-11 items-center gap-2 rounded-lg border border-[#1e293b] bg-[#0a0e1a] px-6 text-xs font-semibold text-[#f8fafc] transition-all hover:border-slate-600 active:scale-95"
-            >
-              <span>Merchant Console</span>
-            </Link>
+              <Link
+                href="/dashboard"
+                className="flex h-11 items-center gap-2 rounded-lg border border-[#1e293b] bg-[#0a0e1a] px-6 text-xs font-semibold text-[#f8fafc] transition-all hover:border-slate-500 active:scale-[0.98]"
+              >
+                <span>Merchant Console</span>
+              </Link>
 
-            <a
-              href="http://localhost:8000/docs"
-              target="_blank"
-              rel="noreferrer"
-              className="flex h-11 items-center gap-2 rounded-lg border border-[#1e293b] bg-[#0a0e1a] px-5 text-xs text-[#94a3b8] transition-all hover:border-slate-600 hover:text-[#f8fafc]"
-            >
-              <span>OpenAPI Swagger Docs</span>
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
+              <a
+                href="http://localhost:8000/docs"
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-11 items-center gap-2 rounded-lg border border-[#1e293b] bg-[#0a0e1a] px-5 text-xs text-[#94a3b8] transition-all hover:border-slate-500 hover:text-[#f8fafc] active:scale-[0.98]"
+              >
+                <span>OpenAPI Swagger Docs</span>
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </div>
           </div>
-        </div>
+        </ScrollReveal>
       </main>
 
       {/* 
