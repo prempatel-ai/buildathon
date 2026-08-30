@@ -9,6 +9,7 @@ import {
   Merchant,
   AuditEvent,
 } from '@/lib/api';
+import { useAuthGuard } from '@/lib/useAuthGuard';
 
 import Navigation from '@/components/Navigation';
 import PageHeader from '@/components/PageHeader';
@@ -35,14 +36,6 @@ function AuditViewerContent() {
 
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadMerchants();
-  }, []);
-
-  useEffect(() => {
-    loadEvents();
-  }, [selectedMerchantId, actorTypeFilter, actionFilter, sortOrder]);
-
   const loadMerchants = async () => {
     try {
       const data = await fetchMerchants();
@@ -51,6 +44,8 @@ function AuditViewerContent() {
       console.error('Failed to load merchants', err);
     }
   };
+
+  useAuthGuard(loadMerchants);
 
   const loadEvents = async () => {
     setLoading(true);
@@ -71,6 +66,10 @@ function AuditViewerContent() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadEvents();
+  }, [selectedMerchantId, actorTypeFilter, actionFilter, sortOrder]);
 
   const formatDate = (dateStr: string) => {
     try {

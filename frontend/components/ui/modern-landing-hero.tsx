@@ -705,7 +705,7 @@ def verify_webhook(payload: str, signature: str, secret: str) -> bool:
               <div className="p-5 bg-[#050811] overflow-x-auto text-[11px] sm:text-xs leading-relaxed text-slate-200">
                 <pre>
 {`{
-  "audit_event_id": "evt_7f8a9b0c-1d2e-3f4a",
+  "audit_event_id": "evt_7f8a9b0c-1d2e-3f4a",            // [ILLUSTRATIVE AUDIT RECORD]
   "timestamp": "2026-08-30T05:34:12Z",
   "merchant_id": "fe9038dc-5d00-4171-a9d6-b292e5dae054", // [SAMPLE DEMO MERCHANT ID]
   "actor_type": "agent",

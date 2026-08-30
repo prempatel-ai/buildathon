@@ -15,6 +15,7 @@ import {
   Merchant,
   AuditEvent
 } from '@/lib/api';
+import { useAuthGuard } from '@/lib/useAuthGuard';
 import Navigation from '@/components/Navigation';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -57,18 +58,7 @@ export default function UsagePage() {
   const [activeRange, setActiveRange] = useState<'1d' | '7d' | '30d' | '90d'>('7d');
   const [activeHoverData, setActiveHoverData] = useState<{ date: string; value: number; change: number } | null>(null);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && localStorage.getItem('onboarding_in_progress') === 'true') {
-      router.push('/onboarding');
-      return;
-    }
-    const token = getAuthToken();
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-    loadData();
-  }, [router]);
+  useAuthGuard(loadData);
 
   async function loadData() {
     setLoading(true);

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getWebhooks, registerWebhook, testWebhook, getAuthToken } from '@/lib/api';
+import { useAuthGuard } from '@/lib/useAuthGuard';
 
 import Navigation from '@/components/Navigation';
 import PageHeader from '@/components/PageHeader';
@@ -23,18 +24,7 @@ export default function WebhooksPage() {
   const [secret, setSecret] = useState('');
   const [showSecret, setShowSecret] = useState(false);  // P5: mask secret by default
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && localStorage.getItem('onboarding_in_progress') === 'true') {
-      router.push('/onboarding');
-      return;
-    }
-    const token = getAuthToken();
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-    loadWebhooks();
-  }, [router]);
+  useAuthGuard(loadWebhooks);
 
   async function loadWebhooks() {
     setLoading(true);

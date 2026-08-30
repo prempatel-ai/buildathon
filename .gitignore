@@ -34,6 +34,15 @@ ENV/
 # .env.production.local
 # !.env.example
 
+# Databases & Test Artifacts
+*.db
+*.sqlite
+*.sqlite3
+test.db
+test_*.db
+.coverage
+htmlcov/
+
 # IDE / OS
 .vscode/
 .idea/
