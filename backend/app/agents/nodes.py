@@ -45,6 +45,8 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
         "RULES:\n"
         "1. If the user asks what items are in stock, what is available in store, or asks to view a store catalog (e.g. 'What items are in stock?', 'show catalog'), YOU MUST CALL `get_catalog`.\n"
         "2. If the user wants to search, compare, find, or get recommendations for products or prices across stores ('find cheap headphones', 'show smart watches'), call `search_and_compare`.\n"
+        "   - ALWAYS extract a `max_price` number if the user mentions any price/budget (e.g. 'under 500', 'below 1000', 'less than 40', 'under 40 INR', '40 rupees max'). Set `max_price` to that number.\n"
+        "   - Extract a meaningful `query` keyword (e.g. 'headphones', 'earbuds', 'watch').\n"
         "3. If the user explicitly asks to buy or order a product ('buy option 1', 'buy boAt headphones', 'order headphones for 1200 INR'), call `propose_order` with `amount`, `category`, and `item_name`.\n"
         "4. ONLY if the user is saying a pure greeting ('hi', 'hello', 'hi buddy') or asking general non-product questions, do not call any tool and respond conversationally."
     )
@@ -91,6 +93,16 @@ def llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
         tool_args = {}
         response_msg = (msg.content if msg else None) or "Hello! I am your AI Consumer Shopping Assistant. Ask me to find or compare products across merchants!"
 
+    # ── Regex fallback: extract max_price if LLM missed it ──────────────────────
+    if proposed_tool == "search_and_compare" and not tool_args.get("max_price"):
+        import re
+        price_match = re.search(
+            r'(?:under|below|less\s+than|max|upto|up\s+to|within|budget\s+of)?\s*(?:rs\.?|inr|₹)?\s*(\d+(?:\.\d+)?)\s*(?:rs\.?|inr|rupees?|/-)?',
+            prompt.lower()
+        )
+        if price_match:
+            tool_args["max_price"] = float(price_match.group(1))
+
     state["proposed_tool"] = proposed_tool
     state["tool_args"] = tool_args
     state["response_message"] = response_msg
@@ -102,12 +114,13 @@ def search_and_compare_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     Search & Compare Node (Phase 14 Cross-Merchant Discovery):
     Queries catalog items across all onboarded merchants in the registry.
-    Filters and ranks options by price and query criteria.
+    Filters and ranks options by price, user budget constraints, and active Customer Spend Authorization limit.
     READ-ONLY: Creates ZERO transactions and performs ZERO money movement.
     """
     tool_args = state.get("tool_args", {})
     query = str(tool_args.get("query", state.get("prompt", ""))).lower()
-    max_price = tool_args.get("max_price")
+    prompt_max_price = tool_args.get("max_price")
+    customer_id = state.get("customer_id")
 
     stop_words = {"find", "search", "compare", "show", "me", "cheap", "cheapest", "best", "better", "good", "a", "an", "the", "for", "in", "with", "buy", "order", "get", "options", "option", "buddy", "hi", "hello", "hey"}
     query_words = [w for w in query.split() if w not in stop_words and len(w) > 1]
@@ -116,6 +129,30 @@ def search_and_compare_node(state: Dict[str, Any]) -> Dict[str, Any]:
     try:
         from app.models.merchant import Merchant
         from app.models.catalog import CatalogItem
+        from app.models.spend_authorization import SpendAuthorization
+
+        # Fetch Customer Active Spend Limit if available
+        customer_limit: Optional[float] = None
+        if customer_id:
+            try:
+                cust_uuid = uuid.UUID(str(customer_id))
+                auth = db.query(SpendAuthorization).filter(
+                    SpendAuthorization.customer_id == cust_uuid,
+                    SpendAuthorization.status == "active"
+                ).first()
+                if auth:
+                    customer_limit = float(auth.remaining_limit)
+            except Exception:
+                pass
+
+        # Determine effective maximum price cap (lower of prompt max price or active customer spend limit)
+        effective_max_price: Optional[float] = None
+        if prompt_max_price is not None and customer_limit is not None:
+            effective_max_price = min(float(prompt_max_price), customer_limit)
+        elif prompt_max_price is not None:
+            effective_max_price = float(prompt_max_price)
+        elif customer_limit is not None:
+            effective_max_price = customer_limit
 
         merchants = db.query(Merchant).all()
         matching_options = []
@@ -130,9 +167,9 @@ def search_and_compare_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 else:
                     is_match = any(qw in name_cat_lower for qw in query_words)
 
-                if is_match:
+                if is_match and it.stock > 0:
                     price_val = float(it.price)
-                    if max_price is None or price_val <= float(max_price):
+                    if effective_max_price is None or price_val <= effective_max_price:
                         matching_options.append({
                             "item_id": str(it.id),
                             "item_name": it.name,
@@ -154,20 +191,37 @@ def search_and_compare_node(state: Dict[str, Any]) -> Dict[str, Any]:
         state["status"] = "COMPLETED"
 
         if matching_options:
-            summary_lines = [f"Found {len(matching_options)} options across merchants:"]
+            limit_info = ""
+            if customer_limit is not None and prompt_max_price is not None:
+                limit_info = f" (Filtered by max budget ₹{prompt_max_price:.0f} and Spend Limit ₹{customer_limit:.0f})"
+            elif customer_limit is not None:
+                limit_info = f" (Within active Spend Limit ₹{customer_limit:.0f})"
+            elif prompt_max_price is not None:
+                limit_info = f" (Under ₹{prompt_max_price:.0f})"
+
+            summary_lines = [f"Found {len(matching_options)} options across merchants{limit_info}:"]
             for opt in matching_options:
                 summary_lines.append(f"  Option {opt['option_index']}: {opt['item_name']} at {opt['merchant_name']} — INR {opt['price']} (Stock: {opt['stock']})")
             summary_lines.append("Reply with 'buy option 1' or 'buy the boAt one' to confirm purchase.")
             state["response_message"] = "\n".join(summary_lines)
         else:
-            state["response_message"] = "No matching products found across merchants."
+            price_msg = f" under ₹{effective_max_price:.0f}" if effective_max_price is not None else ""
+            query_msg = f" matching '{' '.join(query_words)}'" if query_words else ""
+            cust_info = f" (Your active Spend Authorization limit is ₹{customer_limit:.0f})" if customer_limit is not None else ""
+            state["response_message"] = f"Sorry, no items found{query_msg}{price_msg} across any merchant.{cust_info} Try adjusting your search or raising your spend authorization limit."
 
         AuditService.log_event(
             db=db,
             actor_type="customer" if state.get("customer_id") else "agent",
             actor_id=str(state.get("customer_id", state.get("agent_id", "consumer_agent"))),
             action="cross_merchant_search_performed",
-            input={"query": query, "results_count": len(matching_options)},
+            input={
+                "query": query,
+                "prompt_max_price": prompt_max_price,
+                "customer_limit": customer_limit,
+                "effective_max_price": effective_max_price,
+                "results_count": len(matching_options)
+            },
             decision="SEARCH_COMPLETED",
             reasoning=f"Cross-merchant search executed. Found {len(matching_options)} matching catalog options.",
             merchant_id=None
@@ -483,6 +537,20 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
             )
             
             tx = PaymentService.create_payment_order(db, tx_create)
+            
+            # Decrement merchant catalog item stock for the purchased product
+            item_name_bought = tool_args.get("item_name")
+            qty_bought = int(tool_args.get("quantity", 1))
+            if item_name_bought:
+                from app.models.catalog import CatalogItem
+                cat_item = db.query(CatalogItem).filter(
+                    CatalogItem.merchant_id == merchant_id,
+                    CatalogItem.name.ilike(f"%{item_name_bought}%")
+                ).first()
+                if cat_item:
+                    cat_item.stock = max(0, cat_item.stock - qty_bought)
+                    db.commit()
+                    db.refresh(cat_item)
             
             # If customer spend authorization is attached, auto-settle the order with real Razorpay payment capture ID & decrement limit
             customer_id = state.get("customer_id")
