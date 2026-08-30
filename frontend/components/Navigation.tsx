@@ -97,7 +97,7 @@ export default function Navigation() {
 
             <span className="text-slate-300 font-mono text-xs">/</span>
 
-            {isMerchantContext ? (
+            {isMerchantContext && pathname !== '/onboarding' ? (
               <div className="relative">
                 <button
                   onClick={() => setStoreMenuOpen(!storeMenuOpen)}
@@ -147,8 +147,8 @@ export default function Navigation() {
                 )}
               </div>
             ) : (
-              <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">
-                {isCustomerContext ? 'Consumer Portal' : 'Razorpay AI Protocol'}
+              <span className="text-xs font-mono font-bold text-slate-600 uppercase tracking-wider">
+                {pathname === '/onboarding' ? 'Merchant Account Setup' : (isCustomerContext ? 'Consumer Portal' : 'Razorpay AI Protocol')}
               </span>
             )}
           </div>
@@ -156,18 +156,20 @@ export default function Navigation() {
           {/* Global Action Utilities */}
           <div className="flex items-center space-x-3">
             {/* Interactive Search Bar Button */}
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="flex items-center space-x-2 px-3 py-1.5 bg-slate-100/90 hover:bg-slate-200/80 active:scale-95 border border-slate-200/80 rounded-xl text-slate-600 text-xs font-medium select-none transition-all shadow-2xs"
-            >
-              <Search className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-              <span className="font-semibold text-slate-700 hidden sm:inline">Search app...</span>
-              <kbd className="px-1.5 py-0.5 bg-white border border-slate-200/90 rounded text-[10px] text-slate-500 font-mono shadow-2xs font-bold">
-                ⌘K
-              </kbd>
-            </button>
+            {pathname !== '/onboarding' && (
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="flex items-center space-x-2 px-3 py-1.5 bg-slate-100/90 hover:bg-slate-200/80 active:scale-95 border border-slate-200/80 rounded-xl text-slate-600 text-xs font-medium select-none transition-all shadow-2xs"
+              >
+                <Search className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                <span className="font-semibold text-slate-700 hidden sm:inline">Search app...</span>
+                <kbd className="px-1.5 py-0.5 bg-white border border-slate-200/90 rounded text-[10px] text-slate-500 font-mono shadow-2xs font-bold">
+                  ⌘K
+                </kbd>
+              </button>
+            )}
 
-            {isMerchantContext ? (
+            {isMerchantContext && pathname !== '/onboarding' ? (
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -201,7 +203,7 @@ export default function Navigation() {
                   </div>
                 )}
               </div>
-            ) : (
+            ) : pathname !== '/onboarding' && (
               <nav className="flex items-center space-x-2">
                 <Link
                   href="/customer/chat"
@@ -220,8 +222,8 @@ export default function Navigation() {
           </div>
         </div>
 
-        {/* Tier 2: Horizontal Sub-Navigation Strip */}
-        {isMerchantContext && (
+        {/* Tier 2: Horizontal Sub-Navigation Strip (Hidden on Onboarding) */}
+        {isMerchantContext && pathname !== '/onboarding' && (
           <div className="border-t border-slate-100 bg-white">
             <div className="max-w-7xl mx-auto px-6 flex items-center space-x-7 overflow-x-auto no-scrollbar">
               {merchantTabs.map((tab) => {
