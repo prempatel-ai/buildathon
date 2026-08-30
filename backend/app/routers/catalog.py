@@ -44,3 +44,8 @@ def get_agent_schema(merchant_id: UUID, db: Session = Depends(get_db)):
 def bulk_import_catalog_items(merchant_id: UUID, items_in: List[CatalogItemCreate], db: Session = Depends(get_db)):
     """Bulk import catalog items for a merchant via JSON or Shopify/CSV sync."""
     return CatalogService.bulk_import_catalog_items(db, merchant_id=merchant_id, items_data=items_in)
+
+@router.post("/shopify-sync", response_model=List[CatalogItemRead], status_code=status.HTTP_201_CREATED)
+def sync_shopify_catalog(merchant_id: UUID, store_url: str = "myshop.myshopify.com", access_token: Optional[str] = None, db: Session = Depends(get_db)):
+    """Automatically fetch and sync products directly from a Shopify store domain into Agentpay."""
+    return CatalogService.sync_shopify_catalog(db, merchant_id=merchant_id, store_url=store_url, access_token=access_token)
