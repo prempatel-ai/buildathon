@@ -671,8 +671,11 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                         timeout=10
                     )
 
-                    action1_match = re.search(r'<form[^>]*action=["\']([^"\']+)["\']', r1.text)
-                    form1_match = re.search(r'<form[^>]*name=["\']form1["\'][^>]*>(.*?)</form>', r1.text, re.DOTALL)
+                    # Robust Callback URL Discovery (Direct URL regex + Form parser)
+                    cb_direct_match = re.search(r'https://api\.razorpay\.com/v1/payments/pay_[^"\'\s]+/callback/[^"\'\s]+', r1.text)
+                    pid_match = re.search(r'pay_[a-zA-Z0-9]+', r1.text)
+                    if pid_match:
+                        real_pay_id = pid_match.group(0)
 
                     if action1_match and form1_match:
                         import urllib.parse
@@ -684,31 +687,19 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                         form_data = {name: val for name, val in inputs}
                         pid = form_data.get("payment_id")
                         cb_url = form_data.get("callback_url")
-                        if pid:
+                        if pid and not real_pay_id:
                             real_pay_id = f"pay_{pid}" if not pid.startswith("pay_") else pid
 
-                        # Step A: Post to gateway with redirect following
+                        # Post to gateway
                         r2 = session.post(form_action, data=form_data, headers=headers, timeout=10, allow_redirects=True)
 
-                        # Step B: Direct submit mock bank authorization with redirect following to callback URL
-                        submit_url = f"https://api.razorpay.com/v1/gateway/mocksharp/payment/submit?key_id={settings.RAZORPAY_KEY_ID}"
-                        if cb_url:
-                            submit_payload = {
-                                "callback_url": cb_url,
-                                "language_code": "en",
-                                "success": "S"
-                            }
-                            session.post(submit_url, data=submit_payload, headers=headers, timeout=10, allow_redirects=True)
+                    if not cb_url and cb_direct_match:
+                        cb_url = cb_direct_match.group(0)
 
-                        # Check if r2 returned a dynamic submit action
-                        submit_match = re.search(r'<form[^>]*action=["\']([^"\']+)["\']', r2.text)
-                        cb_match = re.search(r'name=["\']callback_url["\']\s*value=["\']([^"\']+)["\']', r2.text)
-                        if submit_match and cb_match:
-                            dyn_submit = submit_match.group(1)
-                            if not dyn_submit.startswith("http"):
-                                dyn_submit = urllib.parse.urljoin("https://api.razorpay.com", dyn_submit)
-                            dyn_cb = cb_match.group(1)
-                            session.post(dyn_submit, data={"callback_url": dyn_cb, "language_code": "en", "success": "S"}, headers=headers, timeout=10, allow_redirects=True)
+                    # Direct submit mock bank authorization with redirect following to callback URL
+                    if cb_url:
+                        submit_url = f"https://api.razorpay.com/v1/gateway/mocksharp/payment/submit?key_id={settings.RAZORPAY_KEY_ID}"
+                        session.post(submit_url, data={"callback_url": cb_url, "language_code": "en", "success": "S"}, headers=headers, timeout=10, allow_redirects=True)
 
                     # Verify actual capture on Razorpay's live API with propagation wait
                     import time
