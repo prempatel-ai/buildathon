@@ -42,7 +42,8 @@ export default function WebhooksPage() {
         setSecret(res.endpoint.secret || '');
       }
     } catch (err: any) {
-      setMsg({ type: 'error', text: err.message || 'Failed to load webhooks' });
+      router.push('/onboarding');
+      return;
     } finally {
       setLoading(false);
     }

@@ -72,11 +72,15 @@ export default function UsagePage() {
     try {
       const [uData, mData, tData, aData, dData] = await Promise.all([
         getMerchantUsage(),
-        getMerchantMe().catch(() => null),
+        getMerchantMe(),
         fetchMerchantTimeline(activeRange).catch(() => []),
         fetchMerchantAgentDistribution().catch(() => []),
         fetchMerchantDecisionBreakdown().catch(() => [])
       ]);
+      if (!mData || !mData.id) {
+        router.push('/onboarding');
+        return;
+      }
       setUsage(uData);
       setMerchant(mData);
       setTimelineData(tData);
@@ -88,7 +92,8 @@ export default function UsagePage() {
         setAuditEvents(eventsRes.items || []);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to load live analytics metrics');
+      router.push('/onboarding');
+      return;
     } finally {
       setLoading(false);
     }

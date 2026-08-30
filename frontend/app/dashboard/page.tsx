@@ -118,18 +118,21 @@ function DashboardContent() {
     setError(null);
     try {
       const meData = await getMerchantMe();
+      if (!meData || !meData.id) {
+        router.push('/onboarding');
+        return;
+      }
       setMerchant(meData);
 
-      if (meData?.id) {
-        const [catData, schemaData] = await Promise.all([
-          fetchCatalogItems(meData.id).catch(() => []),
-          fetchAgentSchema(meData.id).catch(() => null),
-        ]);
-        setItems(catData);
-        setAgentSchema(schemaData);
-      }
+      const [catData, schemaData] = await Promise.all([
+        fetchCatalogItems(meData.id).catch(() => []),
+        fetchAgentSchema(meData.id).catch(() => null),
+      ]);
+      setItems(catData);
+      setAgentSchema(schemaData);
     } catch (err: any) {
-      setError(err.message || 'Failed to load merchant dashboard');
+      router.push('/onboarding');
+      return;
     } finally {
       setLoading(false);
     }

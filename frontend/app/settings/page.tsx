@@ -38,6 +38,10 @@ export default function SettingsPage() {
     setLoading(true);
     try {
       const data = await getMerchantMe();
+      if (!data || !data.id) {
+        router.push('/onboarding');
+        return;
+      }
       setMerchant(data);
       setName(data.name || '');
       setRazorpayKeyId(data.razorpay_key_id || '');
@@ -49,7 +53,8 @@ export default function SettingsPage() {
       setBlockedCatStr(Array.isArray(cfg.blocked_categories) ? cfg.blocked_categories.join(', ') : '');
       setVelocityLimit(cfg.velocity_limit ?? '');
     } catch (err: any) {
-      setMsg({ type: 'error', text: err.message || 'Failed to load profile' });
+      router.push('/onboarding');
+      return;
     } finally {
       setLoading(false);
     }
