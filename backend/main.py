@@ -68,13 +68,15 @@ async def global_exception_handler(request: Request, exc: Exception):
     if isinstance(exc, HTTPException):
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
     
+    import traceback
+    traceback.print_exc()
     logger.error(f"Unhandled Application Exception: {str(exc)}", exc_info=True)
     if settings.SENTRY_DSN:
         sentry_sdk.capture_exception(exc)
     
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": "Internal Application Error - Exception captured by Observability Engine"}
+        content={"detail": f"Database / Application Error: {str(exc)}"}
     )
 
 @app.get("/")
