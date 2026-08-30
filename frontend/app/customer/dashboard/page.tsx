@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/lib/api';
 import Navigation from '@/components/Navigation';
+import { Sparkles, ArrowRight } from 'lucide-react';
 
 interface SpendAuth {
   id: string;
@@ -152,10 +153,11 @@ export default function CustomerDashboardPage() {
           <div className="flex items-center space-x-3">
             <button
               onClick={() => router.push('/customer/chat')}
-              className="inline-flex items-center space-x-2 px-4 py-2 text-xs font-extrabold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 active:scale-95 transition-all shadow-sm"
+              className="inline-flex items-center space-x-2 px-4 py-2.5 text-xs font-semibold text-white bg-slate-900 hover:bg-indigo-600 rounded-xl transition-all shadow-xs border border-slate-800 active:scale-95 group"
             >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400 group-hover:rotate-12 transition-transform" />
               <span>Launch AI Shopping Chat</span>
-              <span>⚡</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
         </div>

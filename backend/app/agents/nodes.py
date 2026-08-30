@@ -216,7 +216,7 @@ def search_and_compare_node(state: Dict[str, Any]) -> Dict[str, Any]:
             actor_id=str(state.get("customer_id", state.get("agent_id", "consumer_agent"))),
             action="cross_merchant_search_performed",
             input={
-                "query": query,
+                "query": state.get("prompt") or query,
                 "prompt_max_price": prompt_max_price,
                 "customer_limit": customer_limit,
                 "effective_max_price": effective_max_price,
