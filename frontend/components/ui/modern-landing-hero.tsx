@@ -8,10 +8,14 @@ import {
   Check,
   Copy,
   Terminal,
-  Play,
-  RotateCcw,
   ExternalLink,
-  Code2
+  Code2,
+  Lock,
+  Shield,
+  Zap,
+  Activity,
+  Layers,
+  Database
 } from 'lucide-react';
 import CommandSearchModal from '@/components/CommandSearchModal';
 
@@ -111,12 +115,12 @@ export function ModernLandingHero() {
     setSimState({ simMode: mode, step: 0 });
 
     const stepTimeouts = [
-      setTimeout(() => setSimState({ simMode: mode, step: 1 }), 350),
-      setTimeout(() => setSimState({ simMode: mode, step: 2 }), 750),
+      setTimeout(() => setSimState({ simMode: mode, step: 1 }), 400),
+      setTimeout(() => setSimState({ simMode: mode, step: 2 }), 800),
       setTimeout(() => {
         setSimState({ simMode: mode, step: 3 });
         setIsSimulating(false);
-      }, 1150),
+      }, 1200),
     ];
 
     return () => stepTimeouts.forEach(clearTimeout);
@@ -126,11 +130,11 @@ export function ModernLandingHero() {
     <section className="relative flex min-h-screen w-full flex-col items-center bg-[#0a0e1a] font-sans text-[#f8fafc] selection:bg-[#f8fafc] selection:text-[#0a0e1a] pb-24">
       
       {/* 
-        1. Infrastructure Navbar (Swiss Minimalist Header)
+        1. Infrastructure Navbar (Single-Weight Hierarchy)
       */}
       <header className="fixed top-0 z-40 w-full border-b border-[#1e293b] bg-[#0a0e1a]/95 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-          {/* Brand */}
+          {/* Brand - Prominent */}
           <div className="flex items-center space-x-3">
             <Link href="/" className="flex items-center space-x-2.5 group">
               <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#f8fafc] font-mono text-xs font-bold text-[#0a0e1a] transition-transform group-hover:scale-105">
@@ -139,24 +143,24 @@ export function ModernLandingHero() {
               <span className="text-sm font-bold tracking-tight text-[#f8fafc] font-mono">Agentpay</span>
             </Link>
             <span className="font-mono text-xs text-[#94a3b8]">/</span>
-            <span className="font-mono text-xs font-semibold uppercase tracking-wider text-[#94a3b8]">
+            <span className="font-mono text-xs text-[#94a3b8]">
               Razorpay AI Protocol
             </span>
           </div>
 
-          {/* Technical Nav Links */}
-          <nav className="hidden lg:flex items-center space-x-6 text-xs text-[#94a3b8] font-mono font-medium">
-            <a href="#pipeline" className="hover:text-[#f8fafc] transition-colors">
-              01. Pipeline
+          {/* Technical Nav Links - Muted Single Weight, No Prefixes */}
+          <nav className="hidden lg:flex items-center space-x-6 text-[11px] text-[#94a3b8] font-mono">
+            <a href="#pipeline" className="hover:text-white transition-colors">
+              Pipeline
             </a>
-            <a href="#matrix" className="hover:text-[#f8fafc] transition-colors">
-              02. Comparison Matrix
+            <a href="#matrix" className="hover:text-white transition-colors">
+              Comparison Matrix
             </a>
-            <a href="#credibility" className="hover:text-[#f8fafc] transition-colors">
-              03. Specs
+            <a href="#credibility" className="hover:text-white transition-colors">
+              Specs
             </a>
-            <a href="#audit-ledger" className="hover:text-[#f8fafc] transition-colors">
-              04. Audit Ledger
+            <a href="#audit-ledger" className="hover:text-white transition-colors">
+              Audit Ledger
             </a>
           </nav>
 
@@ -175,7 +179,7 @@ export function ModernLandingHero() {
 
             <Link
               href="/customer/chat"
-              className="rounded-lg bg-[#f8fafc] px-3.5 py-1.5 text-xs font-mono font-bold text-[#0a0e1a] transition-all hover:bg-slate-200 active:scale-[0.98] shadow-sm"
+              className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-mono font-bold text-white transition-all hover:bg-blue-500 active:scale-[0.98] shadow-sm"
             >
               Consumer Chat AI
             </Link>
@@ -202,7 +206,7 @@ export function ModernLandingHero() {
             
             {/* Pill Badge */}
             <div className="inline-flex items-center gap-2 rounded-md border border-[#1e293b] bg-[#0e1223] px-3 py-1 text-xs font-mono font-semibold text-[#94a3b8]">
-              <span className="h-2 w-2 rounded-full bg-[#059669]" />
+              <span className="h-2 w-2 rounded-full bg-blue-500" />
               <span>RAZORPAY AI BUILDATHON 2026 &bull; TRACK 01</span>
             </div>
 
@@ -221,7 +225,7 @@ export function ModernLandingHero() {
             <div className="flex flex-wrap items-center gap-3 pt-2 font-mono text-xs">
               <Link
                 href="/customer/chat"
-                className="flex h-11 items-center gap-2 rounded-lg bg-[#f8fafc] px-5 font-bold text-[#0a0e1a] transition-all hover:bg-slate-200 active:scale-[0.98] shadow-sm"
+                className="flex h-11 items-center gap-2 rounded-lg bg-blue-600 px-5 font-bold text-white transition-all hover:bg-blue-500 active:scale-[0.98] shadow-sm"
               >
                 <span>Launch Consumer Agent Demo</span>
                 <ArrowRight className="h-4 w-4" />
@@ -246,12 +250,12 @@ export function ModernLandingHero() {
               </button>
             </div>
 
-            {/* Specification Metrics */}
+            {/* Verifiable Specification Metrics (No Unsubstantiated Claims) */}
             <div className="grid grid-cols-3 gap-4 pt-6 border-t border-[#1e293b] font-mono text-xs">
               <div className="transition-all hover:-translate-y-0.5">
-                <div className="text-[10px] uppercase text-[#94a3b8] font-semibold mb-0.5">EVALUATION LATENCY</div>
-                <div className="font-bold text-[#f8fafc] text-sm">&lt; 80ms</div>
-                <div className="text-[11px] text-[#94a3b8]">Groq Llama 3.3 70B</div>
+                <div className="text-[10px] uppercase text-[#94a3b8] font-semibold mb-0.5">TEST COVERAGE</div>
+                <div className="font-bold text-[#f8fafc] text-sm">30+ Pytest Suite</div>
+                <div className="text-[11px] text-[#94a3b8]">Verified Unit & Integration</div>
               </div>
               <div className="transition-all hover:-translate-y-0.5">
                 <div className="text-[10px] uppercase text-[#94a3b8] font-semibold mb-0.5">SECURITY MODEL</div>
@@ -296,7 +300,7 @@ export function ModernLandingHero() {
                 </div>
               </div>
 
-              {/* Code Container */}
+              {/* Code Container with Explicit Sample Labels */}
               <div className="p-4 bg-[#050811] overflow-x-auto min-h-[300px] text-[11px] sm:text-xs leading-relaxed">
                 {heroTab === 'request' ? (
                   <pre className="text-slate-300">
@@ -304,8 +308,8 @@ export function ModernLandingHero() {
 // Authorization: Bearer agent_key_8f29c1d0
 
 {
-  "merchant_id": "fe9038dc-5d00-4171-a9d6-b292e5dae054",
-  "customer_id": "cust_99a80b7c",
+  "merchant_id": "fe9038dc-5d00-4171-a9d6-b292e5dae054", // [SAMPLE DEMO MERCHANT ID]
+  "customer_id": "cust_99a80b7c",                       // [SANDBOX CUSTOMER ID]
   "prompt": "Buy boAt Rockerz 450 Headphones under ₹2,500",
   "intent": {
     "action": "propose_order",
@@ -342,7 +346,7 @@ export function ModernLandingHero() {
                   </pre>
                 )}
               </div>
-              <div className="border-t border-[#1e293b] bg-[#0a0e1a] px-4 py-2 text-[10px] text-[#94a3b8] flex justify-between">
+              <div className="border-t border-[#1e293b] bg-[#0a0e1a] px-4 py-2 text-[10px] text-[#94a3b8] flex justify-between font-mono">
                 <span>FORMAT: OPENAPI / JSON-LD</span>
                 <span className="text-[#059669] font-bold">STATUS: 200 OK</span>
               </div>
@@ -351,7 +355,7 @@ export function ModernLandingHero() {
         </div>
 
         {/* 
-          3. SECTION 2: PROBLEM FRAMING (Before & After Matrix with Staggered Reveal)
+          3. SECTION 2: PROBLEM FRAMING (Before & After Matrix with Enhanced Win Column Visual Weight)
         */}
         <div id="matrix" className="w-full mt-16 scroll-mt-24">
           <ScrollReveal>
@@ -365,9 +369,9 @@ export function ModernLandingHero() {
           </ScrollReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-            {/* Legacy Gateway Box */}
+            {/* Legacy Gateway Box (Subtle Muted Surface) */}
             <ScrollReveal delay={0}>
-              <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] p-6 space-y-4 transition-all hover:border-slate-600 hover:bg-[#0f1427] hover:-translate-y-0.5">
+              <div className="rounded-xl border border-[#1e293b]/70 bg-[#080b15] p-6 space-y-4 transition-all hover:border-slate-700">
                 <div className="flex items-center justify-between pb-3 border-b border-[#1e293b] font-mono text-xs">
                   <span className="font-bold text-[#dc2626]">LEGACY E-COMMERCE CHECKOUT</span>
                   <span className="px-2 py-0.5 rounded bg-red-950/60 text-[#dc2626] border border-red-900/50 font-bold text-[10px]">
@@ -375,20 +379,20 @@ export function ModernLandingHero() {
                   </span>
                 </div>
 
-                <ul className="space-y-3 font-mono text-xs text-[#94a3b8]">
-                  <li className="flex items-start gap-2">
+                <ul className="space-y-3.5 font-mono text-xs text-[#94a3b8]">
+                  <li className="flex items-start gap-2.5">
                     <span className="text-[#dc2626] font-bold">✕</span>
                     <span><strong>Human 2FA Dependency</strong>: Requires interactive SMS OTPs and 3DS web frames that autonomous agents cannot answer.</span>
                   </li>
-                  <li className="flex items-start gap-2">
+                  <li className="flex items-start gap-2.5">
                     <span className="text-[#dc2626] font-bold">✕</span>
                     <span><strong>Raw Credential Exposure</strong>: Direct card details exposed to LLM prompts, introducing prompt injection risks.</span>
                   </li>
-                  <li className="flex items-start gap-2">
+                  <li className="flex items-start gap-2.5">
                     <span className="text-[#dc2626] font-bold">✕</span>
                     <span><strong>Unbounded Spend Cap</strong>: All-or-nothing credit limits leading to runaway automated API loops.</span>
                   </li>
-                  <li className="flex items-start gap-2">
+                  <li className="flex items-start gap-2.5">
                     <span className="text-[#dc2626] font-bold">✕</span>
                     <span><strong>Human HTML Pages</strong>: Product catalogs rendered in HTML DOMs unreadable by AI buyers.</span>
                   </li>
@@ -396,31 +400,31 @@ export function ModernLandingHero() {
               </div>
             </ScrollReveal>
 
-            {/* Agentpay Dual-Gated Box */}
+            {/* Agentpay Dual-Gated Box (WIN COLUMN - Elevated Surface & Stronger Visual Weight) */}
             <ScrollReveal delay={120}>
-              <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] p-6 space-y-4 transition-all hover:border-slate-600 hover:bg-[#0f1427] hover:-translate-y-0.5">
-                <div className="flex items-center justify-between pb-3 border-b border-[#1e293b] font-mono text-xs">
-                  <span className="font-bold text-[#059669]">AGENTPAY DUAL-GATED PROTOCOL</span>
-                  <span className="px-2 py-0.5 rounded bg-emerald-950/60 text-[#059669] border border-emerald-900/50 font-bold text-[10px]">
+              <div className="rounded-xl border-2 border-slate-700 bg-[#0e1427] p-6 space-y-4 transition-all hover:border-slate-500 shadow-xl shadow-slate-950/50">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-700 font-mono text-xs">
+                  <span className="font-bold text-[#f8fafc] text-sm">AGENTPAY DUAL-GATED PROTOCOL</span>
+                  <span className="px-2.5 py-0.5 rounded bg-emerald-950 text-[#059669] border border-emerald-800 font-bold text-[10px]">
                     DETERMINISTIC SAFE
                   </span>
                 </div>
 
-                <ul className="space-y-3 font-mono text-xs text-[#94a3b8]">
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#059669] font-bold">✓</span>
+                <ul className="space-y-3.5 font-mono text-xs text-slate-200">
+                  <li className="flex items-start gap-2.5">
+                    <Check className="h-4 w-4 text-[#059669] stroke-[3] shrink-0 mt-0.5" />
                     <span><strong>Tokenized Spend Vault</strong>: Pre-authorized UPI e-mandates with strict user-configured transaction caps.</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#059669] font-bold">✓</span>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="h-4 w-4 text-[#059669] stroke-[3] shrink-0 mt-0.5" />
                     <span><strong>LLM Proposes, Engine Disposes</strong>: Zero raw card exposure; LLM proposes intent, engine validates rules.</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#059669] font-bold">✓</span>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="h-4 w-4 text-[#059669] stroke-[3] shrink-0 mt-0.5" />
                     <span><strong>Merchant Policy Engine</strong>: Groq Llama 3.3 70B checks max order cap, category whitelist, and stock availability.</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#059669] font-bold">✓</span>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="h-4 w-4 text-[#059669] stroke-[3] shrink-0 mt-0.5" />
                     <span><strong>Schema.org JSON-LD Feed</strong>: Standardized product schemas built for LangChain, AutoGPT, and Claude agents.</span>
                   </li>
                 </ul>
@@ -430,7 +434,7 @@ export function ModernLandingHero() {
         </div>
 
         {/* 
-          4. SECTION 3: HOW IT WORKS (Horizontal 3-Gate Pipeline Diagram with Animated Flow)
+          4. SECTION 3: HOW IT WORKS (Horizontal 3-Gate Pipeline Diagram with Real Animated Flow)
         */}
         <div id="pipeline" className="w-full mt-24 scroll-mt-24">
           <ScrollReveal>
@@ -478,7 +482,7 @@ export function ModernLandingHero() {
               <ScrollReveal delay={0}>
                 <div className={`rounded-xl border p-6 transition-all duration-300 ${
                   simState.step >= 1
-                    ? 'border-[#1e293b] bg-[#0e1223] hover:border-slate-600'
+                    ? 'border-slate-600 bg-[#0e1427] ring-1 ring-emerald-900/50'
                     : 'border-slate-800/40 bg-[#0a0e1a] opacity-60'
                 }`}>
                   <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#1e293b]">
@@ -501,8 +505,8 @@ export function ModernLandingHero() {
                 <div className={`rounded-xl border p-6 transition-all duration-300 ${
                   simState.step >= 2
                     ? simState.simMode === 'violation'
-                      ? 'border-red-900/80 bg-red-950/20 shadow-red-950/30'
-                      : 'border-[#1e293b] bg-[#0e1223] hover:border-slate-600'
+                      ? 'border-red-900 bg-red-950/20 ring-1 ring-red-800/50'
+                      : 'border-slate-600 bg-[#0e1427] ring-1 ring-emerald-900/50'
                     : 'border-slate-800/40 bg-[#0a0e1a] opacity-60'
                 }`}>
                   <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#1e293b]">
@@ -534,7 +538,7 @@ export function ModernLandingHero() {
                   simState.step >= 3
                     ? simState.simMode === 'violation'
                       ? 'border-slate-800/40 bg-[#0a0e1a] opacity-40'
-                      : 'border-[#1e293b] bg-[#0e1223] hover:border-slate-600'
+                      : 'border-slate-600 bg-[#0e1427] ring-1 ring-emerald-900/50'
                     : 'border-slate-800/40 bg-[#0a0e1a] opacity-60'
                 }`}>
                   <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#1e293b]">
@@ -562,13 +566,13 @@ export function ModernLandingHero() {
         </div>
 
         {/* 
-          5. SECTION 4: PROOF & TECHNICAL CREDIBILITY (Staggered Reveals)
+          5. SECTION 4: PROOF & TECHNICAL CREDIBILITY (Real Specifications)
         */}
         <div id="credibility" className="w-full mt-24 scroll-mt-24">
           <ScrollReveal>
             <div className="border-b border-[#1e293b] pb-4 mb-8 text-left font-mono">
               <div className="text-xs uppercase text-[#94a3b8] font-semibold mb-1">03. TECHNICAL SPECIFICATIONS</div>
-              <h2 className="text-2xl font-bold text-[#f8fafc]">Infrastructure Standards & Proofs</h2>
+              <h2 className="text-2xl font-bold text-[#f8fafc]">Infrastructure Standards & Verified Proofs</h2>
               <p className="text-xs text-[#94a3b8] mt-1 font-sans">
                 Concrete facts and protocols built for developer transparency and zero-trust verification.
               </p>
@@ -576,6 +580,7 @@ export function ModernLandingHero() {
           </ScrollReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left font-mono text-xs">
+            {/* Card 1 */}
             <ScrollReveal delay={0}>
               <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] p-6 space-y-3 transition-all hover:border-slate-600 hover:bg-[#0f1427] hover:-translate-y-0.5">
                 <div className="px-2.5 py-1 rounded bg-[#0a0e1a] border border-[#1e293b] text-[#f8fafc] font-bold inline-block">
@@ -588,6 +593,7 @@ export function ModernLandingHero() {
               </div>
             </ScrollReveal>
 
+            {/* Card 2 */}
             <ScrollReveal delay={120}>
               <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] p-6 space-y-3 transition-all hover:border-slate-600 hover:bg-[#0f1427] hover:-translate-y-0.5">
                 <div className="px-2.5 py-1 rounded bg-[#0a0e1a] border border-[#1e293b] text-[#f8fafc] font-bold inline-block">
@@ -600,14 +606,15 @@ export function ModernLandingHero() {
               </div>
             </ScrollReveal>
 
+            {/* Card 3 (REPLACED SUBSTANTIATED REAL API SPEC) */}
             <ScrollReveal delay={240}>
               <div className="rounded-xl border border-[#1e293b] bg-[#0e1223] p-6 space-y-3 transition-all hover:border-slate-600 hover:bg-[#0f1427] hover:-translate-y-0.5">
                 <div className="px-2.5 py-1 rounded bg-[#0a0e1a] border border-[#1e293b] text-[#f8fafc] font-bold inline-block">
-                  POST /catalog/shopify-sync
+                  POST /agent/chat
                 </div>
-                <h3 className="text-sm font-bold text-[#f8fafc]">1-Click Shopify Live Crawler</h3>
+                <h3 className="text-sm font-bold text-[#f8fafc]">LangGraph Tool-Call & Intent Gating</h3>
                 <p className="text-xs text-[#94a3b8] font-sans leading-relaxed">
-                  Real HTTPX crawler fetches live product titles, variant pricing, inventory stock, and product types directly from any Shopify domain in &lt;2s.
+                  Agent proposes structured <code className="text-[#f8fafc]">propose_order</code> tool payload. Evaluated against DB spend vault, Groq Llama 3.3 70B policy engine, and Redis sliding-window velocity limiter before payment capture.
                 </p>
               </div>
             </ScrollReveal>
@@ -615,7 +622,7 @@ export function ModernLandingHero() {
         </div>
 
         {/* 
-          6. SECTION 5: AUDIT TRAIL TEASER (Append-Only Postgres JSON Inspector)
+          6. SECTION 5: AUDIT TRAIL TEASER (Append-Only Postgres JSON Inspector with Sample Labels)
         */}
         <div id="audit-ledger" className="w-full mt-24 scroll-mt-24">
           <ScrollReveal>
@@ -641,13 +648,13 @@ export function ModernLandingHero() {
 {`{
   "audit_event_id": "evt_7f8a9b0c-1d2e-3f4a",
   "timestamp": "2026-08-30T05:34:12Z",
-  "merchant_id": "fe9038dc-5d00-4171-a9d6-b292e5dae054",
+  "merchant_id": "fe9038dc-5d00-4171-a9d6-b292e5dae054", // [SAMPLE DEMO MERCHANT ID]
   "actor_type": "agent",
   "actor_id": "ag_8f29c1d0a7b4",
   "action": "payment_order_settled",
   "decision": "ALLOW",
   "input_payload": {
-    "customer_id": "cust_99a80b7c",
+    "customer_id": "cust_99a80b7c",                       // [SANDBOX CUSTOMER ID]
     "amount": 2499.00,
     "currency": "INR",
     "prompt": "Buy boAt Rockerz 450 Headphones under ₹2,500"
@@ -686,7 +693,7 @@ export function ModernLandingHero() {
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/customer/chat"
-                className="flex h-11 items-center gap-2 rounded-lg bg-[#f8fafc] px-6 text-xs font-bold text-[#0a0e1a] transition-all hover:bg-slate-200 active:scale-[0.98] shadow-sm"
+                className="flex h-11 items-center gap-2 rounded-lg bg-blue-600 px-6 text-xs font-bold text-white transition-all hover:bg-blue-500 active:scale-[0.98] shadow-sm"
               >
                 <span>Launch Consumer Agent Demo</span>
                 <ArrowRight className="h-4 w-4" />
