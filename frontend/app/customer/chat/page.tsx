@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { API_BASE_URL } from '@/lib/api';
 import {
   PanelLeftClose,
   PanelLeft,
@@ -133,7 +134,7 @@ export default function ConsumerChatPage() {
 
   const fetchAuthLimit = async (token: string) => {
     try {
-      const res = await fetch('http://localhost:8000/customer/authorizations/me', {
+      const res = await fetch(`${API_BASE_URL}/customer/authorizations/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -190,7 +191,7 @@ export default function ConsumerChatPage() {
     }
 
     try {
-      const res = await fetch('http://localhost:8000/customer/chat', {
+      const res = await fetch(`${API_BASE_URL}/customer/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

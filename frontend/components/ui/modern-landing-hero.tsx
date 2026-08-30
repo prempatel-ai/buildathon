@@ -766,7 +766,7 @@ def verify_webhook(payload: str, signature: str, secret: str) -> bool:
               </Link>
 
               <a
-                href="http://localhost:8000/docs"
+                href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/docs`}
                 target="_blank"
                 rel="noreferrer"
                 className="flex h-11 items-center gap-2 rounded-lg border border-[#1e293b] bg-[#0a0e1a] px-5 text-xs text-[#94a3b8] transition-all hover:border-slate-500 hover:text-[#f8fafc] active:scale-[0.98]"
