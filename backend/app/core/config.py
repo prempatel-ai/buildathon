@@ -23,9 +23,9 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # External Integrations
-    GROQ_API_KEY: str = "gsk_placeholder_groq_api_key"
-    RAZORPAY_KEY_ID: str = "rzp_test_placeholder_key_id"
-    RAZORPAY_KEY_SECRET: str = "placeholder_key_secret"
+    GROQ_API_KEY: str = "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"
+    RAZORPAY_KEY_ID: str = "rzp_test_TV5qHLNGCgqxgO"
+    RAZORPAY_KEY_SECRET: str = "HlOTaHKEB1QBA50RiBFLfhNg"
 
     # Observability & Monitoring
     SENTRY_DSN: str | None = None
