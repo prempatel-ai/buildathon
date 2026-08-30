@@ -7,6 +7,7 @@ import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getMerchantMe, updateMerchantSettings, getAuthToken, Merchant } from '@/lib/api';
+import { useAuthGuard } from '@/lib/useAuthGuard';
 import { ShieldCheck, RefreshCw } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -25,18 +26,7 @@ export default function SettingsPage() {
   const [blockedCatStr, setBlockedCatStr] = useState('');
   const [velocityLimit, setVelocityLimit] = useState<number | ''>('');
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && localStorage.getItem('onboarding_in_progress') === 'true') {
-      router.push('/onboarding');
-      return;
-    }
-    const token = getAuthToken();
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-    loadProfile();
-  }, [router]);
+  useAuthGuard(loadProfile);
 
   async function loadProfile() {
     setLoading(true);

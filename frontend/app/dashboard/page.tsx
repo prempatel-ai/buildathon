@@ -15,6 +15,7 @@ import {
   Merchant,
   CatalogItem,
 } from '@/lib/api';
+import { useAuthGuard } from '@/lib/useAuthGuard';
 
 import Navigation from '@/components/Navigation';
 import PageHeader from '@/components/PageHeader';
@@ -104,18 +105,7 @@ function DashboardContent() {
     }
   };
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && localStorage.getItem('onboarding_in_progress') === 'true') {
-      router.push('/onboarding');
-      return;
-    }
-    const token = getAuthToken();
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-    loadDashboardData();
-  }, [router]);
+  useAuthGuard(loadDashboardData);
 
   async function loadDashboardData() {
     setLoading(true);
