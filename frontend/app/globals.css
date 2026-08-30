@@ -8,22 +8,25 @@ html {
 
 @layer base {
   :root {
-    --color-background: #0a0e1a;
-    --color-card: #0e1223;
+    /* HeroUI Finances Theme (Hue 255° Indigo-Violet FinTech) */
+    --color-background: #090d16;
+    --color-card: #0e1322;
+    --color-card-elevated: #13192e;
     --color-foreground: #f8fafc;
     --color-muted-foreground: #94a3b8;
     --color-border: #1e293b;
-    --color-primary: #1e40af;
+    --color-primary: #4f46e5;
+    --color-primary-light: #6366f1;
     --color-accent: #059669;
     --color-destructive: #dc2626;
-    --color-ring: #ffffff;
+    --color-ring: #6366f1;
 
-    --background: 222 47% 7%;
+    --background: 224 40% 6%;
     --foreground: 210 40% 98%;
-    --card: 222 47% 9%;
+    --card: 224 35% 9%;
     --card-foreground: 210 40% 98%;
     --border: 217 33% 17%;
-    --radius: 0.75rem;
+    --radius: 0.85rem;
   }
 }
 
