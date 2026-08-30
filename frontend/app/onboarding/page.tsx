@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { MetricCard } from '@/components/ui/metric-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Badge } from '@/components/ui/badge';
-import { createMerchant, createCatalogItem, seedDemoMerchant, Merchant } from '@/lib/api';
+import { createMerchant, createCatalogItem, seedDemoMerchant, getMerchantMe, fetchCatalogItems, Merchant, CatalogItem } from '@/lib/api';
 import { Store, Package, Code, Upload, Plus, Edit2, Trash2 } from 'lucide-react';
 
 export default function OnboardingPage() {
@@ -16,17 +16,38 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Merchant state
+  // Active Merchant in background context
+  const [activeMerchant, setActiveMerchant] = useState<Merchant | null>(null);
+  const [activeItems, setActiveItems] = useState<CatalogItem[]>([]);
+
+  // Onboarding Merchant form state
   const [merchantName, setMerchantName] = useState('');
   const [razorpayKey, setRazorpayKey] = useState('');
   const [createdMerchant, setCreatedMerchant] = useState<Merchant | null>(null);
 
-  // Catalog item state
+  // Catalog item form state
   const [itemName, setItemName] = useState('');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
   const [category, setCategory] = useState('Electronics');
   const [addedItemsCount, setAddedItemsCount] = useState(0);
+
+  useEffect(() => {
+    // Attempt to load existing logged-in merchant store details for crisp background preview
+    getMerchantMe()
+      .then(async (m) => {
+        if (m?.id) {
+          setActiveMerchant(m);
+          try {
+            const items = await fetchCatalogItems(m.id);
+            setActiveItems(items);
+          } catch {
+            // fallback to empty
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleCreateMerchant = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,12 +135,19 @@ export default function OnboardingPage() {
     }
   };
 
+  const bgStoreName = createdMerchant?.name || activeMerchant?.name || merchantName.trim() || 'New Merchant Store Setup';
+  const bgStoreId = createdMerchant?.id || activeMerchant?.id || 'Pending Account Creation';
+  const displayItems = activeItems.length > 0 ? activeItems : [
+    { id: '1', name: 'boAt Wave Call Smartwatch', category: 'Smartwatches', price: 1799, stock: 40 },
+    { id: '2', name: 'boAt Airdopes 141', category: 'Earbuds', price: 1299, stock: 60 }
+  ];
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans relative selection:bg-slate-200 overflow-x-hidden">
       <Navigation />
 
-      {/* Background App / Dashboard Structure */}
-      <main className="max-w-6xl w-full mx-auto px-6 py-8 flex-1 opacity-70 pointer-events-none filter blur-[0.5px]">
+      {/* Crisp Background App / Dashboard Structure (NO Blur) */}
+      <main className="max-w-6xl w-full mx-auto px-6 py-8 flex-1">
         {/* Store Header Banner */}
         <div className="mb-6 bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
@@ -128,10 +156,10 @@ export default function OnboardingPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-                {createdMerchant ? createdMerchant.name : (merchantName.trim() || 'New Merchant Store Setup')}
+                {bgStoreName}
               </h1>
               <p className="text-xs text-slate-500 font-mono">
-                Store ID: {createdMerchant ? createdMerchant.id : 'Pending Account Creation'} &bull; Merchant Store
+                Store ID: {bgStoreId} &bull; Merchant Store
               </p>
             </div>
           </div>
@@ -139,7 +167,7 @@ export default function OnboardingPage() {
           <div className="flex items-center space-x-2">
             <Button variant="default" size="sm">
               <Package className="w-3.5 h-3.5 mr-1.5" />
-              Catalog ({addedItemsCount})
+              Catalog ({activeItems.length || addedItemsCount})
             </Button>
             <Button variant="secondary" size="sm">
               <Code className="w-3.5 h-3.5 mr-1.5" />
@@ -152,7 +180,7 @@ export default function OnboardingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
           <MetricCard
             title="Total Products"
-            value={addedItemsCount}
+            value={activeItems.length || addedItemsCount}
             unit="items"
             footerRight="Discoverable by AI"
           />
@@ -205,36 +233,27 @@ export default function OnboardingPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                <tr className="hover:bg-slate-50/80 transition-colors">
-                  <td className="px-6 py-4 font-bold text-slate-900">boAt Wave Call Smartwatch</td>
-                  <td className="px-6 py-4 text-slate-600"><Badge variant="secondary">Smartwatches</Badge></td>
-                  <td className="px-6 py-4 font-mono font-bold text-slate-900 text-sm">₹1,799.00</td>
-                  <td className="px-6 py-4 font-mono font-semibold text-slate-800">40 units</td>
-                  <td className="px-6 py-4"><StatusBadge status="Transactable" /></td>
-                  <td className="px-6 py-4 text-right space-x-2">
-                    <Button variant="ghost" size="xs"><Edit2 className="w-3 h-3 mr-1" /> Edit</Button>
-                    <Button variant="destructive" size="xs"><Trash2 className="w-3 h-3 mr-1" /> Delete</Button>
-                  </td>
-                </tr>
-                <tr className="hover:bg-slate-50/80 transition-colors">
-                  <td className="px-6 py-4 font-bold text-slate-900">boAt Airdopes 141</td>
-                  <td className="px-6 py-4 text-slate-600"><Badge variant="secondary">Earbuds</Badge></td>
-                  <td className="px-6 py-4 font-mono font-bold text-slate-900 text-sm">₹1,299.00</td>
-                  <td className="px-6 py-4 font-mono font-semibold text-slate-800">60 units</td>
-                  <td className="px-6 py-4"><StatusBadge status="Transactable" /></td>
-                  <td className="px-6 py-4 text-right space-x-2">
-                    <Button variant="ghost" size="xs"><Edit2 className="w-3 h-3 mr-1" /> Edit</Button>
-                    <Button variant="destructive" size="xs"><Trash2 className="w-3 h-3 mr-1" /> Delete</Button>
-                  </td>
-                </tr>
+                {displayItems.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="px-6 py-4 font-bold text-slate-900">{item.name}</td>
+                    <td className="px-6 py-4 text-slate-600"><Badge variant="secondary">{item.category}</Badge></td>
+                    <td className="px-6 py-4 font-mono font-bold text-slate-900 text-sm">₹{Number(item.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    <td className="px-6 py-4 font-mono font-semibold text-slate-800">{item.stock} units</td>
+                    <td className="px-6 py-4"><StatusBadge status="Transactable" /></td>
+                    <td className="px-6 py-4 text-right space-x-2">
+                      <Button variant="ghost" size="xs"><Edit2 className="w-3 h-3 mr-1" /> Edit</Button>
+                      <Button variant="destructive" size="xs"><Trash2 className="w-3 h-3 mr-1" /> Delete</Button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </div>
       </main>
 
-      {/* Foreground Onboarding Card Modal Overlay */}
-      <div className="fixed inset-0 top-[73px] bg-slate-900/10 backdrop-blur-[2px] flex items-center justify-center p-6 z-40 overflow-y-auto">
+      {/* Foreground Onboarding Card Modal Overlay (Crisp Background - NO Blur) */}
+      <div className="fixed inset-0 top-[73px] bg-slate-900/10 flex items-center justify-center p-6 z-40 overflow-y-auto">
         <div className="max-w-xl w-full bg-white border border-slate-200 rounded-2xl p-8 shadow-2xl my-auto">
           {/* Top Banner for Quick Seed */}
           <div className="mb-8 p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
