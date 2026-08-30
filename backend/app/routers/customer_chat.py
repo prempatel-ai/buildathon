@@ -10,7 +10,7 @@ from app.core.customer_auth import get_current_customer
 from app.models.customer import Customer
 from app.models.merchant import Merchant
 from app.models.catalog import CatalogItem
-from app.agents.graph import run_agent_workflow
+from app.agents.graph import run_agent_workflow, run_direct_purchase_workflow
 
 router = APIRouter(prefix="/customer", tags=["Customer Chat AI"])
 
@@ -60,7 +60,7 @@ def customer_chat(
 
     cached_options = session_search_memory.get(thread_id, [])
 
-    # Check if prompt is an explicit purchase confirmation ("buy option 1", "buy boAt", "buy the cheaper one", etc.)
+    # Check if prompt is an explicit purchase confirmation ("buy option 1", "buy boAt", etc.)
     is_buy_confirm = any(k in prompt_lower for k in ["buy", "purchase", "confirm", "order"]) and not any(k in prompt_lower for k in ["find", "search", "compare", "recommend", "show options"])
 
     if is_buy_confirm and cached_options:
@@ -75,16 +75,16 @@ def customer_chat(
         else:
             target_opt = cached_options[0]
 
-        # Execute purchase proposal through full dual-gate chain
-        merchant_id = target_opt["merchant_id"]
-        order_prompt = f"Please order {target_opt['item_name']} for price {target_opt['price']} INR"
-
-        final_state = run_agent_workflow(
-            merchant_id=merchant_id,
-            agent_id="consumer_shopping_agent",
-            prompt=order_prompt,
+        # FIX: Use run_direct_purchase_workflow to bypass LLM node.
+        # This guarantees the EXACT price from the cached search result is used —
+        # the LLM catalog re-lookup in llm_node was overwriting amounts with wrong matches.
+        final_state = run_direct_purchase_workflow(
+            merchant_id=target_opt["merchant_id"],
+            item_name=target_opt["item_name"],
+            amount=float(target_opt["price"]),          # <-- EXACT price from DB search result
+            category=target_opt.get("category", "General"),
             customer_id=str(customer.id),
-            thread_id=thread_id
+            thread_id=thread_id,
         )
 
         return CustomerChatResponse(
