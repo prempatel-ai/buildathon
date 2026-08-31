@@ -467,8 +467,8 @@ export default function ConsumerChatPage() {
             onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
             className="w-full flex items-center justify-between p-1.5 hover:bg-neutral-100/80 rounded-md transition-colors text-left cursor-pointer"
           >
-            <div className="flex items-center space-x-2 truncate">
-              <div className="w-6.5 h-6.5 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+            <div className="flex items-center space-x-2.5 truncate">
+              <div className="w-7 h-7 min-w-[28px] max-w-[28px] aspect-square rounded-full bg-neutral-950 text-white flex items-center justify-center font-mono font-bold text-[11px] shrink-0 shadow-2xs">
                 {getInitials(customerName)}
               </div>
               <div className="truncate">
@@ -600,8 +600,8 @@ export default function ConsumerChatPage() {
                   }`}
                 >
                   {msg.sender === 'assistant' && (
-                    <div className="w-6.5 h-6.5 rounded-md bg-neutral-950 text-white flex items-center justify-center shrink-0 mt-0.5">
-                      <ShoppingBag className="w-3.5 h-3.5" />
+                    <div className="w-7 h-7 min-w-[28px] max-w-[28px] aspect-square rounded-md bg-neutral-950 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                      <ShoppingBag className="w-3.5 h-3.5 text-neutral-200" />
                     </div>
                   )}
 
@@ -764,7 +764,7 @@ export default function ConsumerChatPage() {
                   </div>
 
                   {msg.sender === 'user' && (
-                    <div className="w-6.5 h-6.5 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                    <div className="w-7 h-7 min-w-[28px] max-w-[28px] aspect-square rounded-full bg-neutral-950 text-white flex items-center justify-center font-mono font-bold text-[11px] shrink-0 mt-0.5 shadow-2xs">
                       {getInitials(customerName)}
                     </div>
                   )}
@@ -772,9 +772,9 @@ export default function ConsumerChatPage() {
               ))}
 
               {loading && (
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-6.5 h-6.5 rounded-md bg-neutral-950 text-white flex items-center justify-center shrink-0">
-                    <ShoppingBag className="w-3.5 h-3.5" />
+                <div className="flex items-center space-x-3">
+                  <div className="w-7 h-7 min-w-[28px] max-w-[28px] aspect-square rounded-md bg-neutral-950 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                    <ShoppingBag className="w-3.5 h-3.5 text-neutral-200" />
                   </div>
                   <div className="bg-neutral-100 text-neutral-600 rounded-lg px-3.5 py-2 text-xs font-medium border border-neutral-200 flex items-center space-x-2">
                     <Loader2 className="w-3.5 h-3.5 text-neutral-700 animate-spin" />

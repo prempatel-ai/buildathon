@@ -245,17 +245,54 @@ def search_and_compare_node(state: Dict[str, Any]) -> Dict[str, Any]:
         merchants = db.query(Merchant).all()
         matching_options = []
 
+        # Canonical synonyms map for commerce terms
+        synonyms = {
+            "smartwatch": ["smartwatch", "watch", "smart", "band"],
+            "smartwatches": ["smartwatch", "watch", "smart", "band"],
+            "watch": ["watch", "smartwatch"],
+            "watches": ["watch", "smartwatch"],
+            "headphone": ["headphone", "headphones", "earbuds", "earphones", "headset", "airpod", "airdopes", "rockerz"],
+            "headphones": ["headphone", "headphones", "earbuds", "earphones", "headset", "airpod", "airdopes", "rockerz"],
+            "earbuds": ["earbuds", "earbud", "headphone", "airdopes", "earphones"],
+            "speaker": ["speaker", "speakers", "bluetooth", "soundbar", "stone"],
+            "speakers": ["speaker", "speakers", "bluetooth", "soundbar", "stone"],
+            "protein": ["protein", "whey", "isolate", "shake", "powder", "bowl"],
+            "peanut": ["peanut", "butter", "spread"],
+            "laptop": ["laptop", "notebook", "pc", "computer", "macbook"],
+        }
+
+        # Expand query words with synonyms
+        expanded_query_words = set(query_words)
+        for qw in query_words:
+            if qw in synonyms:
+                expanded_query_words.update(synonyms[qw])
+
         for m in merchants:
             items = db.query(CatalogItem).filter(CatalogItem.merchant_id == m.id).all()
             for it in items:
-                name_cat_lower = f"{it.name} {it.category} {m.name}".lower()
-                is_match = False
-                if not query_words:
-                    is_match = True
-                else:
-                    is_match = any(qw in name_cat_lower for qw in query_words)
+                it_name_lower = it.name.lower()
+                it_cat_lower = it.category.lower() if it.category else ""
+                m_name_lower = m.name.lower()
 
-                if is_match and it.stock > 0:
+                relevance_score = 0
+                if not query_words:
+                    relevance_score = 1
+                else:
+                    # 1. Product Name matches (Highest priority)
+                    for qw in expanded_query_words:
+                        if qw in it_name_lower:
+                            relevance_score += 10
+                    # 2. Category matches
+                    for qw in expanded_query_words:
+                        if qw in it_cat_lower:
+                            relevance_score += 5
+                    # 3. Specific Merchant name matches (Only if merchant name itself is in query)
+                    for qw in query_words:
+                        if qw in m_name_lower and qw not in ["health", "fitness", "store", "electronics", "online", "india"]:
+                            relevance_score += 3
+
+                # Only include item if relevance_score > 0 and stock > 0
+                if relevance_score > 0 and it.stock > 0:
                     price_val = float(it.price)
                     if effective_max_price is None or price_val <= effective_max_price:
                         matching_options.append({
@@ -265,11 +302,12 @@ def search_and_compare_node(state: Dict[str, Any]) -> Dict[str, Any]:
                             "merchant_name": m.name,
                             "price": price_val,
                             "stock": it.stock,
-                            "category": it.category
+                            "category": it.category,
+                            "relevance": relevance_score
                         })
 
-        # Sort by price ascending
-        matching_options.sort(key=lambda x: x["price"])
+        # Sort primarily by relevance descending, then by price ascending
+        matching_options.sort(key=lambda x: (-x["relevance"], x["price"]))
 
         # Assign Option 1, Option 2, Option 3 index
         for idx, opt in enumerate(matching_options, 1):
@@ -288,9 +326,11 @@ def search_and_compare_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 limit_info = f" (Under ₹{prompt_max_price:.0f})"
 
             summary_lines = [f"Found {len(matching_options)} options across merchants{limit_info}:"]
-            for opt in matching_options:
-                summary_lines.append(f"  Option {opt['option_index']}: {opt['item_name']} at {opt['merchant_name']} — INR {opt['price']} (Stock: {opt['stock']})")
-            summary_lines.append("Reply with 'buy option 1' or 'buy the boAt one' to confirm purchase.")
+            for opt in matching_options[:5]:
+                summary_lines.append(f"• Option {opt['option_index']}: {opt['item_name']} at {opt['merchant_name']} — ₹{opt['price']:,.2f}")
+            if len(matching_options) > 5:
+                summary_lines.append(f"... and {len(matching_options) - 5} more options.")
+            summary_lines.append("Reply with 'buy option 1' or click 'Instant Buy' to confirm purchase.")
             state["response_message"] = "\n".join(summary_lines)
         else:
             price_msg = f" under ₹{effective_max_price:.0f}" if effective_max_price is not None else ""
