@@ -568,48 +568,55 @@ export default function ConsumerChatPage() {
           </div>
         </header>
 
-        {/* Messages Feed or ChatGPT Hero Empty State */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-8 space-y-6">
+        {/* Chat Stream / Hero Greeting Container */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-8 pb-32 space-y-6">
           {messages.length === 0 ? (
-            /* ========================================================================= */
-            /* EMPTY STATE HERO (ChatGPT Screenshot 1 & 2)                               */
-            /* ========================================================================= */
-            <div className="max-w-2xl mx-auto h-full flex flex-col justify-center items-center text-center pt-8 pb-16">
-              <h1 className="text-2xl sm:text-3xl font-semibold text-slate-800 mb-8 tracking-tight">
-                What&apos;s on the agenda today?
-              </h1>
+            /* HERO GREETING & SUGGESTION CARDS */
+            <div className="max-w-2xl mx-auto mt-8 sm:mt-16 text-center space-y-6">
+              <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center mx-auto shadow-sm">
+                <ShoppingBag className="w-6 h-6" />
+              </div>
 
-              {/* Suggested Prompt Action Cards (ChatGPT Screenshot 1) */}
-              <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                  Autonomous Commerce Assistant
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto mt-1.5">
+                  Discover products across registered merchants. AI verifies your bounded spend policy and autonomously settles orders via Razorpay.
+                </p>
+              </div>
+
+              {/* Quick Prompts */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 text-left">
                 <button
-                  onClick={() => handleSendMessage('find cheap headphones')}
-                  className="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-2xl text-left transition-all hover:border-slate-300 group flex flex-col justify-between"
+                  onClick={() => handleSendMessage('Search for wireless noise cancelling headphones under ₹3000')}
+                  className="p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-slate-400 shadow-2xs hover:shadow-xs transition-all text-left group"
                 >
-                  <Headphones className="w-5 h-5 text-indigo-600 mb-3 group-hover:scale-110 transition-transform" />
+                  <Headphones className="w-5 h-5 text-slate-700 mb-3 group-hover:scale-105 transition-transform" />
                   <div>
-                    <p className="text-xs font-semibold text-slate-800">Find noise-canceling headphones</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Search top catalog deals</p>
+                    <p className="text-xs font-semibold text-slate-900">ANC Headphones</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Budget under ₹3,000</p>
                   </div>
                 </button>
 
                 <button
-                  onClick={() => handleSendMessage('find wireless earbuds')}
-                  className="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-2xl text-left transition-all hover:border-slate-300 group flex flex-col justify-between"
+                  onClick={() => handleSendMessage('Find high protein peanut butter 1kg')}
+                  className="p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-slate-400 shadow-2xs hover:shadow-xs transition-all text-left group"
                 >
-                  <Smartphone className="w-5 h-5 text-emerald-600 mb-3 group-hover:scale-110 transition-transform" />
+                  <ShoppingBag className="w-5 h-5 text-slate-700 mb-3 group-hover:scale-105 transition-transform" />
                   <div>
-                    <p className="text-xs font-semibold text-slate-800">Wireless Earbuds with fast charge</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Compare price & stock</p>
+                    <p className="text-xs font-semibold text-slate-900">Peanut Butter 1kg</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Health & fitness grocery</p>
                   </div>
                 </button>
 
                 <button
-                  onClick={() => handleSendMessage('find gaming smartwatch')}
-                  className="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-2xl text-left transition-all hover:border-slate-300 group flex flex-col justify-between"
+                  onClick={() => handleSendMessage('Show top smartwatch options with health monitoring')}
+                  className="p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-slate-400 shadow-2xs hover:shadow-xs transition-all text-left group"
                 >
-                  <Watch className="w-5 h-5 text-amber-600 mb-3 group-hover:scale-110 transition-transform" />
+                  <Watch className="w-5 h-5 text-slate-700 mb-3 group-hover:scale-105 transition-transform" />
                   <div>
-                    <p className="text-xs font-semibold text-slate-800">Smartwatch health tracking</p>
+                    <p className="text-xs font-semibold text-slate-900">Health Smartwatches</p>
                     <p className="text-[11px] text-slate-400 mt-0.5">Auto-settle with limit</p>
                   </div>
                 </button>
@@ -628,14 +635,14 @@ export default function ConsumerChatPage() {
                   }`}
                 >
                   {msg.sender === 'assistant' && (
-                    <div className="w-7 h-7 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-1 shadow-xs">
-                      AI
+                    <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center shrink-0 mt-1 shadow-2xs">
+                      <ShoppingBag className="w-3.5 h-3.5 text-slate-200" />
                     </div>
                   )}
 
                   <div className={`flex flex-col max-w-[85%] ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
                     {msg.status === 'PAYMENT_SETTLED' || msg.status === 'SETTLED' ? (
-                      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4 w-full text-xs animate-in fade-in zoom-in-95 duration-150">
+                      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-4 w-full text-xs animate-in fade-in zoom-in-95 duration-150">
                         {/* Header */}
                         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                           <div className="flex items-center gap-2">
@@ -686,7 +693,7 @@ export default function ConsumerChatPage() {
                         {msg.estimatedDeliveryDate && (
                           <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1.5">
                             <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs">
-                              <Truck className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                              <Truck className="w-3.5 h-3.5 text-slate-700 shrink-0" />
                               <span>
                                 Expected Delivery:{' '}
                                 <strong className="text-slate-900 font-bold">
@@ -708,11 +715,20 @@ export default function ConsumerChatPage() {
                           </div>
                         )}
 
-                        {/* Gate Verification Footer */}
-                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                          <span>Customer Auth: <strong className="text-slate-700 font-medium">{msg.customerAuthDecision || 'Verified'}</strong></span>
-                          <span>Policy Gate: <strong className="text-slate-700 font-medium">{msg.policyDecision || 'Approved'}</strong></span>
-                          <span>Settlement: <strong className="text-slate-700 font-medium">Autonomous</strong></span>
+                        {/* Structured Gate Verification Grid */}
+                        <div className="pt-3 border-t border-slate-100 grid grid-cols-3 gap-2 text-center text-[11px]">
+                          <div className="bg-slate-50 border border-slate-100 rounded-lg py-1.5 px-2">
+                            <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">Customer Auth</span>
+                            <span className="font-semibold text-emerald-700">{msg.customerAuthDecision || 'ALLOW'}</span>
+                          </div>
+                          <div className="bg-slate-50 border border-slate-100 rounded-lg py-1.5 px-2">
+                            <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">Policy Gate</span>
+                            <span className="font-semibold text-emerald-700">{msg.policyDecision || 'ALLOW'}</span>
+                          </div>
+                          <div className="bg-slate-50 border border-slate-100 rounded-lg py-1.5 px-2">
+                            <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">Settlement</span>
+                            <span className="font-semibold text-slate-800">Autonomous</span>
+                          </div>
                         </div>
                       </div>
                     ) : (
@@ -738,27 +754,28 @@ export default function ConsumerChatPage() {
                             <div>
                               <div className="flex items-center justify-between text-[10px] font-bold uppercase text-slate-400 mb-1">
                                 <span>Option #{card.option_index}</span>
-                                <span className="text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded font-semibold">
-                                  {card.merchant_name}
+                                <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-mono">
+                                  {card.category}
                                 </span>
                               </div>
-                              <h3 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                              <h4 className="text-xs font-bold text-slate-900 group-hover:text-slate-900 line-clamp-1">
                                 {card.item_name}
-                              </h3>
-                              <div className="text-sm font-extrabold text-slate-900 mt-2">
-                                ₹{card.price.toLocaleString('en-IN')}
-                              </div>
-                              <div className="text-[10px] text-slate-400 mt-0.5">Stock: {card.stock} units available</div>
+                              </h4>
+                              <p className="text-[11px] text-slate-500 mt-0.5">by {card.merchant_name}</p>
                             </div>
 
-                            <button
-                              onClick={() => handleBuyOption(card)}
-                              className="mt-3 w-full py-2.5 px-3.5 rounded-xl bg-slate-900 hover:bg-indigo-600 active:scale-[0.98] text-white font-bold text-xs transition-all shadow-xs flex items-center justify-center space-x-2 group/btn"
-                            >
-                              <ShoppingBag className="w-3.5 h-3.5 text-indigo-300 group-hover/btn:text-white transition-colors" />
-                              <span>Confirm & Buy</span>
-                              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover/btn:text-white group-hover/btn:translate-x-0.5 transition-all" />
-                            </button>
+                            <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                              <span className="text-xs font-extrabold text-slate-900">
+                                ₹{card.price.toLocaleString('en-IN')}
+                              </span>
+                              <button
+                                onClick={() => handleBuyOption(card)}
+                                className="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[11px] font-semibold transition-all shadow-xs active:scale-95 flex items-center space-x-1"
+                              >
+                                <span>Instant Buy</span>
+                                <ArrowRight className="w-3 h-3" />
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -777,11 +794,11 @@ export default function ConsumerChatPage() {
 
               {loading && (
                 <div className="flex items-center space-x-3">
-                  <div className="w-7 h-7 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-[10px] shrink-0 animate-pulse">
-                    AI
+                  <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                    <ShoppingBag className="w-3.5 h-3.5 text-slate-200" />
                   </div>
-                  <div className="bg-slate-100 text-slate-500 rounded-2xl px-4 py-2.5 text-xs font-medium border border-slate-200/60 flex items-center space-x-2">
-                    <Sparkles className="w-3.5 h-3.5 text-indigo-500 animate-spin" />
+                  <div className="bg-slate-100 text-slate-600 rounded-2xl px-4 py-2.5 text-xs font-medium border border-slate-200/60 flex items-center space-x-2">
+                    <Loader2 className="w-3.5 h-3.5 text-slate-700 animate-spin" />
                     <span>Searching catalog & evaluating gates...</span>
                   </div>
                 </div>
