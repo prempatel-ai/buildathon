@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   getMerchantAgents,
@@ -14,11 +14,7 @@ import {
 import { useAuthGuard } from '@/lib/useAuthGuard';
 
 import Navigation from '@/components/Navigation';
-import PageHeader from '@/components/PageHeader';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, RotateCcw, Trash2, Copy, Check, KeyRound, Bot } from 'lucide-react';
+import { Plus, RotateCcw, Trash2, Copy, Check, KeyRound, Loader2, X } from 'lucide-react';
 
 export default function AgentsListPage() {
   const router = useRouter();
@@ -96,7 +92,6 @@ export default function AgentsListPage() {
   }
 
   async function handleRotateKey(agentId: string) {
-    // BUG FIX: pass merchant.id (from JWT context), not agentId
     if (!merchant?.id) {
       setMsg({ type: 'error', text: 'Merchant context not loaded. Refresh and try again.' });
       return;
@@ -106,7 +101,7 @@ export default function AgentsListPage() {
       const res = await rotateAgentKey(agentId, merchant.id);
       setCreatedKeyData({ name: res.name || agentId, api_key: res.new_api_key });
       setCopied(false);
-      setMsg({ type: 'success', text: `Key rotated for agent. Copy the new key now — it won't be shown again.` });
+      setMsg({ type: 'success', text: `Key rotated for agent. Copy the new key now — it will not be shown again.` });
       loadData();
     } catch (err: any) {
       setMsg({ type: 'error', text: err.message || 'Failed to rotate key' });
@@ -156,164 +151,184 @@ export default function AgentsListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafa] text-slate-900 font-sans selection:bg-indigo-100 pb-16">
+    <div className="min-h-screen bg-white text-neutral-900 font-sans antialiased selection:bg-neutral-200 pb-16">
       <Navigation />
 
       <main className="max-w-6xl mx-auto px-6 py-8">
-        <PageHeader
-          category="Agent Management"
-          title="AI Agent Keys & Scopes"
-          subtitle="Create and manage API keys with explicit scope permissions for autonomous buyer agents."
-          badge={merchant?.name}
-          actions={
-            <Button variant="indigo" size="sm" onClick={() => setShowModal(true)}>
-              <Plus className="w-3.5 h-3.5 mr-1.5" />
-              Create New Agent Key
-            </Button>
-          }
-        />
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-8 border-b border-neutral-200">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Agent Governance</span>
+              <span className="text-neutral-300">•</span>
+              <span className="text-xs text-neutral-500 font-medium">HMAC Scoped Access</span>
+            </div>
+            <h1 className="text-xl font-bold text-neutral-900 tracking-tight">AI Agent Keys & Scopes</h1>
+            <p className="text-xs text-neutral-500 mt-0.5 max-w-xl">
+              Issue and rotate API keys with bounded scope permissions for autonomous buyer agents.
+            </p>
+          </div>
 
+          <div className="flex items-center gap-3">
+            {merchant?.name && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-neutral-50 border border-neutral-200 text-xs text-neutral-700 font-medium font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span>{merchant.name}</span>
+              </div>
+            )}
+            <button
+              onClick={() => setShowModal(true)}
+              className="h-8 px-3 rounded-md bg-neutral-900 hover:bg-black text-white text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Create Agent Key</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Message Banner */}
         {msg && (
           <div
-            className={`mb-6 p-3.5 rounded-2xl text-xs font-medium ${
+            className={`mb-6 p-3.5 rounded-md text-xs font-medium flex items-center justify-between ${
               msg.type === 'success'
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                : 'bg-red-50 text-red-800 border border-red-200'
+                ? 'bg-neutral-50 border border-neutral-300 text-neutral-900'
+                : 'bg-red-50 border border-red-200 text-red-800'
             }`}
           >
-            {msg.text}
+            <div className="flex items-center gap-2">
+              {msg.type === 'success' && <Check className="w-4 h-4 text-neutral-900" />}
+              <span>{msg.text}</span>
+            </div>
+            <button onClick={() => setMsg(null)} className="text-neutral-400 hover:text-neutral-700 ml-2 text-sm font-bold">×</button>
           </div>
         )}
 
         {/* Newly Issued / Rotated Key Banner */}
         {createdKeyData && (
-          <div className="mb-6 p-5 bg-amber-50 border border-amber-200 rounded-3xl shadow-sm">
+          <div className="mb-6 p-4 bg-neutral-50 border border-neutral-300 rounded-lg">
             <div className="flex items-start justify-between mb-2">
-              <div>
-                <p className="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <KeyRound className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-neutral-800" />
+                <p className="text-xs font-semibold text-neutral-900">
                   Newly Issued API Key — Copy Now
                 </p>
-                <p className="text-xs text-slate-600 mt-0.5">Agent: <span className="font-semibold">{createdKeyData.name}</span> · This key will not be shown again.</p>
+                <span className="text-[11px] text-neutral-500">({createdKeyData.name})</span>
               </div>
               <button
                 onClick={() => setCreatedKeyData(null)}
-                className="text-slate-400 hover:text-slate-600 text-lg leading-none font-light"
+                className="text-neutral-400 hover:text-neutral-700 text-sm font-bold cursor-pointer"
               >
                 ×
               </button>
             </div>
-            <div className="flex items-center gap-2 mt-3">
-              <code className="flex-1 p-3 bg-white border border-amber-300 rounded-xl font-mono text-xs text-slate-900 select-all break-all">
+            <p className="text-[11px] text-neutral-500 mb-2.5">
+              This secret API key is shown only once. Store it securely in your agent configuration.
+            </p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded font-mono text-xs text-neutral-900 select-all break-all">
                 {createdKeyData.api_key}
               </code>
-              <Button
-                variant={copied ? 'indigo' : 'outline'}
-                size="sm"
+              <button
                 onClick={handleCopyKey}
-                className="shrink-0"
+                className="h-8 px-3 bg-neutral-900 hover:bg-black text-white text-xs font-medium rounded transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
               >
-                {copied ? (
-                  <><Check className="w-3.5 h-3.5 mr-1" /> Copied</>
-                ) : (
-                  <><Copy className="w-3.5 h-3.5 mr-1" /> Copy</>
-                )}
-              </Button>
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copied ? 'Copied' : 'Copy Key'}</span>
+              </button>
             </div>
           </div>
         )}
 
-        {/* Agents Table */}
-        <div className="bg-white border border-slate-200/90 rounded-3xl shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        {/* Registered Agent Keys Table */}
+        <div className="border border-neutral-200 rounded-lg overflow-hidden bg-white">
+          <div className="px-5 py-3.5 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Bot className="w-4 h-4 text-indigo-600 shrink-0" />
-              <h2 className="text-sm font-bold text-slate-900">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-600">
                 Registered Agent Keys
               </h2>
               {!loading && (
-                <span className="text-xs font-mono text-slate-400">({agents.length} active)</span>
+                <span className="text-xs font-mono text-neutral-400">({agents.length})</span>
               )}
             </div>
           </div>
 
           {loading ? (
-            <div className="p-6 space-y-4">
-              <Skeleton className="h-10 w-full rounded-xl" />
-              <Skeleton className="h-10 w-full rounded-xl" />
-              <Skeleton className="h-10 w-full rounded-xl" />
+            <div className="py-20 flex flex-col items-center justify-center text-neutral-400 gap-2">
+              <Loader2 className="w-6 h-6 animate-spin text-neutral-600" />
+              <p className="text-xs">Loading registered agent keys...</p>
             </div>
           ) : agents.length === 0 ? (
-            <div className="p-16 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center mx-auto mb-4">
-                <Bot className="w-6 h-6 text-indigo-500" />
+            <div className="p-14 text-center">
+              <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-3 text-neutral-600 font-mono text-xs font-bold">
+                KEY
               </div>
-              <p className="text-sm font-bold text-slate-800">No agent keys registered</p>
-              <p className="text-xs text-slate-400 mt-1 mb-5">Create an API key to allow AI agents to transact on your store.</p>
-              <Button variant="indigo" size="sm" onClick={() => setShowModal(true)}>
-                <Plus className="w-3.5 h-3.5 mr-1.5" />
-                Create First Agent Key
-              </Button>
+              <p className="text-xs font-semibold text-neutral-800">No agent keys registered</p>
+              <p className="text-[11px] text-neutral-400 mt-0.5 mb-4">Issue an API key to allow autonomous agents to transact on your catalog.</p>
+              <button
+                onClick={() => setShowModal(true)}
+                className="h-8 px-3.5 bg-neutral-900 hover:bg-black text-white text-xs font-medium rounded transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Create First Agent Key</span>
+              </button>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50/80 border-b border-slate-100 text-slate-400 uppercase font-mono tracking-wider text-[10px]">
-                  <tr>
-                    <th className="px-6 py-3.5">Agent Name</th>
-                    <th className="px-6 py-3.5">Agent ID</th>
-                    <th className="px-6 py-3.5">Scopes</th>
-                    <th className="px-6 py-3.5">Status</th>
-                    <th className="px-6 py-3.5">Created</th>
-                    <th className="px-6 py-3.5 text-right">Actions</th>
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-neutral-50 border-b border-neutral-200 text-neutral-500 font-semibold uppercase tracking-wider text-[11px]">
+                    <th className="py-2.5 px-4">Agent Name</th>
+                    <th className="py-2.5 px-4">Agent ID</th>
+                    <th className="py-2.5 px-4">Scope Permissions</th>
+                    <th className="py-2.5 px-4">Status</th>
+                    <th className="py-2.5 px-4">Created Date</th>
+                    <th className="py-2.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-neutral-100">
                   {agents.map((ag) => (
-                    <tr key={ag.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-6 py-4 font-bold text-slate-900">{ag.name}</td>
-                      <td className="px-6 py-4 font-mono text-slate-500 text-[11px]">{ag.id}</td>
-                      <td className="px-6 py-4">
+                    <tr key={ag.id} className="hover:bg-neutral-50/70 transition-colors">
+                      <td className="py-3 px-4 font-semibold text-neutral-900">{ag.name}</td>
+                      <td className="py-3 px-4 font-mono text-neutral-500 text-[11px]">{ag.id}</td>
+                      <td className="py-3 px-4">
                         <div className="flex flex-wrap gap-1">
                           {ag.scopes.map((sc) => (
-                            <Badge
+                            <span
                               key={sc}
-                              variant={sc === 'propose_order' ? 'default' : 'secondary'}
-                              className="font-mono text-[10px]"
+                              className="px-2 py-0.5 bg-neutral-100 text-neutral-800 border border-neutral-200 rounded font-mono text-[10px] font-medium"
                             >
                               {sc}
-                            </Badge>
+                            </span>
                           ))}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-mono text-[10px] font-semibold">
-                          {ag.status}
+                      <td className="py-3 px-4">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-emerald-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          {ag.status.toUpperCase()}
                         </span>
                       </td>
-                      <td className="px-6 py-4 font-mono text-slate-400 text-[11px]">
+                      <td className="py-3 px-4 font-mono text-neutral-500 text-[11px]">
                         {formatDate(ag.created_at)}
                       </td>
-                      <td className="px-6 py-4 text-right space-x-1.5">
-                        <Button
-                          variant="ghost"
-                          size="xs"
+                      <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
+                        <button
                           onClick={() => handleRotateKey(ag.id)}
+                          className="h-7 px-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded text-[11px] font-medium transition-colors border border-neutral-200 cursor-pointer inline-flex items-center gap-1"
                           title="Rotate API key — old key immediately invalidated"
                         >
-                          <RotateCcw className="w-3 h-3 mr-1" />
-                          Rotate Key
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="xs"
+                          <RotateCcw className="w-3 h-3 text-neutral-600" />
+                          <span>Rotate</span>
+                        </button>
+                        <button
                           onClick={() => handleDeleteAgent(ag.id)}
-                          loading={deletingId === ag.id}
+                          disabled={deletingId === ag.id}
+                          className="h-7 px-2.5 bg-neutral-50 hover:bg-red-50 text-neutral-600 hover:text-red-700 rounded text-[11px] font-medium transition-colors border border-neutral-200 cursor-pointer disabled:opacity-50 inline-flex items-center gap-1"
                           title="Permanently revoke and delete this agent"
                         >
-                          <Trash2 className="w-3 h-3 mr-1" />
-                          Revoke
-                        </Button>
+                          <Trash2 className="w-3 h-3" />
+                          <span>Revoke</span>
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -326,72 +341,82 @@ export default function AgentsListPage() {
 
       {/* Create Agent Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-base font-bold text-slate-900 mb-1">Create New AI Agent Key</h3>
-            <p className="text-xs text-slate-500 mb-5">
-              Specify explicit scope permissions for this agent key. The raw key is shown once.
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-neutral-200 rounded-lg max-w-md w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-100">
+              <h3 className="text-sm font-semibold text-neutral-900">Issue New AI Agent Key</h3>
+              <button onClick={() => setShowModal(false)} className="text-neutral-400 hover:text-neutral-700 cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-neutral-500 mb-4">
+              Specify explicit scope permissions for this agent key. The raw HMAC secret is displayed once upon creation.
             </p>
 
             <form onSubmit={handleCreateAgent} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                  Agent Name *
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">
+                  Agent Label / Name *
                 </label>
                 <input
                   type="text"
                   value={agentName}
                   onChange={(e) => setAgentName(e.target.value)}
-                  placeholder="e.g. Authorized Inventory Buyer #3"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-slate-400 transition"
+                  placeholder="e.g. Autonomous Buyer Agent #1"
+                  className="w-full h-9 px-3 bg-neutral-50/50 border border-neutral-200 rounded-md text-xs text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-sans"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
                   Scope Permissions
                 </label>
-                <div className="space-y-2.5 p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <label className="flex items-center space-x-2.5 text-xs text-slate-700 cursor-pointer">
+                <div className="space-y-2 p-3 bg-neutral-50/50 rounded-md border border-neutral-200">
+                  <label className="flex items-center space-x-2.5 text-xs text-neutral-700 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={scopeReadCatalog}
                       onChange={(e) => setScopeReadCatalog(e.target.checked)}
-                      className="w-3.5 h-3.5 rounded accent-indigo-600"
+                      className="w-3.5 h-3.5 rounded accent-black"
                     />
-                    <span className="font-mono font-semibold text-slate-800">read_catalog</span>
-                    <span className="text-[10px] text-slate-400">Query store product catalog</span>
+                    <span className="font-mono font-medium text-neutral-900">read_catalog</span>
+                    <span className="text-[11px] text-neutral-500">— Query product catalog</span>
                   </label>
-                  <label className="flex items-center space-x-2.5 text-xs text-slate-700 cursor-pointer">
+                  <label className="flex items-center space-x-2.5 text-xs text-neutral-700 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={scopeProposeOrder}
                       onChange={(e) => setScopeProposeOrder(e.target.checked)}
-                      className="w-3.5 h-3.5 rounded accent-indigo-600"
+                      className="w-3.5 h-3.5 rounded accent-black"
                     />
-                    <span className="font-mono font-semibold text-indigo-700">propose_order</span>
-                    <span className="text-[10px] text-slate-400">Propose & execute purchases</span>
+                    <span className="font-mono font-medium text-neutral-900">propose_order</span>
+                    <span className="text-[11px] text-neutral-500">— Propose and settle orders</span>
                   </label>
                 </div>
               </div>
 
-              <div className="pt-3 flex justify-end space-x-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowModal(false)}>
+              <div className="pt-2 flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="h-8 px-3 rounded-md border border-neutral-200 text-xs font-medium text-neutral-700 hover:bg-neutral-50 transition cursor-pointer"
+                >
                   Cancel
-                </Button>
-                <Button type="submit" variant="indigo" size="sm" loading={formLoading}>
-                  Generate Agent Key
-                </Button>
+                </button>
+                <button
+                  type="submit"
+                  disabled={formLoading}
+                  className="h-8 px-4 rounded-md bg-neutral-900 hover:bg-black text-white text-xs font-medium transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {formLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Generate Key</span>
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
-      <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-400 mt-12">
-        Agentpay · Agent Key Management · Razorpay AI Protocol
-      </footer>
     </div>
   );
 }
