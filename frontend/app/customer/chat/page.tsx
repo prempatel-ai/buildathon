@@ -3,46 +3,30 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/lib/api';
+import { AgentpayLogo } from '@/components/Logo';
 import {
   PanelLeftClose,
   PanelLeft,
   Plus,
-  Search,
-  MessageSquare,
   Settings,
-  User,
   CreditCard,
-  Sparkles,
-  Globe,
   Headphones,
-  Laptop,
   Watch,
-  Smartphone,
   Send,
-  Mic,
   MoreHorizontal,
-  Check,
-  ExternalLink,
-  ShieldCheck,
   LogOut,
   X,
-  ChevronRight,
   ChevronDown,
-  Moon,
-  Sun,
-  Sliders,
   Cpu,
-  Lock,
-  Compass,
-  FileText,
   ShoppingBag,
   ArrowRight,
-  CheckCircle2,
   MapPin,
   Truck,
-  Loader2
+  Loader2,
+  Check,
+  MessageSquare
 } from 'lucide-react';
-import { CustomerAddress, fetchCustomerAddresses, createCustomerAddress, getCustomerToken } from '@/lib/api';
+import { CustomerAddress, fetchCustomerAddresses, getCustomerToken } from '@/lib/api';
 
 interface ProductCard {
   option_index: number;
@@ -84,19 +68,18 @@ interface ChatThreadHistory {
 
 export default function ConsumerChatPage() {
   const router = useRouter();
-  const [customerName, setCustomerName] = useState<string>('Prem Patel');
-  const [customerEmail, setCustomerEmail] = useState<string>('customer@example.com');
+  const [customerName, setCustomerName] = useState<string>('Rahul Sharma');
+  const [customerEmail, setCustomerEmail] = useState<string>('rahul@example.com');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputPrompt, setInputPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
-  
+
   // Settings Modal State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [settingsTab, setSettingsTab] = useState<'general' | 'billing' | 'security' | 'personalization'>('general');
-  const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
-  
+  const [settingsTab, setSettingsTab] = useState<'general' | 'billing' | 'security'>('general');
+
   // Profile Popover State
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
@@ -141,14 +124,13 @@ export default function ConsumerChatPage() {
   }
 
   const [recentPurchases, setRecentPurchases] = useState<RecentPurchase[]>([]);
-
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const token = getCustomerToken();
-    const name = (typeof window !== 'undefined' && localStorage.getItem('customer_name')) || 'Prem Patel';
-    const email = (typeof window !== 'undefined' && localStorage.getItem('customer_email')) || 'customer@example.com';
-    
+    const name = (typeof window !== 'undefined' && localStorage.getItem('customer_name')) || 'Rahul Sharma';
+    const email = (typeof window !== 'undefined' && localStorage.getItem('customer_email')) || 'rahul@example.com';
+
     if (!token) {
       router.push('/customer/login');
       return;
@@ -156,7 +138,6 @@ export default function ConsumerChatPage() {
     setCustomerName(name);
     setCustomerEmail(email);
 
-    // Fetch Spend Limit & Realtime DB Activity
     fetchAuthLimit(token);
     loadAddresses();
   }, [router]);
@@ -185,12 +166,10 @@ export default function ConsumerChatPage() {
         if (data.remaining_limit !== undefined) setRemainingLimit(data.remaining_limit);
         if (data.card_last4) setCardLast4(data.card_last4);
 
-        // Live Real-Time Database Fetched Purchases
         if (data.recent_purchases && Array.isArray(data.recent_purchases)) {
           setRecentPurchases(data.recent_purchases);
         }
 
-        // Live Real-Time Database Fetched Searches
         if (data.recent_searches && Array.isArray(data.recent_searches) && data.recent_searches.length > 0) {
           setHistoryThreads(data.recent_searches.map((s: any) => ({
             id: s.id,
@@ -253,7 +232,6 @@ export default function ConsumerChatPage() {
     if (!customPrompt) setInputPrompt('');
     setLoading(true);
 
-    // Add to history thread title if first message
     if (messages.length === 0) {
       const newHistItem: ChatThreadHistory = {
         id: `thread_${Date.now()}`,
@@ -308,8 +286,6 @@ export default function ConsumerChatPage() {
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
-
-      // Re-fetch limit after potential purchase settlement
       fetchAuthLimit(token);
     } catch (err: any) {
       setMessages((prev) => [
@@ -340,103 +316,101 @@ export default function ConsumerChatPage() {
   };
 
   return (
-    <div className="flex h-screen bg-[#f9f9f9] text-slate-900 font-sans antialiased overflow-hidden selection:bg-slate-200">
-      {/* ========================================================================= */}
-      {/* 1. COLLAPSIBLE LEFT SIDEBAR (ChatGPT Style)                                */}
-      {/* ========================================================================= */}
+    <div className="flex h-screen bg-white text-neutral-900 font-sans antialiased overflow-hidden selection:bg-neutral-200">
+      {/* 1. COLLAPSIBLE LEFT SIDEBAR */}
       <aside
-        className={`bg-[#f9f9f9] border-r border-slate-200/80 flex flex-col transition-all duration-300 ease-in-out z-20 ${
-          sidebarOpen ? 'w-[260px]' : 'w-0 border-none'
+        className={`bg-neutral-50/70 border-r border-neutral-200 flex flex-col transition-all duration-200 ease-in-out z-20 ${
+          sidebarOpen ? 'w-64' : 'w-0 border-none'
         } overflow-hidden`}
       >
         <div className="p-3 flex items-center justify-between">
           <button
             onClick={startNewChat}
-            className="flex-1 flex items-center space-x-2.5 px-3 py-2 bg-white hover:bg-slate-100/80 border border-slate-200/90 text-slate-800 rounded-lg text-sm font-medium transition-colors shadow-2xs group"
+            className="flex-1 flex items-center space-x-2 px-3 h-8 bg-neutral-900 hover:bg-black text-white rounded-md text-xs font-medium transition-colors shadow-xs group cursor-pointer"
           >
-            <div className="w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs group-hover:scale-105 transition-transform">
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-            </div>
-            <span className="truncate">New chat</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>New Chat</span>
           </button>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="p-2 hover:bg-slate-200/60 rounded-lg text-slate-500 hover:text-slate-800 transition-colors ml-1"
+            className="p-1.5 hover:bg-neutral-200/60 rounded-md text-neutral-500 hover:text-neutral-900 transition-colors ml-1 cursor-pointer"
             title="Close sidebar"
           >
-            <PanelLeftClose className="w-5 h-5" />
+            <PanelLeftClose className="w-4 h-4" />
           </button>
         </div>
 
         {/* Sidebar Nav Shortcuts */}
-        <div className="px-2 py-1 space-y-0.5 border-b border-slate-200/60 text-xs font-medium text-slate-600">
+        <div className="px-2 py-1 space-y-0.5 border-b border-neutral-200 text-xs font-medium text-neutral-600">
           <button
             onClick={() => router.push('/customer/addresses')}
-            className="w-full flex items-center space-x-2.5 px-3 py-2 hover:bg-slate-200/50 rounded-lg transition-colors text-left"
+            className="w-full flex items-center space-x-2 px-2.5 py-1.5 hover:bg-neutral-100/80 rounded-md transition-colors text-left cursor-pointer"
           >
-            <MapPin className="w-4 h-4 text-slate-500" />
+            <MapPin className="w-3.5 h-3.5 text-neutral-500" />
             <span>Delivery Addresses</span>
           </button>
           <button
             onClick={() => router.push('/customer/dashboard')}
-            className="w-full flex items-center space-x-2.5 px-3 py-2 hover:bg-slate-200/50 rounded-lg transition-colors text-left"
+            className="w-full flex items-center space-x-2 px-2.5 py-1.5 hover:bg-neutral-100/80 rounded-md transition-colors text-left cursor-pointer"
           >
-            <CreditCard className="w-4 h-4 text-slate-500" />
+            <CreditCard className="w-3.5 h-3.5 text-neutral-500" />
             <span>Spend Vault & Card</span>
           </button>
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="w-full flex items-center space-x-2.5 px-3 py-2 hover:bg-slate-200/50 rounded-lg transition-colors text-left"
+            className="w-full flex items-center space-x-2 px-2.5 py-1.5 hover:bg-neutral-100/80 rounded-md transition-colors text-left cursor-pointer"
           >
-            <Settings className="w-4 h-4 text-slate-500" />
+            <Settings className="w-3.5 h-3.5 text-neutral-500" />
             <span>Settings</span>
           </button>
         </div>
 
         {/* Recent Shopping Threads & Purchased Items */}
-        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-5">
+        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
           {/* RECENTLY BOUGHT SECTION */}
-          <div>
-            <div className="px-3 flex items-center justify-between mb-2">
-              <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
-                Recently Bought
-              </h3>
-              <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
+          {recentPurchases.length > 0 && (
+            <div>
+              <div className="px-2.5 flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                  Recently Bought
+                </span>
+                <ShoppingBag className="w-3 h-3 text-neutral-500" />
+              </div>
+              <div className="space-y-1">
+                {recentPurchases.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => handleSendMessage(`check order details for ${item.item_name}`)}
+                    className="w-full text-left p-2 bg-white hover:bg-neutral-100 border border-neutral-200/80 rounded-md transition-all shadow-2xs group flex items-center justify-between cursor-pointer"
+                  >
+                    <div className="truncate pr-2">
+                      <p className="font-semibold text-neutral-900 truncate text-[11px] group-hover:text-black">
+                        {item.item_name}
+                      </p>
+                      <p className="text-[10px] text-neutral-400 font-mono mt-0.5 truncate">{item.merchant_name} • {item.date}</p>
+                    </div>
+                    <span className="shrink-0 px-1.5 py-0.2 bg-neutral-100 text-neutral-800 font-mono font-semibold text-[10px] rounded border border-neutral-200">
+                      ₹{item.price.toLocaleString('en-IN')}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="space-y-1.5">
-              {recentPurchases.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleSendMessage(`check order details for ${item.item_name}`)}
-                  className="w-full text-left p-2.5 bg-white hover:bg-slate-100/90 border border-slate-200/80 rounded-xl transition-all shadow-2xs group flex items-center justify-between"
-                >
-                  <div className="truncate pr-2">
-                    <p className="font-bold text-slate-900 truncate text-[11px] group-hover:text-indigo-600 transition-colors">
-                      {item.item_name}
-                    </p>
-                    <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">{item.merchant_name} • {item.date}</p>
-                  </div>
-                  <span className="shrink-0 px-2 py-0.5 bg-emerald-50 text-emerald-700 font-mono font-extrabold text-[10px] rounded-lg border border-emerald-200/60">
-                    ₹{item.price.toLocaleString('en-IN')}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
 
           {/* RECENT SEARCHES SECTION */}
           <div>
-            <h3 className="px-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">
+            <span className="px-2.5 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider block mb-1.5">
               Recent Searches
-            </h3>
+            </span>
             <div className="space-y-0.5">
               {historyThreads.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => handleSendMessage(item.title)}
-                  className="w-full flex items-center space-x-2.5 px-3 py-2 hover:bg-slate-200/60 rounded-xl text-xs text-slate-700 hover:text-slate-900 transition-colors text-left group truncate"
+                  className="w-full flex items-center space-x-2 px-2.5 py-1.5 hover:bg-neutral-100/80 rounded-md text-xs text-neutral-700 hover:text-neutral-900 transition-colors text-left truncate cursor-pointer"
                 >
-                  <MessageSquare className="w-3.5 h-3.5 text-slate-400 shrink-0 group-hover:text-indigo-600 transition-colors" />
+                  <MessageSquare className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                   <span className="truncate flex-1 font-medium">{item.title}</span>
                 </button>
               ))}
@@ -444,16 +418,15 @@ export default function ConsumerChatPage() {
           </div>
         </div>
 
-        {/* Bottom Profile Pill (from ChatGPT Screenshot 2 & 3) */}
-        <div className="p-2 border-t border-slate-200/80 relative">
-          {/* Profile Popover Menu */}
+        {/* Bottom Profile Pill */}
+        <div className="p-2 border-t border-neutral-200 relative">
           {isProfileMenuOpen && (
-            <div className="absolute bottom-16 left-2 right-2 bg-white rounded-2xl border border-slate-200 shadow-xl p-1.5 text-xs z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
-              <div className="px-3 py-2 border-b border-slate-100">
-                <p className="font-bold text-slate-900 truncate">{customerName}</p>
-                <p className="text-[11px] text-slate-400 truncate">{customerEmail}</p>
-                <span className="inline-block mt-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 font-semibold text-[10px] rounded-full">
-                  Limit: ₹{remainingLimit.toLocaleString('en-IN')} Available
+            <div className="absolute bottom-14 left-2 right-2 bg-white rounded-lg border border-neutral-200 shadow-xl p-1 text-xs z-50 animate-in fade-in zoom-in-95 duration-100">
+              <div className="px-3 py-2 border-b border-neutral-100 mb-1">
+                <p className="font-semibold text-neutral-900 truncate text-xs">{customerName}</p>
+                <p className="text-[10px] text-neutral-400 truncate mt-0.5 font-mono">{customerEmail}</p>
+                <span className="inline-block mt-1.5 px-2 py-0.5 bg-neutral-100 text-neutral-800 font-mono font-medium text-[10px] rounded border border-neutral-200">
+                  Limit: ₹{remainingLimit.toLocaleString('en-IN')}
                 </span>
               </div>
               <button
@@ -461,109 +434,103 @@ export default function ConsumerChatPage() {
                   setIsProfileMenuOpen(false);
                   router.push('/customer/dashboard');
                 }}
-                className="w-full flex items-center space-x-2 px-3 py-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-700"
+                className="w-full flex items-center space-x-2 px-2.5 py-1.5 hover:bg-neutral-100 rounded-md transition-colors text-neutral-700 cursor-pointer"
               >
-                <CreditCard className="w-4 h-4 text-slate-500" />
-                <span>Spend Authorization Vault</span>
+                <CreditCard className="w-3.5 h-3.5 text-neutral-500" />
+                <span>Spend Vault</span>
               </button>
               <button
                 onClick={() => {
                   setIsProfileMenuOpen(false);
                   setIsSettingsOpen(true);
                 }}
-                className="w-full flex items-center space-x-2 px-3 py-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-700"
+                className="w-full flex items-center space-x-2 px-2.5 py-1.5 hover:bg-neutral-100 rounded-md transition-colors text-neutral-700 cursor-pointer"
               >
-                <Settings className="w-4 h-4 text-slate-500" />
+                <Settings className="w-3.5 h-3.5 text-neutral-500" />
                 <span>Settings</span>
               </button>
-              <div className="my-1 border-t border-slate-100" />
+              <div className="my-1 border-t border-neutral-100" />
               <button
                 onClick={() => {
                   localStorage.clear();
                   router.push('/customer/login');
                 }}
-                className="w-full flex items-center space-x-2 px-3 py-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors font-medium"
+                className="w-full flex items-center space-x-2 px-2.5 py-1.5 hover:bg-red-50 text-red-600 rounded-md transition-colors font-medium cursor-pointer"
               >
-                <LogOut className="w-4 h-4 text-red-500" />
-                <span>Log out</span>
+                <LogOut className="w-3.5 h-3.5 text-red-500" />
+                <span>Sign Out</span>
               </button>
             </div>
           )}
 
           <button
             onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-            className="w-full flex items-center justify-between p-2 hover:bg-slate-200/60 rounded-xl transition-colors text-left"
+            className="w-full flex items-center justify-between p-1.5 hover:bg-neutral-100/80 rounded-md transition-colors text-left cursor-pointer"
           >
-            <div className="flex items-center space-x-2.5 truncate">
-              <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+            <div className="flex items-center space-x-2 truncate">
+              <div className="w-6.5 h-6.5 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
                 {getInitials(customerName)}
               </div>
               <div className="truncate">
-                <p className="text-xs font-semibold text-slate-800 truncate leading-tight">{customerName}</p>
-                <p className="text-[10px] text-slate-400 truncate">Agentpay Pro</p>
+                <p className="text-xs font-semibold text-neutral-900 truncate leading-tight">{customerName}</p>
+                <p className="text-[10px] text-neutral-400 truncate font-mono">Consumer</p>
               </div>
             </div>
-            <MoreHorizontal className="w-4 h-4 text-slate-400 shrink-0" />
+            <MoreHorizontal className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
           </button>
         </div>
       </aside>
 
-      {/* ========================================================================= */}
-      {/* 2. MAIN CHAT AREA (ChatGPT Layout)                                        */}
-      {/* ========================================================================= */}
+      {/* 2. MAIN CHAT AREA */}
       <main className="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
         {/* Top Floating Header Bar */}
-        <header className="h-14 px-4 flex items-center justify-between border-b border-slate-100 bg-white/80 backdrop-blur-md z-10">
-          <div className="flex items-center space-x-3">
+        <header className="h-12 px-4 flex items-center justify-between border-b border-neutral-200 bg-white z-10">
+          <div className="flex items-center space-x-2.5">
             {!sidebarOpen && (
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
+                className="p-1.5 hover:bg-neutral-100 rounded-md text-neutral-600 transition-colors cursor-pointer"
                 title="Open sidebar"
               >
-                <PanelLeft className="w-5 h-5" />
+                <PanelLeft className="w-4 h-4" />
               </button>
             )}
 
-            {/* Clean Model / Chat Selector */}
-            <div className="flex items-center space-x-2 px-3 py-1 bg-slate-100/80 hover:bg-slate-100 rounded-xl text-xs font-semibold text-slate-800 border border-slate-200/60 transition-colors">
-              <Sparkles className="w-3.5 h-3.5 text-slate-700" />
-              <span>Agentpay Shopping AI</span>
+            <div className="flex items-center space-x-2 px-2.5 py-1 bg-neutral-50 rounded-md text-xs font-medium text-neutral-800 border border-neutral-200">
+              <AgentpayLogo size={16} />
+              <span className="font-semibold text-neutral-900">Shopping Assistant</span>
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             {/* Delivery Destination Pill */}
             <button
               onClick={() => setIsAddressModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-full text-xs font-medium text-slate-700 shadow-2xs transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-md text-xs font-medium text-neutral-700 transition-colors cursor-pointer"
               title="Change Delivery Destination"
             >
-              <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-              <span className="truncate max-w-[120px] sm:max-w-[180px]">
-                Ship to:{' '}
-                <strong className="text-slate-900 font-semibold">
-                  {addresses.find((a) => a.id === selectedAddressId)?.label || (addresses.length > 0 ? addresses[0].label : 'Add Address')}
-                </strong>
+              <MapPin className="w-3 h-3 text-neutral-500 shrink-0" />
+              <span className="truncate max-w-[140px]">
+                Ship to: <strong className="text-neutral-900 font-semibold">{addresses.find((a) => a.id === selectedAddressId)?.label || (addresses.length > 0 ? addresses[0].label : 'Add Address')}</strong>
               </span>
-              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+              <ChevronDown className="w-3 h-3 text-neutral-400 shrink-0" />
             </button>
 
             {/* Live Spend Limit Badge */}
             <button
               onClick={() => router.push('/customer/dashboard')}
-              className="inline-flex items-center space-x-1.5 px-3 py-1 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 text-emerald-800 rounded-full text-xs font-semibold transition-colors"
+              className="inline-flex items-center space-x-1.5 px-2.5 py-1 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-neutral-800 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer"
             >
-              <Lock className="w-3 h-3 text-emerald-600" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               <span>Limit: ₹{remainingLimit.toLocaleString('en-IN')}</span>
             </button>
 
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="p-2 hover:bg-slate-100 rounded-full text-slate-500 hover:text-slate-800 transition-colors"
+              className="p-1.5 hover:bg-neutral-100 rounded-md text-neutral-500 hover:text-neutral-900 transition-colors cursor-pointer"
               title="Settings"
             >
-              <Settings className="w-5 h-5" />
+              <Settings className="w-4 h-4" />
             </button>
           </div>
         </header>
@@ -572,60 +539,58 @@ export default function ConsumerChatPage() {
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-8 pb-32 space-y-6">
           {messages.length === 0 ? (
             /* HERO GREETING & SUGGESTION CARDS */
-            <div className="max-w-2xl mx-auto mt-8 sm:mt-16 text-center space-y-6">
-              <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center mx-auto shadow-sm">
-                <ShoppingBag className="w-6 h-6" />
+            <div className="max-w-xl mx-auto mt-10 sm:mt-16 text-center space-y-6">
+              <div className="w-11 h-11 rounded-lg bg-neutral-950 text-white flex items-center justify-center mx-auto shadow-xs">
+                <ShoppingBag className="w-5 h-5" />
               </div>
 
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">
                   Autonomous Commerce Assistant
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto mt-1.5">
+                <p className="text-xs text-neutral-500 max-w-md mx-auto mt-1 leading-relaxed">
                   Discover products across registered merchants. AI verifies your bounded spend policy and autonomously settles orders via Razorpay.
                 </p>
               </div>
 
               {/* Quick Prompts */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 text-left">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-left">
                 <button
                   onClick={() => handleSendMessage('Search for wireless noise cancelling headphones under ₹3000')}
-                  className="p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-slate-400 shadow-2xs hover:shadow-xs transition-all text-left group"
+                  className="p-3.5 rounded-lg bg-white border border-neutral-200 hover:border-neutral-900 transition-all text-left group cursor-pointer hover:shadow-xs"
                 >
-                  <Headphones className="w-5 h-5 text-slate-700 mb-3 group-hover:scale-105 transition-transform" />
+                  <Headphones className="w-4 h-4 text-neutral-700 mb-2.5 group-hover:scale-105 transition-transform" />
                   <div>
-                    <p className="text-xs font-semibold text-slate-900">ANC Headphones</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Budget under ₹3,000</p>
+                    <p className="text-xs font-semibold text-neutral-900">ANC Headphones</p>
+                    <p className="text-[10.5px] text-neutral-400 mt-0.5">Budget under ₹3,000</p>
                   </div>
                 </button>
 
                 <button
-                  onClick={() => handleSendMessage('Find high protein peanut butter 1kg')}
-                  className="p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-slate-400 shadow-2xs hover:shadow-xs transition-all text-left group"
+                  onClick={() => handleSendMessage('Find boAt Bluetooth speakers under ₹2000')}
+                  className="p-3.5 rounded-lg bg-white border border-neutral-200 hover:border-neutral-900 transition-all text-left group cursor-pointer hover:shadow-xs"
                 >
-                  <ShoppingBag className="w-5 h-5 text-slate-700 mb-3 group-hover:scale-105 transition-transform" />
+                  <ShoppingBag className="w-4 h-4 text-neutral-700 mb-2.5 group-hover:scale-105 transition-transform" />
                   <div>
-                    <p className="text-xs font-semibold text-slate-900">Peanut Butter 1kg</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Health & fitness grocery</p>
+                    <p className="text-xs font-semibold text-neutral-900">boAt Speakers</p>
+                    <p className="text-[10.5px] text-neutral-400 mt-0.5">Speakers under ₹2,000</p>
                   </div>
                 </button>
 
                 <button
                   onClick={() => handleSendMessage('Show top smartwatch options with health monitoring')}
-                  className="p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-slate-400 shadow-2xs hover:shadow-xs transition-all text-left group"
+                  className="p-3.5 rounded-lg bg-white border border-neutral-200 hover:border-neutral-900 transition-all text-left group cursor-pointer hover:shadow-xs"
                 >
-                  <Watch className="w-5 h-5 text-slate-700 mb-3 group-hover:scale-105 transition-transform" />
+                  <Watch className="w-4 h-4 text-neutral-700 mb-2.5 group-hover:scale-105 transition-transform" />
                   <div>
-                    <p className="text-xs font-semibold text-slate-900">Health Smartwatches</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Auto-settle with limit</p>
+                    <p className="text-xs font-semibold text-neutral-900">Smartwatches</p>
+                    <p className="text-[10.5px] text-neutral-400 mt-0.5">Auto-settle with limit</p>
                   </div>
                 </button>
               </div>
             </div>
           ) : (
-            /* ========================================================================= */
-            /* CHAT MESSAGE STREAM                                                       */
-            /* ========================================================================= */
+            /* CHAT MESSAGE STREAM */
             <div className="max-w-2xl mx-auto space-y-6 pb-28">
               {messages.map((msg) => (
                 <div
@@ -635,41 +600,41 @@ export default function ConsumerChatPage() {
                   }`}
                 >
                   {msg.sender === 'assistant' && (
-                    <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center shrink-0 mt-1 shadow-2xs">
-                      <ShoppingBag className="w-3.5 h-3.5 text-slate-200" />
+                    <div className="w-6.5 h-6.5 rounded-md bg-neutral-950 text-white flex items-center justify-center shrink-0 mt-0.5">
+                      <ShoppingBag className="w-3.5 h-3.5" />
                     </div>
                   )}
 
                   <div className={`flex flex-col max-w-[85%] ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
                     {msg.status === 'PAYMENT_SETTLED' || msg.status === 'SETTLED' || msg.status === 'ORDER_DETAILS' ? (
-                      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-4 w-full text-xs animate-in fade-in zoom-in-95 duration-150">
+                      <div className="bg-white rounded-lg border border-neutral-200 p-5 space-y-4 w-full text-xs animate-in fade-in zoom-in-95 duration-100 shadow-xs">
                         {/* Header */}
-                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
                           <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                            <span className="font-bold text-slate-900 text-xs tracking-tight">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span className="font-semibold text-neutral-900 text-xs tracking-tight">
                               {msg.status === 'ORDER_DETAILS' ? 'Order Receipt Details' : 'Autonomous Payment Settled'}
                             </span>
                           </div>
-                          <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
-                            {msg.status === 'ORDER_DETAILS' ? 'Settled on Razorpay' : 'Paid & Captured'}
+                          <span className="text-[10px] font-mono font-semibold text-emerald-700">
+                            SETTLED ON RAZORPAY
                           </span>
                         </div>
 
                         {/* Product & Price */}
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <h4 className="font-bold text-slate-900 text-sm">
+                            <h4 className="font-bold text-neutral-900 text-sm">
                               {msg.itemName || (msg.text.includes('for') ? msg.text.split('for')[1].split('on')[0].trim() : 'Product Purchase')}
                             </h4>
                             {msg.merchantName ? (
-                              <p className="text-[11px] text-slate-500 mt-0.5">Merchant: {msg.merchantName}</p>
+                              <p className="text-[11px] text-neutral-500 mt-0.5">Merchant: {msg.merchantName}</p>
                             ) : (
-                              <p className="text-[11px] text-slate-500 mt-0.5">Executed directly on Razorpay</p>
+                              <p className="text-[11px] text-neutral-500 mt-0.5">Executed directly on Razorpay</p>
                             )}
                           </div>
                           {msg.amount ? (
-                            <div className="text-base font-bold text-slate-900 font-mono shrink-0">
+                            <div className="text-base font-bold text-neutral-900 font-mono shrink-0">
                               ₹{Number(msg.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                             </div>
                           ) : null}
@@ -677,14 +642,14 @@ export default function ConsumerChatPage() {
 
                         {/* Razorpay Order & Payment ID */}
                         {msg.razorpayOrderId && (
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1 font-mono text-[11px]">
-                            <div className="flex items-center justify-between text-slate-600">
-                              <span className="text-slate-400 font-sans">Razorpay Order</span>
-                              <span className="font-semibold text-slate-900">{msg.razorpayOrderId}</span>
+                          <div className="bg-neutral-50 rounded-md p-3 border border-neutral-200 space-y-1 font-mono text-[11px]">
+                            <div className="flex items-center justify-between text-neutral-600">
+                              <span className="text-neutral-500 font-sans">Razorpay Order</span>
+                              <span className="font-semibold text-neutral-900">{msg.razorpayOrderId}</span>
                             </div>
                             {msg.razorpayPaymentId && (
-                              <div className="flex items-center justify-between text-slate-600">
-                                <span className="text-slate-400 font-sans">Payment ID</span>
+                              <div className="flex items-center justify-between text-neutral-600">
+                                <span className="text-neutral-500 font-sans">Payment ID</span>
                                 <span className="font-semibold text-emerald-700">{msg.razorpayPaymentId}</span>
                               </div>
                             )}
@@ -693,12 +658,12 @@ export default function ConsumerChatPage() {
 
                         {/* Shipping & Delivery */}
                         {msg.estimatedDeliveryDate && (
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1.5">
-                            <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs">
-                              <Truck className="w-3.5 h-3.5 text-slate-700 shrink-0" />
+                          <div className="bg-neutral-50 rounded-md p-3 border border-neutral-200 space-y-1">
+                            <div className="flex items-center gap-2 text-neutral-900 font-semibold text-xs">
+                              <Truck className="w-3.5 h-3.5 text-neutral-700 shrink-0" />
                               <span>
                                 Expected Delivery:{' '}
-                                <strong className="text-slate-900 font-bold">
+                                <strong className="text-neutral-900 font-bold">
                                   {new Date(msg.estimatedDeliveryDate).toLocaleDateString('en-IN', {
                                     weekday: 'long',
                                     day: 'numeric',
@@ -709,8 +674,8 @@ export default function ConsumerChatPage() {
                               </span>
                             </div>
                             {msg.deliveryAddress && (
-                              <div className="flex items-start gap-2 text-[11px] text-slate-600">
-                                <MapPin className="w-3 h-3 text-slate-400 shrink-0 mt-0.5" />
+                              <div className="flex items-start gap-2 text-[11px] text-neutral-600">
+                                <MapPin className="w-3 h-3 text-neutral-400 shrink-0 mt-0.5" />
                                 <span className="leading-tight">{msg.deliveryAddress}</span>
                               </div>
                             )}
@@ -718,27 +683,26 @@ export default function ConsumerChatPage() {
                         )}
 
                         {/* Structured Gate Verification Grid */}
-                        <div className="pt-3 border-t border-slate-100 grid grid-cols-3 gap-2 text-center text-[11px]">
-                          <div className="bg-slate-50 border border-slate-100 rounded-lg py-1.5 px-2">
-                            <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">Customer Auth</span>
-                            <span className="font-semibold text-emerald-700">{msg.customerAuthDecision || 'ALLOW'}</span>
+                        <div className="pt-3 border-t border-neutral-100 grid grid-cols-3 gap-2 text-center text-[11px]">
+                          <div className="bg-neutral-50 border border-neutral-200 rounded py-1.5 px-2">
+                            <span className="text-neutral-400 block text-[9px] uppercase font-bold tracking-wider font-mono">Customer Auth</span>
+                            <span className="font-semibold text-emerald-700 font-mono text-[10px]">{msg.customerAuthDecision || 'ALLOW'}</span>
                           </div>
-                          <div className="bg-slate-50 border border-slate-100 rounded-lg py-1.5 px-2">
-                            <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">Policy Gate</span>
-                            <span className="font-semibold text-emerald-700">{msg.policyDecision || 'ALLOW'}</span>
+                          <div className="bg-neutral-50 border border-neutral-200 rounded py-1.5 px-2">
+                            <span className="text-neutral-400 block text-[9px] uppercase font-bold tracking-wider font-mono">Policy Gate</span>
+                            <span className="font-semibold text-emerald-700 font-mono text-[10px]">{msg.policyDecision || 'ALLOW'}</span>
                           </div>
-                          <div className="bg-slate-50 border border-slate-100 rounded-lg py-1.5 px-2">
-                            <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">Settlement</span>
-                            <span className="font-semibold text-slate-800">Autonomous</span>
+                          <div className="bg-neutral-50 border border-neutral-200 rounded py-1.5 px-2">
+                            <span className="text-neutral-400 block text-[9px] uppercase font-bold tracking-wider font-mono">Settlement</span>
+                            <span className="font-semibold text-neutral-900 font-mono text-[10px]">AUTONOMOUS</span>
                           </div>
                         </div>
 
-                        {/* Optional Buy Again action for past order inquiries */}
                         {msg.status === 'ORDER_DETAILS' && msg.itemName && (
                           <div className="pt-2 flex justify-end">
                             <button
                               onClick={() => handleSendMessage(`buy ${msg.itemName}`)}
-                              className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-2xs transition-colors flex items-center gap-1.5"
+                              className="h-8 px-3 bg-neutral-900 hover:bg-black text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
                             >
                               <ShoppingBag className="w-3.5 h-3.5" />
                               <span>Buy Again</span>
@@ -748,44 +712,44 @@ export default function ConsumerChatPage() {
                       </div>
                     ) : (
                       <div
-                        className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                        className={`rounded-lg px-4 py-2.5 text-xs leading-relaxed ${
                           msg.sender === 'user'
-                            ? 'bg-slate-900 text-white font-normal rounded-tr-none shadow-xs'
-                            : 'bg-slate-100/80 text-slate-800 rounded-tl-none border border-slate-200/60'
+                            ? 'bg-neutral-900 text-white font-normal'
+                            : 'bg-neutral-100 text-neutral-800 border border-neutral-200'
                         }`}
                       >
                         <p className="whitespace-pre-wrap">{msg.text}</p>
                       </div>
                     )}
 
-                    {/* Product Options Grid rendered in Assistant Response */}
+                    {/* Product Options Grid */}
                     {msg.cards && msg.cards.length > 0 && (
-                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
                         {msg.cards.map((card) => (
                           <div
                             key={card.item_id}
-                            className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between group"
+                            className="bg-white p-3.5 rounded-lg border border-neutral-200 hover:border-neutral-400 transition-all flex flex-col justify-between group"
                           >
                             <div>
-                              <div className="flex items-center justify-between text-[10px] font-bold uppercase text-slate-400 mb-1">
-                                <span>Option #{card.option_index}</span>
-                                <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-mono">
+                              <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 mb-1">
+                                <span>OPTION #{card.option_index}</span>
+                                <span className="px-1.5 py-0.2 bg-neutral-100 rounded text-neutral-700 border border-neutral-200">
                                   {card.category}
                                 </span>
                               </div>
-                              <h4 className="text-xs font-bold text-slate-900 group-hover:text-slate-900 line-clamp-1">
+                              <h4 className="text-xs font-bold text-neutral-900 line-clamp-1">
                                 {card.item_name}
                               </h4>
-                              <p className="text-[11px] text-slate-500 mt-0.5">by {card.merchant_name}</p>
+                              <p className="text-[11px] text-neutral-500 mt-0.5">by {card.merchant_name}</p>
                             </div>
 
-                            <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                              <span className="text-xs font-extrabold text-slate-900">
+                            <div className="mt-3 pt-2.5 border-t border-neutral-100 flex items-center justify-between">
+                              <span className="text-xs font-bold font-mono text-neutral-900">
                                 ₹{card.price.toLocaleString('en-IN')}
                               </span>
                               <button
                                 onClick={() => handleBuyOption(card)}
-                                className="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[11px] font-semibold transition-all shadow-xs active:scale-95 flex items-center space-x-1"
+                                className="h-7 px-2.5 bg-neutral-900 hover:bg-black text-white rounded text-[11px] font-medium transition-all flex items-center gap-1 cursor-pointer"
                               >
                                 <span>Instant Buy</span>
                                 <ArrowRight className="w-3 h-3" />
@@ -796,11 +760,11 @@ export default function ConsumerChatPage() {
                       </div>
                     )}
 
-                    <span className="text-[10px] text-slate-400 mt-1 px-1">{msg.timestamp}</span>
+                    <span className="text-[10px] font-mono text-neutral-400 mt-1 px-1">{msg.timestamp}</span>
                   </div>
 
                   {msg.sender === 'user' && (
-                    <div className="w-7 h-7 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-1 shadow-xs">
+                    <div className="w-6.5 h-6.5 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
                       {getInitials(customerName)}
                     </div>
                   )}
@@ -808,13 +772,13 @@ export default function ConsumerChatPage() {
               ))}
 
               {loading && (
-                <div className="flex items-center space-x-3">
-                  <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                    <ShoppingBag className="w-3.5 h-3.5 text-slate-200" />
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-6.5 h-6.5 rounded-md bg-neutral-950 text-white flex items-center justify-center shrink-0">
+                    <ShoppingBag className="w-3.5 h-3.5" />
                   </div>
-                  <div className="bg-slate-100 text-slate-600 rounded-2xl px-4 py-2.5 text-xs font-medium border border-slate-200/60 flex items-center space-x-2">
-                    <Loader2 className="w-3.5 h-3.5 text-slate-700 animate-spin" />
-                    <span>Searching catalog & evaluating gates...</span>
+                  <div className="bg-neutral-100 text-neutral-600 rounded-lg px-3.5 py-2 text-xs font-medium border border-neutral-200 flex items-center space-x-2">
+                    <Loader2 className="w-3.5 h-3.5 text-neutral-700 animate-spin" />
+                    <span>Searching catalog & evaluating policy gates...</span>
                   </div>
                 </div>
               )}
@@ -823,9 +787,7 @@ export default function ConsumerChatPage() {
           )}
         </div>
 
-        {/* ========================================================================= */}
-        {/* 3. FLOATING BOTTOM INPUT DOCK (ChatGPT Style)                             */}
-        {/* ========================================================================= */}
+        {/* 3. FLOATING BOTTOM INPUT DOCK */}
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10">
           <div className="max-w-2xl mx-auto">
             <form
@@ -833,15 +795,15 @@ export default function ConsumerChatPage() {
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="bg-white rounded-3xl border border-slate-200/90 shadow-lg hover:border-slate-300 transition-all p-2 flex items-center space-x-2 focus-within:ring-2 focus-within:ring-slate-900/10 focus-within:border-slate-400"
+              className="bg-white rounded-xl border border-neutral-200 shadow-md p-1.5 flex items-center space-x-2 focus-within:border-neutral-900 focus-within:ring-1 focus-within:ring-neutral-900 transition-all"
             >
               <button
                 type="button"
                 onClick={() => handleSendMessage('find cheap headphones')}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors ml-1"
+                className="p-1.5 text-neutral-400 hover:text-neutral-700 rounded-md hover:bg-neutral-100 transition-colors ml-1 cursor-pointer"
                 title="Search Products"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
               </button>
 
               <input
@@ -849,291 +811,107 @@ export default function ConsumerChatPage() {
                 value={inputPrompt}
                 onChange={(e) => setInputPrompt(e.target.value)}
                 placeholder="Ask anything or search across merchants..."
-                className="flex-1 bg-transparent text-sm text-slate-800 placeholder-slate-400 focus:outline-none px-2"
+                className="flex-1 bg-transparent text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none px-2 font-sans"
                 disabled={loading}
               />
 
-              {/* Action Buttons Right (ChatGPT Screenshot 1) */}
               <div className="flex items-center space-x-1.5 pr-1">
-                <button
-                  type="button"
-                  className="hidden sm:flex items-center space-x-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200/70 text-slate-600 rounded-full text-xs font-medium transition-colors"
+                <div
+                  className="hidden sm:flex items-center space-x-1 px-2 py-0.5 bg-neutral-100 text-neutral-600 rounded text-[10.5px] font-mono"
                   title="LLM Reasoning Engine Enabled"
                 >
-                  <Cpu className="w-3 h-3 text-indigo-600" />
+                  <Cpu className="w-3 h-3 text-neutral-700" />
                   <span>Think</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
-                  title="Voice input"
-                >
-                  <Mic className="w-4 h-4" />
-                </button>
+                </div>
 
                 <button
                   type="submit"
                   disabled={!inputPrompt.trim() || loading}
-                  className={`p-2.5 rounded-full transition-all ${
+                  className={`w-7 h-7 rounded-md transition-all flex items-center justify-center cursor-pointer ${
                     inputPrompt.trim() && !loading
-                      ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-sm scale-100'
-                      : 'bg-slate-200 text-slate-400 cursor-not-allowed scale-95'
+                      ? 'bg-neutral-900 hover:bg-black text-white'
+                      : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
                   }`}
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className="w-3.5 h-3.5" />
                 </button>
               </div>
             </form>
-            <p className="text-[11px] text-center text-slate-400 mt-2">
+            <p className="text-[10.5px] font-mono text-center text-neutral-400 mt-2">
               Agentpay AI evaluates spend rules & settles transactions directly via Razorpay.
             </p>
           </div>
         </div>
       </main>
 
-      {/* ========================================================================= */}
-      {/* 4. CHATGPT SETTINGS MODAL (ChatGPT Screenshot 4)                          */}
-      {/* ========================================================================= */}
+      {/* 4. SETTINGS MODAL */}
       {isSettingsOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
-            {/* Modal Header */}
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <h2 className="text-base font-semibold text-slate-800">Settings</h2>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white rounded-lg border border-neutral-200 shadow-xl w-full max-w-xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="px-5 py-3.5 border-b border-neutral-100 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-neutral-900">Settings</h2>
               <button
                 onClick={() => setIsSettingsOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-full transition-colors"
+                className="text-neutral-400 hover:text-neutral-700 cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Modal Body */}
             <div className="flex-1 flex overflow-hidden">
-              {/* Modal Left Navigation */}
-              <div className="w-48 bg-slate-50/80 border-r border-slate-100 p-2 space-y-0.5 text-xs font-medium text-slate-600">
+              <div className="w-44 bg-neutral-50/60 border-r border-neutral-100 p-2 space-y-0.5 text-xs font-medium text-neutral-600">
                 <button
                   onClick={() => setSettingsTab('general')}
-                  className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-left transition-colors ${
-                    settingsTab === 'general' ? 'bg-white text-slate-900 font-semibold shadow-2xs' : 'hover:bg-slate-200/60'
+                  className={`w-full flex items-center space-x-2 px-2.5 py-1.5 rounded-md text-left transition-colors cursor-pointer ${
+                    settingsTab === 'general' ? 'bg-white text-neutral-900 font-semibold shadow-2xs' : 'hover:bg-neutral-100'
                   }`}
                 >
-                  <Settings className="w-4 h-4 text-slate-500" />
+                  <Settings className="w-3.5 h-3.5 text-neutral-500" />
                   <span>General</span>
                 </button>
                 <button
                   onClick={() => setSettingsTab('billing')}
-                  className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-left transition-colors ${
-                    settingsTab === 'billing' ? 'bg-white text-slate-900 font-semibold shadow-2xs' : 'hover:bg-slate-200/60'
+                  className={`w-full flex items-center space-x-2 px-2.5 py-1.5 rounded-md text-left transition-colors cursor-pointer ${
+                    settingsTab === 'billing' ? 'bg-white text-neutral-900 font-semibold shadow-2xs' : 'hover:bg-neutral-100'
                   }`}
                 >
-                  <CreditCard className="w-4 h-4 text-slate-500" />
+                  <CreditCard className="w-3.5 h-3.5 text-neutral-500" />
                   <span>Billing & Vault</span>
-                </button>
-                <button
-                  onClick={() => setSettingsTab('security')}
-                  className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-left transition-colors ${
-                    settingsTab === 'security' ? 'bg-white text-slate-900 font-semibold shadow-2xs' : 'hover:bg-slate-200/60'
-                  }`}
-                >
-                  <ShieldCheck className="w-4 h-4 text-slate-500" />
-                  <span>Security & Login</span>
                 </button>
               </div>
 
-              {/* Modal Tab Content */}
-              <div className="flex-1 p-6 overflow-y-auto space-y-6">
+              <div className="flex-1 p-5 overflow-y-auto space-y-4 text-xs">
                 {settingsTab === 'general' && (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     <div>
-                      <h3 className="text-sm font-semibold text-slate-900 mb-1">Appearance</h3>
-                      <p className="text-xs text-slate-500 mb-3">Customize how Agentpay looks on your device.</p>
-                      <div className="flex items-center space-x-3">
-                        <button
-                          onClick={() => setThemeMode('light')}
-                          className={`flex-1 p-3 rounded-2xl border text-xs font-semibold flex items-center justify-center space-x-2 transition-all ${
-                            themeMode === 'light'
-                              ? 'border-slate-900 bg-slate-900 text-white shadow-xs'
-                              : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                          }`}
-                        >
-                          <Sun className="w-4 h-4" />
-                          <span>Light</span>
-                        </button>
-                        <button
-                          onClick={() => setThemeMode('dark')}
-                          className={`flex-1 p-3 rounded-2xl border text-xs font-semibold flex items-center justify-center space-x-2 transition-all ${
-                            themeMode === 'dark'
-                              ? 'border-slate-900 bg-slate-900 text-white shadow-xs'
-                              : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                          }`}
-                        >
-                          <Moon className="w-4 h-4" />
-                          <span>Dark</span>
-                        </button>
-                      </div>
+                      <h3 className="font-semibold text-neutral-900 mb-1">Account Information</h3>
+                      <p className="text-neutral-500">{customerName} &bull; {customerEmail}</p>
                     </div>
-
-                    <div className="pt-4 border-t border-slate-100">
-                      <h3 className="text-sm font-semibold text-slate-900 mb-1">Language</h3>
-                      <p className="text-xs text-slate-500 mb-2">Primary conversational language for Groq LLM.</p>
-                      <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none">
-                        <option>English (Auto-detect)</option>
-                        <option>Hindi (हिंदी)</option>
-                        <option>Gujarati (ગુજરાતી)</option>
-                      </select>
+                    <div className="pt-3 border-t border-neutral-100">
+                      <h3 className="font-semibold text-neutral-900 mb-1">Theme</h3>
+                      <p className="text-neutral-500">Minimal Monochrome Light (System Default)</p>
                     </div>
                   </div>
                 )}
 
                 {settingsTab === 'billing' && (
                   <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-slate-900 mb-1">Spend Authorization Vault</h3>
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-                      <div className="flex justify-between text-xs text-slate-600">
-                        <span>Authorized Spend Cap</span>
-                        <span className="font-bold text-slate-900">₹{spendLimit.toLocaleString('en-IN')}</span>
-                      </div>
-                      <div className="flex justify-between text-xs text-slate-600">
-                        <span>Remaining Balance</span>
-                        <span className="font-bold text-emerald-700">₹{remainingLimit.toLocaleString('en-IN')}</span>
-                      </div>
-                      <div className="flex justify-between text-xs text-slate-600 pt-2 border-t border-slate-200">
-                        <span>Tokenized Card</span>
-                        <span className="font-bold text-slate-900">Visa ending in {cardLast4}</span>
-                      </div>
+                    <div>
+                      <h3 className="font-semibold text-neutral-900 mb-1">Active Spend Authorization</h3>
+                      <p className="font-mono text-neutral-800">Remaining Balance: ₹{remainingLimit.toLocaleString('en-IN')}</p>
                     </div>
                     <button
                       onClick={() => {
                         setIsSettingsOpen(false);
                         router.push('/customer/dashboard');
                       }}
-                      className="w-full py-2.5 px-4 bg-slate-900 text-white font-semibold text-xs rounded-xl hover:bg-slate-800 transition-colors shadow-xs"
+                      className="h-8 px-3 rounded-md bg-neutral-900 text-white text-xs font-medium hover:bg-black transition-colors cursor-pointer"
                     >
-                      Manage Vault & Limits
+                      Manage Spend Vault & Card
                     </button>
                   </div>
                 )}
-
-                {settingsTab === 'security' && (
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-slate-900 mb-1">Account Security</h3>
-                    <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-900 space-y-1">
-                      <p className="font-bold flex items-center space-x-1.5">
-                        <ShieldCheck className="w-4 h-4 text-emerald-700" />
-                        <span>Spend Authorization Secured</span>
-                      </p>
-                      <p className="text-[11px] text-emerald-800">
-                        Purchases require strict customer limit verification ($\le$ ₹{remainingLimit}).
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delivery Destination Modal */}
-      {isAddressModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-2xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
-                  <MapPin className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">Select Delivery Address</h3>
-                  <p className="text-[11px] text-slate-500">Autonomous orders will be shipped here</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsAddressModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {addresses.length === 0 ? (
-              <div className="py-6 text-center">
-                <p className="text-xs text-slate-500 mb-4">No delivery addresses on file. Add one to proceed with orders.</p>
-                <button
-                  onClick={() => {
-                    setIsAddressModalOpen(false);
-                    router.push('/customer/addresses');
-                  }}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Address
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                {addresses.map((addr) => (
-                  <div
-                    key={addr.id}
-                    onClick={() => {
-                      setSelectedAddressId(addr.id);
-                      setIsAddressModalOpen(false);
-                    }}
-                    className={`p-3 rounded-lg border text-xs cursor-pointer transition-all flex items-start justify-between gap-3 ${
-                      selectedAddressId === addr.id
-                        ? 'border-slate-900 bg-slate-50'
-                        : 'border-slate-200 hover:border-slate-300 bg-white'
-                    }`}
-                  >
-                    <div className="space-y-0.5 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900">{addr.label}</span>
-                        {addr.is_default && (
-                          <span className="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.2 rounded font-medium">
-                            Default
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-slate-700 font-medium">{addr.recipient_name} • {addr.phone}</p>
-                      <p className="text-slate-500 text-[11px] leading-tight">
-                        {addr.line1}, {addr.city} ({addr.postal_code})
-                      </p>
-                    </div>
-                    <div className="pt-0.5 shrink-0">
-                      <div
-                        className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                          selectedAddressId === addr.id
-                            ? 'border-slate-900 bg-slate-900 text-white'
-                            : 'border-slate-300'
-                        }`}
-                      >
-                        {selectedAddressId === addr.id && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-              <button
-                onClick={() => {
-                  setIsAddressModalOpen(false);
-                  router.push('/customer/addresses');
-                }}
-                className="text-xs font-semibold text-slate-600 hover:text-slate-900 hover:underline flex items-center gap-1"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Manage Addresses
-              </button>
-              <button
-                onClick={() => setIsAddressModalOpen(false)}
-                className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-lg shadow-xs transition-colors"
-              >
-                Done
-              </button>
             </div>
           </div>
         </div>
