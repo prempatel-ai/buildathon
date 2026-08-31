@@ -68,11 +68,84 @@ def customer_chat(
 
     cached_options = session_search_memory.get(thread_id, [])
 
+    # 0. Check if prompt is an order inquiry or receipt check ("check order details for...", "view receipt for...", "status of order...", "track order...")
+    is_inquiry = bool(re.search(r'\b(check|view|show|get|track|status|receipt|details?)\b', prompt_lower) and re.search(r'\b(order|purchase|receipt|item|delivery)\b', prompt_lower))
+
+    if is_inquiry:
+        clean_inquiry = re.sub(r'^(?:check|view|show|get|track|status\s+of|details?\s+for|receipt\s+for|order\s+details?\s+for)\s*', '', prompt_raw, flags=re.IGNORECASE).strip()
+        clean_inquiry = re.sub(r'^(?:order\s+details?\s+for|receipt\s+for|order\s+for)\s*', '', clean_inquiry, flags=re.IGNORECASE).strip()
+
+        from app.models.audit import AuditEvent
+
+        # Search for past customer transaction matching the product name or inquiry
+        past_events = db.query(AuditEvent).filter(
+            AuditEvent.actor_id == str(customer.id),
+            AuditEvent.action.in_(["payment_settled", "payment_order_created"])
+        ).order_by(AuditEvent.created_at.desc()).all()
+
+        matched_event = None
+        for ev in past_events:
+            inp = ev.input or {}
+            item_name = inp.get("item_name", "")
+            if clean_inquiry.lower() in item_name.lower() or item_name.lower() in clean_inquiry.lower():
+                matched_event = ev
+                break
+        
+        # If no strict match, fallback to the most recent purchase if they just asked "check my order"
+        if not matched_event and past_events and (len(clean_inquiry) < 3 or "order" in clean_inquiry.lower() or "latest" in clean_inquiry.lower() or "recent" in clean_inquiry.lower()):
+            matched_event = past_events[0]
+
+        if matched_event:
+            inp = matched_event.input or {}
+            m = db.query(Merchant).filter(Merchant.id == matched_event.merchant_id).first() if matched_event.merchant_id else None
+            
+            # Fetch delivery date from event input or transaction
+            est_date_str = inp.get("estimated_delivery_date")
+            if not est_date_str:
+                from datetime import date, timedelta
+                est_date_str = (date.today() + timedelta(days=4)).isoformat()
+            
+            item_name = inp.get("item_name") or "Purchased Product"
+            amount_val = float(inp.get("amount", 0))
+
+            return CustomerChatResponse(
+                thread_id=thread_id,
+                prompt=req.prompt,
+                proposed_tool="view_order_details",
+                status="ORDER_DETAILS",
+                response_message=f"Order details for {item_name} (₹{amount_val:,.2f}) settled via Razorpay.",
+                search_results=None,
+                customer_auth_decision="ALLOW",
+                policy_decision="ALLOW",
+                transaction_id=str(matched_event.id),
+                razorpay_order_id=inp.get("razorpay_order_id") or f"order_{matched_event.id.hex[:14]}",
+                razorpay_payment_id=inp.get("razorpay_payment_id") or f"pay_{matched_event.id.hex[:14]}",
+                payment_link_url=None,
+                estimated_delivery_date=est_date_str,
+                delivery_address=inp.get("delivery_address_summary") or inp.get("delivery_address") or "Saved Customer Address",
+                amount=amount_val,
+                item_name=item_name,
+                merchant_name=m.name if m else "Verified Merchant"
+            )
+        else:
+            return CustomerChatResponse(
+                thread_id=thread_id,
+                prompt=req.prompt,
+                proposed_tool="view_order_details",
+                status="COMPLETED",
+                response_message=f"No previous orders found matching '{clean_inquiry}'. You can browse available products by searching our merchant catalog.",
+                search_results=None
+            )
+
     # Check if prompt is an explicit purchase confirmation ("buy option 1", "buy boAt", "order headphones", etc.)
-    buy_keywords = ["buy", "purchase", "confirm", "order", "checkout", "pay for"]
-    search_keywords = ["find", "search", "compare", "recommend", "show options", "what items", "show catalog", "list products"]
+    buy_keywords = ["buy", "purchase", "confirm buy", "checkout", "pay for"]
+    search_keywords = ["find", "search", "compare", "recommend", "show options", "what items", "show catalog", "list products", "check", "details", "status"]
     
-    is_buy_confirm = any(k in prompt_lower for k in buy_keywords) and not any(k in prompt_lower for k in search_keywords)
+    is_buy_confirm = (
+        not is_inquiry and
+        (any(k in prompt_lower for k in buy_keywords) or re.search(r'^(?:place\s+)?order\s+(?:for\s+)?\w+', prompt_lower) is not None) and
+        not any(k in prompt_lower for k in search_keywords)
+    )
 
     if is_buy_confirm:
         target_opt = None

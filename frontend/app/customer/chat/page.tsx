@@ -641,16 +641,18 @@ export default function ConsumerChatPage() {
                   )}
 
                   <div className={`flex flex-col max-w-[85%] ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                    {msg.status === 'PAYMENT_SETTLED' || msg.status === 'SETTLED' ? (
+                    {msg.status === 'PAYMENT_SETTLED' || msg.status === 'SETTLED' || msg.status === 'ORDER_DETAILS' ? (
                       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-4 w-full text-xs animate-in fade-in zoom-in-95 duration-150">
                         {/* Header */}
                         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                            <span className="font-bold text-slate-900 text-xs tracking-tight">Autonomous Payment Settled</span>
+                            <span className="font-bold text-slate-900 text-xs tracking-tight">
+                              {msg.status === 'ORDER_DETAILS' ? 'Order Receipt Details' : 'Autonomous Payment Settled'}
+                            </span>
                           </div>
                           <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
-                            Paid & Captured
+                            {msg.status === 'ORDER_DETAILS' ? 'Settled on Razorpay' : 'Paid & Captured'}
                           </span>
                         </div>
 
@@ -730,6 +732,19 @@ export default function ConsumerChatPage() {
                             <span className="font-semibold text-slate-800">Autonomous</span>
                           </div>
                         </div>
+
+                        {/* Optional Buy Again action for past order inquiries */}
+                        {msg.status === 'ORDER_DETAILS' && msg.itemName && (
+                          <div className="pt-2 flex justify-end">
+                            <button
+                              onClick={() => handleSendMessage(`buy ${msg.itemName}`)}
+                              className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-2xs transition-colors flex items-center gap-1.5"
+                            >
+                              <ShoppingBag className="w-3.5 h-3.5" />
+                              <span>Buy Again</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div
