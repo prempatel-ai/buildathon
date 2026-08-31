@@ -111,16 +111,16 @@ export default function Navigation() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white border-b border-neutral-200">
+      <header className="sticky top-0 z-40 bg-white border-b border-neutral-200/90 shadow-2xs">
         {/* Tier 1: Main Global Header */}
-        <div className="max-w-7xl mx-auto px-6 h-13 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 h-12 flex items-center justify-between">
           {/* Brand & Store Selector */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2.5">
             <Link href="/" className="flex items-center space-x-2 group">
-              <div className="w-6 h-6 rounded bg-neutral-950 flex items-center justify-center font-bold text-white text-[11px] font-mono shadow-xs">
+              <div className="w-5.5 h-5.5 rounded bg-neutral-950 flex items-center justify-center font-bold text-white text-[10px] font-mono shadow-xs">
                 AP
               </div>
-              <span className="font-bold text-neutral-900 tracking-tight text-sm">Agentpay</span>
+              <span className="font-bold text-neutral-900 tracking-tight text-xs">Agentpay</span>
             </Link>
 
             <span className="text-neutral-300 font-mono text-xs">/</span>
@@ -129,11 +129,11 @@ export default function Navigation() {
               <div className="relative">
                 <button
                   onClick={() => setStoreMenuOpen(!storeMenuOpen)}
-                  className="flex items-center space-x-2 px-2.5 py-1 rounded-md bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-xs font-medium text-neutral-800 transition-colors select-none cursor-pointer"
+                  className="flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-neutral-100/70 hover:bg-neutral-100 border border-neutral-200/80 text-xs font-medium text-neutral-800 transition-colors select-none cursor-pointer"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  <span className="truncate max-w-[150px] font-semibold text-neutral-900">{merchant?.name || 'Merchant Store'}</span>
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase tracking-wider bg-neutral-200/70 text-neutral-700">
+                  <span className="truncate max-w-[140px] font-semibold text-neutral-900 text-[11px]">{merchant?.name || 'Merchant Store'}</span>
+                  <span className="px-1 py-0.2 rounded text-[8.5px] font-mono font-bold uppercase tracking-wider bg-neutral-200/60 text-neutral-600">
                     {merchant?.environment === 'live' ? 'LIVE' : 'SANDBOX'}
                   </span>
                   <ChevronDown className="w-3 h-3 text-neutral-400" />
@@ -174,16 +174,16 @@ export default function Navigation() {
           </div>
 
           {/* Global Action Utilities */}
-          <div className="flex items-center space-x-2.5">
+          <div className="flex items-center space-x-2">
             {/* Command Search Button */}
             {pathname !== '/onboarding' && (
               <button
                 onClick={() => setSearchOpen(true)}
-                className="flex items-center space-x-2 px-2.5 py-1 bg-neutral-50 hover:bg-neutral-100 active:scale-98 border border-neutral-200 rounded-md text-neutral-500 text-xs font-medium select-none transition-all cursor-pointer"
+                className="flex items-center space-x-2 px-2.5 py-1 bg-neutral-50 hover:bg-neutral-100 active:scale-98 border border-neutral-200 rounded-md text-neutral-400 text-xs select-none transition-all cursor-pointer h-7"
               >
-                <Search className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                <span className="text-neutral-600 hidden sm:inline">Search...</span>
-                <kbd className="px-1.5 py-0.5 bg-white border border-neutral-200 rounded text-[10px] text-neutral-400 font-mono">
+                <Search className="w-3 h-3 text-neutral-400 shrink-0" />
+                <span className="text-neutral-500 text-[11px] hidden sm:inline">Search...</span>
+                <kbd className="px-1 py-0.5 bg-white border border-neutral-200 rounded text-[9px] text-neutral-400 font-mono">
                   ⌘K
                 </kbd>
               </button>
@@ -193,7 +193,7 @@ export default function Navigation() {
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="w-7 h-7 rounded-full bg-neutral-900 text-white font-mono font-bold text-xs flex items-center justify-center hover:bg-black transition-colors cursor-pointer"
+                  className="w-6.5 h-6.5 rounded-full bg-neutral-900 text-white font-mono font-bold text-[11px] flex items-center justify-center hover:bg-black transition-colors cursor-pointer"
                 >
                   {merchant?.name ? merchant.name[0].toUpperCase() : 'M'}
                 </button>
@@ -228,7 +228,7 @@ export default function Navigation() {
                 {pathname !== '/customer/chat' && (
                   <Link
                     href="/customer/chat"
-                    className="px-3 py-1 rounded-md text-xs font-medium bg-neutral-900 text-white hover:bg-black transition-colors shadow-xs"
+                    className="px-2.5 py-1 rounded-md text-xs font-medium bg-neutral-900 text-white hover:bg-black transition-colors shadow-xs"
                   >
                     Shopping Chat
                   </Link>
@@ -236,12 +236,12 @@ export default function Navigation() {
                 <div className="relative">
                   <button
                     onClick={() => setCustomerMenuOpen(!customerMenuOpen)}
-                    className="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-xs font-medium text-neutral-800 transition-colors cursor-pointer"
+                    className="flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-neutral-100 hover:bg-neutral-200/80 border border-neutral-200 text-xs font-medium text-neutral-800 transition-colors cursor-pointer"
                   >
-                    <div className="w-5 h-5 rounded-full bg-neutral-900 text-white flex items-center justify-center text-[10px] font-bold">
+                    <div className="w-4.5 h-4.5 rounded-full bg-neutral-900 text-white flex items-center justify-center text-[9px] font-bold">
                       {customerName[0].toUpperCase()}
                     </div>
-                    <span className="truncate max-w-[90px] font-semibold text-neutral-900">{customerName}</span>
+                    <span className="truncate max-w-[90px] font-semibold text-neutral-900 text-[11px]">{customerName}</span>
                     <ChevronDown className="w-3 h-3 text-neutral-400" />
                   </button>
 
@@ -291,13 +291,13 @@ export default function Navigation() {
               <nav className="flex items-center space-x-2">
                 <Link
                   href="/customer/chat"
-                  className="px-3 py-1 rounded-md text-xs font-medium bg-neutral-900 text-white hover:bg-black transition-colors"
+                  className="px-2.5 py-1 rounded-md text-xs font-medium bg-neutral-900 text-white hover:bg-black transition-colors"
                 >
                   Shopping Chat
                 </Link>
                 <Link
                   href="/customer/login"
-                  className="px-3 py-1 rounded-md text-xs font-medium text-neutral-700 hover:bg-neutral-100 border border-neutral-200 transition-colors"
+                  className="px-2.5 py-1 rounded-md text-xs font-medium text-neutral-700 hover:bg-neutral-100 border border-neutral-200 transition-colors"
                 >
                   Sign In
                 </Link>
@@ -306,10 +306,10 @@ export default function Navigation() {
           </div>
         </div>
 
-        {/* Tier 2: Horizontal Sub-Navigation Strip */}
+        {/* Tier 2: Horizontal Sub-Navigation Strip (Directly Merged with Bottom Border) */}
         {isMerchantContext && pathname !== '/onboarding' && (
           <div className="border-t border-neutral-100 bg-white">
-            <div className="max-w-7xl mx-auto px-6 flex items-center space-x-6 overflow-x-auto no-scrollbar">
+            <div className="max-w-7xl mx-auto px-6 flex items-center space-x-6 overflow-x-auto no-scrollbar -mb-px">
               {merchantTabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = pathname === tab.href;
