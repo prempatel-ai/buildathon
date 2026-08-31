@@ -216,14 +216,6 @@ export default function Navigation() {
                       <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
                       <span>Store Governance</span>
                     </Link>
-                    <Link
-                      href="/admin"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center space-x-2 px-3 py-2 text-slate-700 hover:bg-slate-50 font-semibold"
-                    >
-                      <Shield className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Platform Admin</span>
-                    </Link>
                     <div className="border-t border-slate-100 my-1" />
                     <button
                       onClick={handleLogout}

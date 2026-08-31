@@ -1,12 +1,15 @@
 import uuid
 import re
+import time
+from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
+import jwt
+from fastapi import APIRouter, Depends, HTTPException, Query, Header, status
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.models.merchant import Merchant
 from app.models.catalog import CatalogItem
@@ -17,6 +20,62 @@ from app.models.customer import Customer
 from app.services.audit_service import AuditService
 
 router = APIRouter(prefix="/admin", tags=["Platform Admin Governance"])
+
+# ─── Master Admin Credentials & Auth ──────────────────────────────────────────
+
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORDS = ["Admin@Agentpay2026", "Admin@1234", "Razorpay@Admin2026"]
+JWT_ALGORITHM = "HS256"
+
+def create_admin_token(username: str) -> str:
+    payload = {
+        "sub": username,
+        "role": "super_admin",
+        "iss": "agentpay_platform_admin",
+        "exp": datetime.utcnow() + timedelta(days=7)
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+def get_current_admin(
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None, alias="X-Admin-Key")
+) -> Dict[str, Any]:
+    """
+    Verifies super admin bearer JWT token or master admin secret key.
+    Enforces strict access control over all admin endpoints.
+    """
+    token = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1].strip()
+    elif x_admin_key:
+        if x_admin_key in ADMIN_PASSWORDS or x_admin_key == settings.SECRET_KEY:
+            return {"sub": "admin", "role": "super_admin"}
+        token = x_admin_key
+
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin authentication required. Missing Bearer token.",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        if payload.get("role") != "super_admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient administrative privileges."
+            )
+        return payload
+    except jwt.PyJWTError:
+        # Fallback check if token itself is raw admin master key
+        if token in ADMIN_PASSWORDS:
+            return {"sub": "admin", "role": "super_admin"}
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired admin authorization token.",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
 
 # ─── Privacy Masking Helper ───────────────────────────────────────────────────
 
@@ -49,7 +108,6 @@ def mask_sensitive_pii(data: Any) -> Any:
                 sanitized[k] = f"•••• •••• •••• {val_str[-4:]}" if len(val_str) >= 4 else "••••"
             elif key_lower in ["delivery_address", "delivery_address_summary"]:
                 val_str = str(v)
-                # Keep city/state/pin, mask recipient name/street
                 match = re.search(r'([A-Za-z\s]+,\s*[A-Za-z\s]+\s*\(\d+\))', val_str)
                 if match:
                     sanitized[k] = f"Masked Destination, {match.group(1)}"
@@ -63,6 +121,16 @@ def mask_sensitive_pii(data: Any) -> Any:
     return data
 
 # ─── Admin Schemas ────────────────────────────────────────────────────────────
+
+class AdminLoginRequest(BaseModel):
+    username: str = Field(..., description="Admin login username")
+    password: str = Field(..., description="Admin master password")
+
+class AdminLoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    role: str = "super_admin"
+    username: str
 
 class PlatformOverviewResponse(BaseModel):
     total_merchants: int
@@ -105,10 +173,42 @@ class AdminAuditResponse(BaseModel):
 class UpdateKYCPayload(BaseModel):
     kyc_status: str  # "verified", "pending", "suspended"
 
-# ─── Admin Endpoints ──────────────────────────────────────────────────────────
+# ─── Auth Endpoint ────────────────────────────────────────────────────────────
+
+@router.post("/auth/login", response_model=AdminLoginResponse)
+def admin_login(req: AdminLoginRequest):
+    """
+    Super Admin Authentication:
+    Authenticates platform administrator and issues a signed JWT.
+    """
+    user_clean = req.username.strip().lower()
+    if user_clean not in ["admin", "superadmin", "agentpay_admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid administrator credentials."
+        )
+
+    if req.password not in ADMIN_PASSWORDS and req.password != settings.SECRET_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid administrator credentials."
+        )
+
+    token = create_admin_token(username=user_clean)
+    return AdminLoginResponse(
+        access_token=token,
+        token_type="bearer",
+        role="super_admin",
+        username=user_clean
+    )
+
+# ─── Protected Governance Endpoints ───────────────────────────────────────────
 
 @router.get("/overview", response_model=PlatformOverviewResponse)
-def get_platform_overview(db: Session = Depends(get_db)):
+def get_platform_overview(
+    admin: Dict[str, Any] = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
     """Returns platform-wide metrics with zero PII exposure."""
     total_merchants = db.query(Merchant).count()
     verified_merchants = db.query(Merchant).filter(Merchant.kyc_status == "verified").count()
@@ -133,7 +233,10 @@ def get_platform_overview(db: Session = Depends(get_db)):
     )
 
 @router.get("/merchants", response_model=List[AdminMerchantItem])
-def list_admin_merchants(db: Session = Depends(get_db)):
+def list_admin_merchants(
+    admin: Dict[str, Any] = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
     """Returns all registered merchants for moderation."""
     merchants = db.query(Merchant).order_by(Merchant.name.asc()).all()
     results = []
@@ -156,6 +259,7 @@ def list_admin_merchants(db: Session = Depends(get_db)):
 def update_merchant_kyc(
     merchant_id: UUID,
     payload: UpdateKYCPayload,
+    admin: Dict[str, Any] = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """Admin moderation endpoint to verify or suspend merchant accounts."""
@@ -193,6 +297,7 @@ def get_admin_audit_stream(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     sort_order: str = Query("desc"),
+    admin: Dict[str, Any] = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """

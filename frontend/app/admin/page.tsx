@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Navigation from '@/components/Navigation';
+import { useRouter } from 'next/navigation';
 import {
   fetchAdminOverview,
   fetchAdminMerchants,
   fetchAdminAuditEvents,
   updateMerchantKYC,
+  getAdminToken,
   AdminOverview,
   AdminMerchant,
   AdminAuditItem
@@ -29,11 +30,17 @@ import {
   ChevronRight,
   Code,
   X,
-  Loader2
+  Loader2,
+  LogOut,
+  SlidersHorizontal,
+  Layers,
+  Database
 } from 'lucide-react';
 
 export default function PlatformAdminPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'overview' | 'merchants' | 'audit'>('overview');
+  const [adminUser, setAdminUser] = useState<string>('admin');
 
   // Overview State
   const [overview, setOverview] = useState<AdminOverview | null>(null);
@@ -58,10 +65,20 @@ export default function PlatformAdminPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
+    const token = getAdminToken();
+    if (!token) {
+      router.push('/admin/login');
+      return;
+    }
+    const user = (typeof window !== 'undefined' && localStorage.getItem('admin_user')) || 'admin';
+    setAdminUser(user);
     loadOverview();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
+    const token = getAdminToken();
+    if (!token) return;
+
     if (activeTab === 'merchants') {
       loadMerchants();
     } else if (activeTab === 'audit') {
@@ -72,9 +89,15 @@ export default function PlatformAdminPage() {
   const loadOverview = async () => {
     try {
       setLoadingOverview(true);
+      setError(null);
       const data = await fetchAdminOverview();
       setOverview(data);
     } catch (err: any) {
+      if (err.message?.includes('401') || err.message?.includes('authentication required')) {
+        localStorage.removeItem('admin_token');
+        router.push('/admin/login');
+        return;
+      }
       setError(err.message || 'Failed to load platform metrics.');
     } finally {
       setLoadingOverview(false);
@@ -84,6 +107,7 @@ export default function PlatformAdminPage() {
   const loadMerchants = async () => {
     try {
       setLoadingMerchants(true);
+      setError(null);
       const data = await fetchAdminMerchants();
       setMerchants(data);
     } catch (err: any) {
@@ -96,6 +120,7 @@ export default function PlatformAdminPage() {
   const loadAudit = async () => {
     try {
       setLoadingAudit(true);
+      setError(null);
       const data = await fetchAdminAuditEvents({
         actor_type: actorFilter || undefined,
         action: actionFilter || undefined,
@@ -115,7 +140,7 @@ export default function PlatformAdminPage() {
     try {
       setUpdatingKYC(merchantId);
       await updateMerchantKYC(merchantId, status);
-      setSuccessMsg(`Merchant KYC updated to ${status}.`);
+      setSuccessMsg(`Merchant status set to ${status}.`);
       await loadMerchants();
       await loadOverview();
       setTimeout(() => setSuccessMsg(null), 3000);
@@ -126,6 +151,12 @@ export default function PlatformAdminPage() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_user');
+    router.push('/admin/login');
+  };
+
   const filteredMerchants = merchants.filter((m) =>
     m.name.toLowerCase().includes(merchantSearch.toLowerCase()) ||
     m.email.toLowerCase().includes(merchantSearch.toLowerCase())
@@ -133,20 +164,50 @@ export default function PlatformAdminPage() {
 
   return (
     <div className="min-h-screen bg-[#fafafa] text-slate-900 flex flex-col font-sans selection:bg-slate-200">
-      <Navigation />
+      {/* Dedicated Super Admin Header Bar */}
+      <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-mono font-bold text-xs">
+              AP
+            </div>
+            <div>
+              <span className="font-bold text-sm text-white tracking-tight">Agentpay Governance</span>
+              <span className="ml-2 text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">
+                Super Admin
+              </span>
+            </div>
+          </div>
 
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 text-xs font-mono text-slate-300 bg-slate-800/80 px-3 py-1 rounded-xl border border-slate-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>{adminUser}</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors"
+              title="Sign Out Admin"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Admin Content */}
       <main className="max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
-        {/* Page Header */}
+        {/* Title Bar & Tab Switcher */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-200/80">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Platform Super Admin</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Master Governance</span>
               <span className="text-slate-300">•</span>
-              <span className="text-xs text-slate-500 font-medium">Multi-Tenant Governance</span>
+              <span className="text-xs text-slate-500 font-medium">Privacy Isolated Control</span>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Platform Administration & Governance</h1>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Platform Command Center</h1>
             <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-              System-wide merchant verification, policy moderation, and privacy-sanitized global audit inspection.
+              Merchant verification, store governance policies, and privacy-sanitized global audit inspection.
             </p>
           </div>
 
@@ -191,9 +252,9 @@ export default function PlatformAdminPage() {
             <Lock className="w-4 h-4" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-slate-900">Zero-Leakage Privacy Policy Enforced</h4>
+            <h4 className="text-xs font-bold text-slate-900">Zero-Leakage Privacy Engine Enforced</h4>
             <p className="text-[11px] text-slate-500 leading-relaxed mt-0.5">
-              Consumer phone numbers, residential addresses, payment card tokens, and authorization secrets are masked at the API gateway layer to prevent surveillance and ensure compliance.
+              Consumer phone numbers, residential addresses, and payment token secrets are dynamically masked at the protocol gateway to preserve buyer privacy.
             </p>
           </div>
         </div>
@@ -530,7 +591,7 @@ export default function PlatformAdminPage() {
                           <td className="py-3.5 px-4 text-right">
                             <button
                               onClick={() => setSelectedJsonEvent(ev)}
-                              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-semibold text-[10px] transition-colors"
+                              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-semibold text-[10px] transition-colors cursor-pointer"
                             >
                               Inspect JSON
                             </button>
@@ -573,7 +634,7 @@ export default function PlatformAdminPage() {
               <span>Privacy Masking: <strong className="text-emerald-700">Enforced</strong></span>
               <button
                 onClick={() => setSelectedJsonEvent(null)}
-                className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors"
+                className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
               >
                 Close
               </button>

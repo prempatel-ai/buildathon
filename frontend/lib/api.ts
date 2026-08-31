@@ -593,14 +593,49 @@ export interface AdminAuditResponse {
   limit: number;
 }
 
+export function getAdminToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('admin_token') || null;
+}
+
+export function getAdminAuthHeaders(): Record<string, string> {
+  const token = getAdminToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+}
+
+export async function adminLogin(payload: { username: string; password: string }): Promise<{ access_token: string; token_type: string; role: string; username: string }> {
+  const res = await fetch(`${API_BASE_URL}/admin/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Invalid administrator credentials' }));
+    throw new Error(err.detail || 'Invalid administrator credentials');
+  }
+  const data = await res.json();
+  if (typeof window !== 'undefined' && data.access_token) {
+    localStorage.setItem('admin_token', data.access_token);
+    localStorage.setItem('admin_user', data.username);
+  }
+  return data;
+}
+
 export async function fetchAdminOverview(): Promise<AdminOverview> {
-  const res = await fetch(`${API_BASE_URL}/admin/overview`);
+  const res = await fetch(`${API_BASE_URL}/admin/overview`, {
+    headers: getAdminAuthHeaders()
+  });
   if (!res.ok) throw new Error('Failed to fetch platform overview');
   return res.json();
 }
 
 export async function fetchAdminMerchants(): Promise<AdminMerchant[]> {
-  const res = await fetch(`${API_BASE_URL}/admin/merchants`);
+  const res = await fetch(`${API_BASE_URL}/admin/merchants`, {
+    headers: getAdminAuthHeaders()
+  });
   if (!res.ok) throw new Error('Failed to fetch merchant directory');
   return res.json();
 }
@@ -608,7 +643,7 @@ export async function fetchAdminMerchants(): Promise<AdminMerchant[]> {
 export async function updateMerchantKYC(merchantId: string, kycStatus: string): Promise<{ message: string; merchant_id: string }> {
   const res = await fetch(`${API_BASE_URL}/admin/merchants/${merchantId}/kyc`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAdminAuthHeaders(),
     body: JSON.stringify({ kyc_status: kycStatus })
   });
   if (!res.ok) {
@@ -634,7 +669,9 @@ export async function fetchAdminAuditEvents(params?: {
   if (params?.skip !== undefined) query.set('skip', String(params.skip));
   if (params?.limit !== undefined) query.set('limit', String(params.limit));
 
-  const res = await fetch(`${API_BASE_URL}/admin/audit?${query.toString()}`);
+  const res = await fetch(`${API_BASE_URL}/admin/audit?${query.toString()}`, {
+    headers: getAdminAuthHeaders()
+  });
   if (!res.ok) throw new Error('Failed to fetch admin audit events');
   return res.json();
 }
