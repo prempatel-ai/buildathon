@@ -1,53 +1,54 @@
 <div align="center">
 
-# ⚡ Agentpay
-### The Autonomous Payment & Settlement Protocol for AI Shopping Agents
+<img src="img/logo.svg" alt="Agentpay" width="64" height="64" />
 
-[![Buildathon](https://img.shields.io/badge/Razorpay_AI_Buildathon_2026-Track_01:_AI_Growth_&_Agentic_Commerce-blue?style=for-the-badge&logo=razorpay)](https://buildathon-nu-eight.vercel.app)
-[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg?style=for-the-badge)](LICENSE)
-[![Next.js 16](https://img.shields.io/badge/Next.js_16-Turbopack-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![LangGraph](https://img.shields.io/badge/LangGraph-Multi--Agent_StateGraph-1C3C3C?style=for-the-badge&logo=langchain)](https://langchain-ai.github.io/langgraph/)
-[![Tests Passing](https://img.shields.io/badge/Pytest-30+_Tests_Passing-brightgreen?style=for-the-badge&logo=pytest)](backend/tests)
+# Agentpay
+### Autonomous Payment & Settlement Infrastructure for AI Commerce Agents
+
+[![Razorpay Buildathon](https://img.shields.io/badge/Razorpay_AI_Buildathon_2026-Track_01:_AI_Growth_&_Agentic_Commerce-0284c7?style=flat-square&logo=razorpay)](https://buildathon-nu-eight.vercel.app)
+[![License: MIT](https://img.shields.io/badge/License-MIT-09090b.svg?style=flat-square)](LICENSE)
+[![Next.js 16](https://img.shields.io/badge/Next.js_16-Turbopack-09090b?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-Multi--Agent_StateGraph-1C3C3C?style=flat-square&logo=langchain)](https://langchain-ai.github.io/langgraph/)
+[![Tests Passing](https://img.shields.io/badge/Pytest-30+_Passing-10b981?style=flat-square&logo=pytest)](backend/tests)
 
 <br />
 
 **"LLM proposes, engine disposes."**  
 *The open-source, dual-gated commerce infrastructure enabling autonomous AI buyer agents to discover, verify, and settle payments safely through Razorpay without human 2FA friction.*
 
-[🚀 Live Demo](https://buildathon-nu-eight.vercel.app) • [🛍️ AI Shopping Assistant](https://buildathon-nu-eight.vercel.app/customer/chat) • [🏪 Merchant Console](https://buildathon-nu-eight.vercel.app/dashboard) • [📖 Documentation](#-system-architecture)
+[Live Platform](https://buildathon-nu-eight.vercel.app) • [Consumer Assistant](https://buildathon-nu-eight.vercel.app/customer/chat) • [Merchant Portal](https://buildathon-nu-eight.vercel.app/dashboard) • [Admin Console](https://buildathon-nu-eight.vercel.app/admin) • [Architecture Guide](#system-architecture--execution-flow)
 
 </div>
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
-- [Executive Summary & The Paradigm Shift](#-executive-summary--the-paradigm-shift)
-- [Platform Interface Showcase](#-platform-interface-showcase)
-- [The Problem We Solve](#-the-problem-we-solve)
-- [Core Architectural Pillars](#-core-architectural-pillars)
-- [System Architecture & Flow](#-system-architecture--flow)
-- [Interactive LangGraph Multi-Agent Engine](#-interactive-langgraph-multi-agent-engine)
-- [Complete Feature Breakdown](#-complete-feature-breakdown)
-  - [1. Consumer Spend Vault & Virtual Limits](#1-consumer-spend-vault--virtual-limits)
+- [Executive Summary](#executive-summary)
+- [Platform Interface Showcase](#platform-interface-showcase)
+- [Problem Definition](#problem-definition)
+- [Architectural Pillars](#architectural-pillars)
+- [System Architecture & Execution Flow](#system-architecture--execution-flow)
+- [LangGraph Multi-Agent Orchestrator](#langgraph-multi-agent-orchestrator)
+- [Core Features & Capabilities](#core-features--capabilities)
+  - [1. Consumer Spend Vault & Pre-Authorizations](#1-consumer-spend-vault--pre-authorizations)
   - [2. Deterministic Merchant Risk Engine](#2-deterministic-merchant-risk-engine)
-  - [3. Excel & CSV Intelligent Product Importer](#3-excel--csv-intelligent-product-importer)
-  - [4. Machine-Readable Schema.org Feeds](#4-machine-readable-schemaorg-feeds)
-  - [5. Razorpay Settlement & Webhook Dispatcher](#5-razorpay-settlement--webhook-dispatcher)
+  - [3. Intelligent Excel & CSV Product Ingestion](#3-intelligent-excel--csv-product-ingestion)
+  - [4. Machine-Readable Schema.org Agent Feeds](#4-machine-readable-schemaorg-agent-feeds)
+  - [5. Razorpay Settlement & HMAC Webhooks](#5-razorpay-settlement--hmac-webhooks)
   - [6. Immutable Cryptographic Audit Ledger](#6-immutable-cryptographic-audit-ledger)
-- [Comparison Matrix: Legacy vs Agentpay](#-comparison-matrix-legacy-vs-agentpay)
-- [API Endpoints Reference](#-api-endpoints-reference)
-- [Project Directory Structure](#-project-directory-structure)
-- [Quickstart & Local Setup Guide](#-quickstart--local-setup-guide)
-- [Testing & Quality Assurance](#-testing--quality-assurance)
-- [Environment Variables](#-environment-variables)
-- [Demo Credentials](#-demo-credentials)
-- [License & Acknowledgments](#-license--acknowledgments)
+- [Comparison: Legacy Gateways vs. Agentpay](#comparison-legacy-gateways-vs-agentpay)
+- [REST API Reference](#rest-api-reference)
+- [Directory Structure](#directory-structure)
+- [Quickstart Guide](#quickstart-guide)
+- [Testing & Verification](#testing--verification)
+- [Demo Accounts](#demo-accounts)
+- [License & Acknowledgments](#license--acknowledgments)
 
 ---
 
-## 📸 Platform Interface Showcase
+## Platform Interface Showcase
 
 ### 1. Consumer Autonomous Commerce & Spend Vault
 | Autonomous AI Shopping Assistant & Settlement | Consumer Spend Vault & Tokenized Card Caps |
@@ -74,19 +75,19 @@
 
 ---
 
-## 🌟 Executive Summary & The Paradigm Shift
+## Executive Summary
 
-As LLM agents (LangGraph, OpenAI Assistants, Claude Computer Use, AutoGPT) evolve from basic conversational chatbots into **autonomous economic actors**, traditional payment gateways break:
+As LLM agents evolve from conversational assistants into **autonomous economic buyers**, legacy payment gateways create fundamental blockers:
 
-1. **Gateways demand interactive human 2FA** (SMS OTPs, biometric prompts, 3D-Secure iframes) which programmatic AI buyers cannot complete.
-2. **Unrestricted API access creates existential financial risk** — prompt injections, hallucinated order quantities, runaway spend loops, and stock manipulation.
-3. **Merchants have no machine-readable catalogs** — agents are forced to scrape brittle HTML pages, leading to price errors and checkout failures.
+1. **Interactive 2FA Barriers**: Traditional gateways require interactive human confirmation (SMS OTPs, 3D-Secure frames, biometric prompts) that programmatic agents cannot complete.
+2. **Financial Execution Risk**: Unrestricted API access exposes merchants and consumers to prompt injections, hallucinated quantities, runaway spend loops, and inventory abuse.
+3. **Unstructured Data Ingestion**: Agents are forced to scrape brittle HTML storefronts, leading to pricing errors, stale stock levels, and broken checkout journeys.
 
-**Agentpay** provides the missing infrastructure layer: a **Dual-Gated Protocol** that separates AI intent generation from financial execution. The AI agent searches, plans, and proposes transactions; the deterministic protocol verifies consumer authorization, enforces merchant policy rules, records an immutable audit trail, and programmatically captures settlements via Razorpay.
+**Agentpay** introduces a **Dual-Gated Protocol** that strictly decouples AI intent generation from financial execution. The LLM agent discovers products, clarifies intent, and proposes structured transactions. The deterministic protocol verifies the consumer's authorized limit, enforces merchant risk policies, writes an immutable audit record, and settles the order directly via Razorpay.
 
 ---
 
-## 🚫 The Problem We Solve
+## Problem Definition
 
 ```text
        TRADITIONAL E-COMMERCE CHECKOUT                       AGENTPAY DUAL-GATED PROTOCOL
@@ -97,9 +98,9 @@ As LLM agents (LangGraph, OpenAI Assistants, Claude Computer Use, AutoGPT) evolv
   └───────────────────┬────────────────────┘                                │
                       │                                                     ▼
                       ▼                                 ┌────────────────────────────────────────┐
-        ❌ FAILS FOR AUTONOMOUS AGENTS                  │ GATE 1: Consumer Spend Vault           │
-     (AI agents cannot read SMS OTPs                    │ • Remaining authorized balance check   │
-      or click interactive 3DS frames)                  │ • Merchant whitelist & expiry window   │
+        [!] FAILS FOR AUTONOMOUS AGENTS                 │ GATE 1: Consumer Spend Vault           │
+     (Programmatic agents cannot read SMS               │ • Remaining authorized balance check   │
+      OTPs or interact with 3DS iframes)                │ • Merchant whitelist & expiry window   │
                                                         └───────────────────┬────────────────────┘
                                                                             │
                                                                             ▼
@@ -121,7 +122,7 @@ As LLM agents (LangGraph, OpenAI Assistants, Claude Computer Use, AutoGPT) evolv
 
 ---
 
-## 🏛️ Core Architectural Pillars
+## Architectural Pillars
 
 ```text
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -136,7 +137,7 @@ As LLM agents (LangGraph, OpenAI Assistants, Claude Computer Use, AutoGPT) evolv
 
 ---
 
-## 🔄 System Architecture & Flow
+## System Architecture & Execution Flow
 
 ```mermaid
 sequenceDiagram
@@ -149,46 +150,46 @@ sequenceDiagram
     participant RZP as Razorpay Gateway API
     participant Audit as Append-Only Audit Ledger
 
-    User->>Chat: "Buy boAt Wave Call Smartwatch for ₹1,799 to Home"
+    User->>Chat: "Buy boAt Wave Call Smartwatch for INR 1,799 to Home"
     Chat->>Agent: POST /customer/chat (Thread Context + Intent)
     
     rect rgb(240, 248, 255)
-    Note over Agent: Step 1: Semantic Catalog Search & Relevance Scoring
-    Agent->>Agent: Filter 8 SKUs across merchants (Relevance Score: +10)
+    Note over Agent: Step 1: Semantic Catalog Search & Scoring
+    Agent->>Agent: Filter matching SKUs across verified merchant catalogs
     end
 
     rect rgb(245, 255, 250)
     Note over Agent,Vault: Step 2: Gate 1 — Consumer Spend Vault Authorization
-    Agent->>Vault: Check Active Pre-Authorized Limit (Limit: ₹3,800)
-    Vault-->>Agent: Limit Sufficient (Remaining after tx: ₹2,001.00)
+    Agent->>Vault: Check Active Pre-Authorized Limit (Balance: INR 3,800)
+    Vault-->>Agent: Limit Verified (Remaining balance after tx: INR 2,001.00)
     end
 
     rect rgb(255, 250, 245)
     Note over Agent,Policy: Step 3: Gate 2 — Merchant Risk & Policy Check
-    Agent->>Policy: Validate Order (Price: ₹1,799, Category: "Smartwatches")
-    Policy-->>Agent: Policy PASS (Cap: ₹10,000, Velocity: 1/20 req/min)
+    Agent->>Policy: Validate Order (Price: INR 1,799, Category: "Smartwatches")
+    Policy-->>Agent: Policy PASS (Cap: INR 10,000, Velocity: 1/20 req/min)
     end
 
     rect rgb(255, 255, 240)
     Note over Agent,RZP: Step 4: Programmatic Razorpay Settlement
     Agent->>RZP: POST /v1/orders (amount: 179900, currency: "INR")
-    RZP-->>Agent: Order Created (id: "order_O5kP9x8...")
+    RZP-->>Agent: Order Created & Captured (id: "order_O5kP9x8...")
     end
 
     rect rgb(248, 248, 255)
-    Note over Agent,Audit: Step 5: Cryptographic Audit Logging
+    Note over Agent,Audit: Step 5: Cryptographic Audit Trail
     Agent->>Audit: Append Event (SHA-256 Hash, Decision: "SETTLED")
     end
 
-    Agent-->>Chat: Render Dynamic Interactive Order Confirmation Card
+    Agent-->>Chat: Render Interactive Order Confirmation Receipt Card
     Chat-->>User: "Order Confirmed & Settled via Razorpay!"
 ```
 
 ---
 
-## 🤖 Interactive LangGraph Multi-Agent Engine
+## LangGraph Multi-Agent Orchestrator
 
-The backend agent is powered by a stateful **LangGraph StateGraph** consisting of 4 deterministic execution nodes:
+The conversational reasoning layer is powered by a stateful **LangGraph StateGraph** consisting of 4 deterministic nodes:
 
 ```text
                  ┌────────────────────────┐
@@ -197,7 +198,7 @@ The backend agent is powered by a stateful **LangGraph StateGraph** consisting o
                              │
                              ▼
                  ┌────────────────────────┐
-                 │     1. Router Node     │  --> Classifies intent: (Search | Policy | Buy | Conversational)
+                 │     1. Router Node     │  --> Classifies intent (Search | Policy | Buy | Conversational)
                  └───────────┬────────────┘
                              │
             ┌────────────────┴────────────────┐
@@ -211,77 +212,77 @@ The backend agent is powered by a stateful **LangGraph StateGraph** consisting o
                              │
                              ▼
                  ┌────────────────────────┐
-                 │  4. Razorpay Executor  │  --> Creates programmatic Razorpay Order
+                 │  4. Razorpay Executor  │  --> Programmatic Razorpay Order Creation
                  └───────────┬────────────┘
                              │
                              ▼
                  ┌────────────────────────┐
-                 │    Audit Trail Node    │  --> Logs cryptographic event to PostgreSQL
+                 │    Audit Trail Node    │  --> Cryptographic event recorded to database
                  └────────────────────────┘
 ```
 
 ---
 
-## ⚡ Complete Feature Breakdown
+## Core Features & Capabilities
 
-### 1. Consumer Spend Vault & Virtual Limits
-- **Bounded Autonomous Spending**: Shoppers configure rolling balances (e.g. ₹3,800) with a single click.
-- **Dynamic Spend Limit Pill**: Real-time badge (`🟢 Limit: ₹3,800` / `🟡 Set Spend Limit`) directly embedded in the shopping assistant.
-- **Delivery Destination Switcher**: 1-click address modal allowing agents to select or provision new delivery addresses inline.
-- **Persistent Discussion Threads**: Chat history is persisted in `localStorage` across reloads with multi-thread sidebar switching and instant thread deletion.
+### 1. Consumer Spend Vault & Pre-Authorizations
+- **Bounded Autonomous Spending**: Shoppers establish virtual transaction limits with a single click.
+- **Spend Limit Indicator**: Embedded status pill directly inside the shopping assistant interface.
+- **Delivery Destination Selector**: Switch or provision shipping destinations inline.
+- **Persistent Discussion Threads**: Multi-thread conversation history stored securely with instant switching and deletion.
 
 ### 2. Deterministic Merchant Risk Engine
-- **Per-Transaction Price Ceilings**: Enforce maximum order amounts (e.g. ₹10,000 cap).
-- **Category Restriction Rules**: Restrict AI buyers to merchant-whitelisted categories (e.g. `Smartwatches`, `Audio`, `Electronics`).
-- **Sliding-Window Velocity Limiter**: Redis-backed velocity caps (e.g. max 20 order proposals/min per AI agent key).
-- **Instant 0ms Synchronous Hydration**: Uses Stale-While-Revalidate (SWR) localStorage caching for store metadata and catalog items to eliminate layout shift and spinner flash.
+- **Per-Transaction Price Ceilings**: Enforce maximum order amounts per autonomous request.
+- **Category Whitelisting**: Restrict AI buyers to specific merchant-approved categories.
+- **Sliding-Window Velocity Limiter**: Redis-backed velocity caps to prevent automated spam and runaway loops.
+- **Zero-Flicker SWR Caching**: Instant hydration using Stale-While-Revalidate caching for store metadata and inventory.
 
-### 3. Excel & CSV Intelligent Product Importer
-- **Drag-and-Drop File Upload**: Direct support for Excel spreadsheets (`.xlsx`, `.xls`), CSV (`.csv`, `.tsv`), and structured JSON.
-- **Fuzzy Column Header Normalization**: Automatically extracts rows regardless of naming conventions (`Name`/`Title`/`SKU`, `Price`/`MRP`/`Cost`, `Stock`/`Quantity`/`Units`, `Category`/`Dept`).
-- **Live Extracted Products Preview**: Interactive preview table with item count badge (`✨ 12 Products Successfully Extracted`) before committing to the catalog.
-- **1-Click Sample CSV Download**: Instant template download for merchant onboarding.
+### 3. Intelligent Excel & CSV Product Ingestion
+- **Multi-Format Ingestion**: Native parsing for Excel spreadsheets (`.xlsx`, `.xls`), CSV (`.csv`), and JSON.
+- **Fuzzy Column Header Normalization**: Automatically identifies product attributes regardless of naming conventions.
+- **Live Extracted Products Preview**: Interactive preview table with SKU counts before committing to the live catalog.
+- **Sample Template Export**: 1-click template export for merchant onboarding.
 
-### 4. Machine-Readable Schema.org Feeds
-- **Zero-Friction AI Discovery**: Auto-generates standard `Schema.org/Product` JSON-LD feeds (`GET /catalog/agent-schema?merchant_id=...`).
-- **OpenAPI Tool Definitions**: LLM agents can inspect stock levels, pricing, specifications, and SKU availability without scraping HTML.
+### 4. Machine-Readable Schema.org Agent Feeds
+- **Zero-Scraping AI Discovery**: Generates standard `Schema.org/Product` JSON-LD endpoints (`GET /catalog/agent-schema?merchant_id=...`).
+- **OpenAPI Tool Definitions**: LLM agents can inspect stock levels, pricing, specifications, and SKU availability directly.
 
-### 5. Razorpay Settlement & Webhook Dispatcher
-- **Programmatic Order Creation**: Programmatically creates live orders with custom receipt IDs and notes.
+### 5. Razorpay Settlement & HMAC Webhooks
+- **Programmatic Settlement**: Captures orders programmatically with custom receipt IDs and structured metadata.
 - **HMAC SHA-256 Webhook Verification**: Cryptographically signed webhooks dispatched to merchant callback endpoints.
-- **Automatic Exponential Backoff Retry**: Resilient 3-attempt retry pipeline for failing merchant webhook servers.
+- **Exponential Backoff Retry**: Resilient 3-attempt retry pipeline for failing webhook destinations.
 
 ### 6. Immutable Cryptographic Audit Ledger
 - **Multi-Actor Logging**: Traces all activities across `Customer`, `Agent`, `Merchant`, and `System` actors.
-- **Tamper-Evident SHA-256 Hashes**: Every policy pass/fail, price verification, and payment record generates a verifiable integrity hash.
+- **Tamper-Evident SHA-256 Hashes**: Every policy evaluation, price check, and payment record produces an integrity hash.
 - **Audit REST API**: Queryable by merchant ID, date ranges, and actor types (`GET /audit`).
 
 ---
 
-## 📊 Comparison Matrix: Legacy vs Agentpay
+## Comparison: Legacy Gateways vs. Agentpay
 
-| Feature / Capability | Legacy Gateways (Stripe, Razorpay Standard) | Scraping Bots (Browser Use) | **Agentpay Autonomous Protocol** |
+| Feature / Capability | Legacy Gateways (Stripe, Razorpay Standard) | Scraping Bots (Browser Use) | Agentpay Autonomous Protocol |
 | :--- | :---: | :---: | :---: |
-| **Autonomous Execution** | ❌ Fails (Demands SMS OTP) | ⚠️ Brittle (Breaks on DOM changes) | **✅ 100% Programmatic Execution** |
-| **Spend Limit Controls** | ❌ None (Full card exposed) | ❌ None | **✅ Virtual Spend Vaults & Daily Caps** |
-| **Merchant Risk Guardrails** | ⚠️ Post-transaction fraud scoring | ❌ None | **✅ Deterministic Pre-Payment Policy Gate** |
-| **Catalog Discoverability** | ❌ Human HTML Pages | ⚠️ High-latency HTML Parsing | **✅ Instant Machine-Readable JSON-LD** |
-| **Bulk Catalog Ingestion** | ⚠️ Manual Single Form | ❌ None | **✅ Drag-and-Drop Excel/CSV Extraction** |
-| **Cryptographic Auditability** | ⚠️ Basic Dashboard Logs | ❌ None | **✅ Append-Only SHA-256 Audit Trail** |
+| **Autonomous Execution** | ✕ Fails (Demands 2FA/OTP) | △ Brittle (DOM shifts) | **✓ 100% Programmatic Execution** |
+| **Spend Limit Controls** | ✕ None (Full card exposed) | ✕ None | **✓ Virtual Spend Vaults & Caps** |
+| **Merchant Risk Guardrails** | △ Post-transaction scoring | ✕ None | **✓ Deterministic Pre-Payment Gate** |
+| **Catalog Discoverability** | ✕ Human HTML Only | △ High-latency Scraping | **✓ Instant JSON-LD Agent Feeds** |
+| **Bulk Catalog Ingestion** | △ Manual Individual Forms | ✕ None | **✓ Excel & CSV File Parsing** |
+| **Cryptographic Auditability** | △ Standard Dashboard Logs | ✕ None | **✓ Append-Only SHA-256 Audit Trail** |
 
 ---
 
-## 🔌 API Endpoints Reference
+## REST API Reference
 
-### 🔐 Authentication & Merchant Onboarding
+### Authentication & Merchant Onboarding
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
 | `POST` | `/auth/register` | Register new merchant store with hashed credentials |
 | `POST` | `/auth/login` | Merchant login & JWT token issuance with auto-demo sync |
-| `POST` | `/merchants/seed` | 1-Click instant demo merchant & catalog provisioner |
+| `POST` | `/merchants/seed` | Instant demo merchant & catalog provisioner |
 | `GET` | `/merchants/me` | Fetch authenticated merchant profile & policy limits |
 
-### 🛍️ Catalog & Agent Schema
+### Catalog & Agent Feeds
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
 | `GET` | `/catalog/items` | List all catalog products for a merchant |
@@ -289,7 +290,7 @@ The backend agent is powered by a stateful **LangGraph StateGraph** consisting o
 | `POST` | `/catalog/bulk-import` | Bulk import products parsed from Excel / CSV |
 | `GET` | `/catalog/agent-schema` | Machine-readable Schema.org JSON-LD agent feed |
 
-### 🤖 Consumer Shopping & Agent Chat
+### Consumer Shopping & Agent Assistant
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
 | `POST` | `/customer/chat` | Main LangGraph conversational agent interaction node |
@@ -298,7 +299,7 @@ The backend agent is powered by a stateful **LangGraph StateGraph** consisting o
 | `GET` | `/customer/addresses` | List saved consumer delivery addresses |
 | `POST` | `/customer/addresses` | Add a new delivery destination |
 
-### 🛡️ Policy & Audit Ledger
+### Policy Governance & Audit Ledger
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
 | `GET` | `/policies` | Fetch merchant risk & spending policies |
@@ -307,7 +308,7 @@ The backend agent is powered by a stateful **LangGraph StateGraph** consisting o
 
 ---
 
-## 📁 Project Directory Structure
+## Directory Structure
 
 ```text
 buildathon/
@@ -316,10 +317,10 @@ buildathon/
 │   │   ├── agents/            # LangGraph multi-agent StateGraph & prompt nodes
 │   │   ├── core/              # Config, DB connections, JWT security, Rate limiters
 │   │   ├── models/            # SQLAlchemy models (Merchant, Catalog, Policy, Audit, etc.)
-│   │   ├── routers/           # FastAPI REST endpoints (Auth, Catalog, Customer, etc.)
+│   │   ├── routers/           # FastAPI REST endpoints (Auth, Catalog, Customer, Admin)
 │   │   ├── schemas/           # Pydantic validation schemas
 │   │   └── services/          # Business logic (Merchant, Audit, Catalog, Webhooks)
-│   ├── tests/                 # Comprehensive Pytest test suite (30+ tests)
+│   ├── tests/                 # Automated Pytest suite (30+ tests)
 │   ├── main.py                # FastAPI ASGI application entrypoint
 │   ├── seed.py                # Database seeder (25 merchants & 150+ SKUs)
 │   └── requirements.txt       # Python dependencies
@@ -327,29 +328,30 @@ buildathon/
 ├── frontend/
 │   ├── app/
 │   │   ├── customer/
-│   │   │   ├── chat/          # ChatGPT-grade AI Shopping Chatbot with persistent threads
+│   │   │   ├── chat/          # AI Shopping Assistant with persistent threads
 │   │   │   ├── dashboard/     # Spend Vault & pre-authorized limit controls
 │   │   │   ├── addresses/     # Delivery address management
 │   │   │   └── login/         # Consumer portal authentication
-│   │   ├── dashboard/         # Merchant Overview, metrics, and Excel/CSV product importer
-│   │   ├── onboarding/        # Vercel-grade store creator & 1-click demo launch
+│   │   ├── dashboard/         # Merchant Overview, metrics, and Excel importer
+│   │   ├── onboarding/        # Store creator & 1-click demo launch
 │   │   ├── settings/          # Policy & Governance risk management
 │   │   ├── agents-list/       # AI Agent API key manager
 │   │   ├── audit/             # Tamper-evident cryptographic audit logs
 │   │   ├── webhooks/          # Webhook endpoint configuration & delivery logs
 │   │   ├── usage/             # Analytics, velocity limits & order volume charts
-│   │   ├── login/             # Minimalist Merchant Portal Sign In
-│   │   └── page.tsx           # Modern monochrome landing page
-│   ├── components/            # Reusable UI components (Navigation, Logo, Modals, etc.)
+│   │   ├── admin/             # Platform Admin Governance Console
+│   │   └── login/             # Minimalist Merchant Portal Sign In
+│   ├── components/            # Reusable UI components (Navigation, Logo, Modals)
 │   └── lib/                   # API client, SWR initializers & auth guards
 │
+├── img/                       # Platform documentation and UI showcase assets
 ├── README.md                  # Project documentation
 └── docker-compose.yml         # Containerized setup
 ```
 
 ---
 
-## 🚀 Quickstart & Local Setup Guide
+## Quickstart Guide
 
 ### Prerequisites
 - **Python**: `3.11+`
@@ -380,7 +382,7 @@ python seed.py
 # Start FastAPI server
 uvicorn main:app --reload --port 8000
 ```
-*API documentation will be available at: `http://localhost:8000/docs`*
+*API documentation available at: `http://localhost:8000/docs`*
 
 ### 3. Frontend Setup
 ```bash
@@ -388,11 +390,11 @@ cd ../frontend
 npm install
 npm run dev
 ```
-*Frontend application will be live at: `http://localhost:3000`*
+*Frontend application live at: `http://localhost:3000`*
 
 ---
 
-## 🧪 Testing & Quality Assurance
+## Testing & Verification
 
 Agentpay is backed by an automated **30+ Pytest suite** covering unit logic, LangGraph agent routing, policy evaluations, and Razorpay signature checks:
 
@@ -406,24 +408,25 @@ pytest -v
 cd frontend
 npm run build
 ```
-*(Verified: 0 TypeScript errors across all 20 Next.js routes)*
+*(Verified: 0 compilation or TypeScript errors across all 20 routes)*
 
 ---
 
-## 🔑 Demo Credentials
+## Demo Accounts
 
 | Role | Portal URL | Email | Password | Pre-Configured State |
 | :--- | :--- | :--- | :--- | :--- |
 | **Merchant Store** | [`/login`](https://buildathon-nu-eight.vercel.app/login) | `demo@agentpay.dev` | `Demo@1234` | Boat Lifestyle Store, 8 SKUs, Live Policies |
-| **Consumer Buyer** | [`/customer/login`](https://buildathon-nu-eight.vercel.app/customer/login) | `rahul@example.com` | `Demo@1234` | ₹3,800 Spend Vault, Saved Home Address |
+| **Consumer Buyer** | [`/customer/login`](https://buildathon-nu-eight.vercel.app/customer/login) | `rahul@example.com` | `Demo@1234` | INR 3,800 Spend Vault, Saved Home Address |
+| **Platform Admin** | [`/admin/login`](https://buildathon-nu-eight.vercel.app/admin/login) | `admin` | `Admin@Agentpay2026` | Global Multi-Tenant Governance Console |
 
 ---
 
-## 📄 License & Acknowledgments
+## License & Acknowledgments
 
 Distributed under the **MIT License**. See `LICENSE` for more information.
 
-Built with ❤️ for the **Razorpay AI Buildathon 2026** (Track 01: AI Growth & Agentic Commerce).
+Built for the **Razorpay AI Buildathon 2026** (Track 01: AI Growth & Agentic Commerce).
 
 <div align="center">
   <sub>Engineered by <a href="https://github.com/prempatel-ai">Prem Patel</a> and the Agentpay Team.</sub>
