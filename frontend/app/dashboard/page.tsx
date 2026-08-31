@@ -17,7 +17,26 @@ import {
 import { useAuthGuard } from '@/lib/useAuthGuard';
 
 import Navigation from '@/components/Navigation';
-import { Plus, Edit2, Trash2, Code, Package, Upload, X, Loader2, Check, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Code,
+  Package,
+  Upload,
+  X,
+  Loader2,
+  Check,
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  FileSpreadsheet,
+  Download,
+  FileText,
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-react';
 
 function DashboardContent() {
   const router = useRouter();
@@ -80,6 +99,11 @@ function DashboardContent() {
 
   // Bulk Import Modal state
   const [showBulkModal, setShowBulkModal] = useState(false);
+  const [importMode, setImportMode] = useState<'file' | 'manual'>('file');
+  const [extractedItems, setExtractedItems] = useState<{ name: string; price: number; stock: number; category: string }[]>([]);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [bulkJson, setBulkJson] = useState(`[
   { "name": "boAt Wave Call Smartwatch", "price": 1799, "stock": 40, "category": "Smartwatches" },
   { "name": "boAt Airdopes 141", "price": 1299, "stock": 60, "category": "Earbuds" },
@@ -87,6 +111,97 @@ function DashboardContent() {
 ]`);
   const [bulkError, setBulkError] = useState<string | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
+
+  const handleFileUpload = async (file: File) => {
+    setIsExtracting(true);
+    setBulkError(null);
+    try {
+      const isJson = file.name.endsWith('.json');
+      if (isJson) {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          throw new Error('JSON file must contain an array of product objects.');
+        }
+        const products = parsed.map((it: any) => ({
+          name: String(it.name || it.product_name || it.title || 'Unnamed Product').trim(),
+          price: parseFloat(it.price || it.cost || it.amount || 0) || 0,
+          stock: parseInt(it.stock || it.quantity || it.qty || 0, 10) || 0,
+          category: String(it.category || it.type || 'General').trim()
+        }));
+        setExtractedItems(products);
+        setUploadedFileName(file.name);
+      } else {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        if (!sheetName) throw new Error('Spreadsheet has no sheets.');
+        const worksheet = workbook.Sheets[sheetName];
+        const rawRows: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+        if (!rawRows || rawRows.length === 0) {
+          throw new Error('The uploaded file contains no data rows.');
+        }
+
+        const findKey = (row: any, candidates: string[]) => {
+          const keys = Object.keys(row);
+          for (const cand of candidates) {
+            const match = keys.find((k) => k.toLowerCase().replace(/[^a-z0-9]/g, '') === cand);
+            if (match && row[match] !== undefined && row[match] !== '') return row[match];
+          }
+          return undefined;
+        };
+
+        const products = rawRows
+          .map((row) => {
+            const nameVal = findKey(row, ['name', 'productname', 'product', 'itemname', 'item', 'title', 'sku', 'productdescription']);
+            const priceVal = findKey(row, ['price', 'mrp', 'cost', 'amount', 'rate', 'inr', 'unitprice']);
+            const stockVal = findKey(row, ['stock', 'quantity', 'qty', 'units', 'count', 'inventory', 'stocklevel']);
+            const catVal = findKey(row, ['category', 'type', 'department', 'dept', 'tag', 'cat', 'categoryname']);
+
+            if (!nameVal && !priceVal) return null;
+
+            return {
+              name: String(nameVal || 'Imported Product').trim(),
+              price: parseFloat(priceVal) || 0,
+              stock: parseInt(stockVal, 10) || 0,
+              category: String(catVal || 'General').trim()
+            };
+          })
+          .filter((p): p is { name: string; price: number; stock: number; category: string } => p !== null && p.name.length > 0);
+
+        if (products.length === 0) {
+          throw new Error('No valid product rows recognized. Ensure columns contain Name, Price, Stock, Category.');
+        }
+
+        setExtractedItems(products);
+        setUploadedFileName(file.name);
+      }
+    } catch (err: any) {
+      setBulkError(err.message || 'Failed to parse file.');
+      setExtractedItems([]);
+      setUploadedFileName(null);
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const downloadSampleCsv = () => {
+    const csvContent = "data:text/csv;charset=utf-8," + 
+      "Product Name,Price,Stock,Category\n" +
+      "boAt Wave Call Smartwatch,1799,40,Smartwatches\n" +
+      "boAt Airdopes 141,1299,60,Earbuds\n" +
+      "boAt Stone 350 Speaker,1499,25,Speakers\n" +
+      "boAt Bassheads 242,349,100,Audio Accessories\n" +
+      "boAt Rockerz 255 Pro+,1499,35,Headphones\n";
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "agentpay_catalog_sample.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleBulkImport = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,25 +211,32 @@ function DashboardContent() {
 
     try {
       let itemsToImport: any[] = [];
-      const trimmed = bulkJson.trim();
 
-      if (trimmed.startsWith('[')) {
-        itemsToImport = JSON.parse(trimmed);
+      if (importMode === 'file') {
+        if (extractedItems.length === 0) {
+          throw new Error('Please upload an Excel or CSV file first.');
+        }
+        itemsToImport = extractedItems;
       } else {
-        const lines = trimmed.split('\n').filter((l) => l.trim().length > 0);
-        itemsToImport = lines.map((line) => {
-          const parts = line.split(',').map((p) => p.trim());
-          return {
-            name: parts[0] || 'Imported Product',
-            price: parseFloat(parts[1]) || 999,
-            stock: parseInt(parts[2]) || 50,
-            category: parts[3] || 'General',
-          };
-        });
+        const trimmed = bulkJson.trim();
+        if (trimmed.startsWith('[')) {
+          itemsToImport = JSON.parse(trimmed);
+        } else {
+          const lines = trimmed.split('\n').filter((l) => l.trim().length > 0);
+          itemsToImport = lines.map((line) => {
+            const parts = line.split(',').map((p) => p.trim());
+            return {
+              name: parts[0] || 'Imported Product',
+              price: parseFloat(parts[1]) || 999,
+              stock: parseInt(parts[2]) || 50,
+              category: parts[3] || 'General',
+            };
+          });
+        }
       }
 
       if (!Array.isArray(itemsToImport) || itemsToImport.length === 0) {
-        throw new Error('Invalid JSON/CSV payload. Must be a non-empty list of products.');
+        throw new Error('No items to import.');
       }
 
       const formatted = itemsToImport.map((it) => ({
@@ -127,6 +249,8 @@ function DashboardContent() {
 
       await bulkImportCatalogItems(merchant.id, formatted);
       setShowBulkModal(false);
+      setExtractedItems([]);
+      setUploadedFileName(null);
       await loadDashboardData();
     } catch (err: any) {
       setBulkError(err.message || 'Failed to bulk import products.');
@@ -644,52 +768,219 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* Modal for Bulk Import */}
+      {/* Modal for Bulk Import (Excel / CSV / JSON File Extraction) */}
       {showBulkModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white border border-neutral-200 rounded-lg max-w-lg w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-100">
-              <h3 className="text-sm font-semibold text-neutral-900">Bulk Import Products</h3>
-              <button onClick={() => setShowBulkModal(false)} className="text-neutral-400 hover:text-neutral-700 cursor-pointer">
+          <div className="bg-white border border-neutral-200 rounded-lg max-w-xl w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-100 shrink-0">
+              <div className="flex items-center space-x-2">
+                <FileSpreadsheet className="w-4 h-4 text-neutral-900" />
+                <h3 className="text-sm font-semibold text-neutral-900">Bulk Import Products</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowBulkModal(false);
+                  setExtractedItems([]);
+                  setUploadedFileName(null);
+                  setBulkError(null);
+                }}
+                className="text-neutral-400 hover:text-neutral-700 cursor-pointer"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-xs text-neutral-500 mb-4">
-              Paste JSON or CSV (Name, Price, Stock, Category) to seed multiple items in one request.
-            </p>
+
+            {/* Mode Switcher Tabs */}
+            <div className="flex items-center justify-between mb-4 border-b border-neutral-100 pb-2 shrink-0">
+              <div className="flex space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setImportMode('file')}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
+                    importMode === 'file' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                  }`}
+                >
+                  Upload Excel / CSV File
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImportMode('manual')}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
+                    importMode === 'manual' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                  }`}
+                >
+                  Direct Paste (JSON/CSV)
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={downloadSampleCsv}
+                className="inline-flex items-center space-x-1 text-xs text-neutral-500 hover:text-neutral-900 font-medium transition-colors cursor-pointer"
+                title="Download formatted sample CSV file"
+              >
+                <Download className="w-3 h-3" />
+                <span>Sample CSV</span>
+              </button>
+            </div>
 
             {bulkError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded text-xs font-medium">
-                {bulkError}
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded text-xs font-medium flex items-center space-x-2 shrink-0">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{bulkError}</span>
               </div>
             )}
 
-            <form onSubmit={handleBulkImport} className="space-y-4">
-              <div>
-                <textarea
-                  value={bulkJson}
-                  onChange={(e) => setBulkJson(e.target.value)}
-                  rows={8}
-                  className="w-full p-3 bg-neutral-50/50 border border-neutral-200 rounded-md text-xs font-mono text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all leading-relaxed"
-                  required
-                />
-              </div>
+            <form onSubmit={handleBulkImport} className="flex-1 flex flex-col overflow-hidden">
+              {importMode === 'file' ? (
+                <div className="space-y-4 flex-1 overflow-y-auto pr-1">
+                  {/* Drag & Drop File Zone */}
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                        handleFileUpload(e.dataTransfer.files[0]);
+                      }
+                    }}
+                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+                      isDragging
+                        ? 'border-neutral-900 bg-neutral-50'
+                        : uploadedFileName
+                          ? 'border-emerald-300 bg-emerald-50/40'
+                          : 'border-neutral-200 hover:border-neutral-400 bg-neutral-50/50'
+                    }`}
+                  >
+                    <input
+                      type="file"
+                      id="catalogFileInput"
+                      accept=".xlsx, .xls, .csv, .tsv, .json"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          handleFileUpload(e.target.files[0]);
+                        }
+                      }}
+                      className="hidden"
+                    />
 
-              <div className="pt-2 flex justify-end space-x-2">
+                    {isExtracting ? (
+                      <div className="flex flex-col items-center justify-center space-y-2 py-4">
+                        <Loader2 className="w-6 h-6 text-neutral-900 animate-spin" />
+                        <p className="text-xs font-medium text-neutral-800">Extracting rows & normalizing columns...</p>
+                      </div>
+                    ) : uploadedFileName ? (
+                      <div className="flex flex-col items-center justify-center space-y-2 py-2">
+                        <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                          <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-neutral-900">{uploadedFileName}</p>
+                          <span className="inline-block mt-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 font-mono font-semibold text-[10px] rounded">
+                            {extractedItems.length} Products Successfully Extracted
+                          </span>
+                        </div>
+                        <label
+                          htmlFor="catalogFileInput"
+                          className="mt-2 text-[11px] text-neutral-500 hover:text-neutral-900 underline cursor-pointer"
+                        >
+                          Choose another file
+                        </label>
+                      </div>
+                    ) : (
+                      <label htmlFor="catalogFileInput" className="flex flex-col items-center justify-center space-y-2 cursor-pointer py-4">
+                        <div className="w-10 h-10 rounded-full bg-neutral-100 text-neutral-600 flex items-center justify-center">
+                          <Upload className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-neutral-900">
+                            Click to upload or drag & drop Excel / CSV
+                          </p>
+                          <p className="text-[11px] text-neutral-400 mt-0.5">
+                            Supports .xlsx, .xls, .csv, and .json
+                          </p>
+                        </div>
+                      </label>
+                    )}
+                  </div>
+
+                  {/* Extracted Items Mini Preview Table */}
+                  {extractedItems.length > 0 && (
+                    <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                      <div className="px-3 py-2 bg-neutral-50 border-b border-neutral-200 flex items-center justify-between text-[11px] font-semibold text-neutral-700">
+                        <span>Extracted Preview</span>
+                        <span className="font-mono text-neutral-500 font-normal">
+                          Showing top {Math.min(extractedItems.length, 5)} of {extractedItems.length} items
+                        </span>
+                      </div>
+                      <div className="max-h-48 overflow-y-auto text-[11px]">
+                        <table className="w-full text-left">
+                          <thead className="bg-neutral-50/70 border-b border-neutral-100 text-neutral-500 text-[10px] uppercase font-mono">
+                            <tr>
+                              <th className="px-3 py-1.5">Product Name</th>
+                              <th className="px-2 py-1.5">Category</th>
+                              <th className="px-2 py-1.5 text-right">Price</th>
+                              <th className="px-3 py-1.5 text-right">Stock</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-neutral-100">
+                            {extractedItems.slice(0, 5).map((it, idx) => (
+                              <tr key={idx} className="hover:bg-neutral-50/50">
+                                <td className="px-3 py-1.5 font-medium text-neutral-900 truncate max-w-[160px]">{it.name}</td>
+                                <td className="px-2 py-1.5 text-neutral-500">{it.category}</td>
+                                <td className="px-2 py-1.5 text-right font-mono font-semibold text-neutral-900">₹{it.price.toLocaleString('en-IN')}</td>
+                                <td className="px-3 py-1.5 text-right font-mono text-neutral-600">{it.stock}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3 flex-1 flex flex-col">
+                  <p className="text-xs text-neutral-500">
+                    Paste raw JSON or CSV text. Column order: <code className="font-mono bg-neutral-100 px-1 py-0.5 rounded">Name, Price, Stock, Category</code>.
+                  </p>
+                  <textarea
+                    value={bulkJson}
+                    onChange={(e) => setBulkJson(e.target.value)}
+                    rows={8}
+                    className="w-full flex-1 p-3 bg-neutral-50/50 border border-neutral-200 rounded-md text-xs font-mono text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all leading-relaxed"
+                    required
+                  />
+                </div>
+              )}
+
+              <div className="pt-4 mt-2 border-t border-neutral-100 flex items-center justify-between shrink-0">
                 <button
                   type="button"
-                  onClick={() => setShowBulkModal(false)}
+                  onClick={() => {
+                    setShowBulkModal(false);
+                    setExtractedItems([]);
+                    setUploadedFileName(null);
+                    setBulkError(null);
+                  }}
                   className="h-8 px-3 rounded-md border border-neutral-200 text-xs font-medium text-neutral-700 hover:bg-neutral-50 transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={bulkLoading}
-                  className="h-8 px-4 rounded-md bg-neutral-900 hover:bg-black text-white text-xs font-medium transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                  disabled={bulkLoading || isExtracting || (importMode === 'file' && extractedItems.length === 0)}
+                  className="h-8 px-4 rounded-md bg-neutral-900 hover:bg-black text-white text-xs font-medium transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-xs"
                 >
                   {bulkLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Import SKUs</span>
+                  <span>
+                    {importMode === 'file' && extractedItems.length > 0
+                      ? `Import ${extractedItems.length} SKUs`
+                      : 'Import SKUs'}
+                  </span>
                 </button>
               </div>
             </form>
