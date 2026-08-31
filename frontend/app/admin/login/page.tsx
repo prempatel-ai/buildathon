@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminLogin, getAdminToken } from '@/lib/api';
+import { AgentpayLogo } from '@/components/Logo';
 import { Loader2 } from 'lucide-react';
 
 export default function AdminLoginPage() {
@@ -44,10 +45,10 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen bg-[#fafafa] text-neutral-900 flex flex-col justify-center items-center px-4 font-sans antialiased selection:bg-neutral-200">
       <div className="max-w-[380px] w-full">
-        {/* Minimal Black Logo Icon */}
+        {/* Official Agentpay Logo */}
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-bold text-sm shadow-xs mb-3">
-            AP
+          <div className="mb-3">
+            <AgentpayLogo size={36} />
           </div>
           <h1 className="text-lg font-semibold tracking-tight text-neutral-900">Platform Admin</h1>
           <p className="text-xs text-neutral-500 mt-1">Authenticate to access system governance</p>

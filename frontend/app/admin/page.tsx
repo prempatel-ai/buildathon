@@ -12,6 +12,7 @@ import {
   AdminMerchant,
   AdminAuditItem
 } from '@/lib/api';
+import { AgentpayLogo } from '@/components/Logo';
 import {
   Search,
   RefreshCw,
@@ -266,9 +267,7 @@ export default function PlatformAdminPage() {
       <header className="border-b border-neutral-200 bg-white sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-6 h-6 rounded bg-neutral-900 text-white flex items-center justify-center font-bold text-[11px]">
-              AP
-            </div>
+            <AgentpayLogo size={24} />
             <div className="flex items-center gap-2">
               <span className="font-semibold text-sm text-neutral-900">Agentpay Admin</span>
               <span className="text-[11px] text-neutral-500 font-mono">/ Governance</span>
