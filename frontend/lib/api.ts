@@ -549,4 +549,95 @@ export async function deleteCustomerAddress(addressId: string): Promise<void> {
   }
 }
 
+// ── Admin Governance API ──────────────────────────────────────────────────────
+
+export interface AdminOverview {
+  total_merchants: number;
+  verified_merchants: number;
+  total_customers: number;
+  total_catalog_items: number;
+  total_policies_enforced: number;
+  total_audit_events: number;
+  total_settled_volume_inr: number;
+  total_settled_transactions: number;
+}
+
+export interface AdminMerchant {
+  id: string;
+  name: string;
+  email: string;
+  kyc_status: string;
+  environment: string;
+  catalog_count: number;
+  policy_count: number;
+  created_at?: string;
+}
+
+export interface AdminAuditItem {
+  id: string;
+  merchant_id?: string;
+  merchant_name?: string;
+  actor_type: string;
+  actor_id: string;
+  action: string;
+  decision: string;
+  reasoning: string;
+  input: Record<string, any>;
+  created_at?: string;
+}
+
+export interface AdminAuditResponse {
+  total: number;
+  items: AdminAuditItem[];
+  skip: number;
+  limit: number;
+}
+
+export async function fetchAdminOverview(): Promise<AdminOverview> {
+  const res = await fetch(`${API_BASE_URL}/admin/overview`);
+  if (!res.ok) throw new Error('Failed to fetch platform overview');
+  return res.json();
+}
+
+export async function fetchAdminMerchants(): Promise<AdminMerchant[]> {
+  const res = await fetch(`${API_BASE_URL}/admin/merchants`);
+  if (!res.ok) throw new Error('Failed to fetch merchant directory');
+  return res.json();
+}
+
+export async function updateMerchantKYC(merchantId: string, kycStatus: string): Promise<{ message: string; merchant_id: string }> {
+  const res = await fetch(`${API_BASE_URL}/admin/merchants/${merchantId}/kyc`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ kyc_status: kycStatus })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to update merchant KYC' }));
+    throw new Error(err.detail || 'Failed to update merchant KYC');
+  }
+  return res.json();
+}
+
+export async function fetchAdminAuditEvents(params?: {
+  merchant_id?: string;
+  actor_type?: string;
+  action?: string;
+  sort_order?: string;
+  skip?: number;
+  limit?: number;
+}): Promise<AdminAuditResponse> {
+  const query = new URLSearchParams();
+  if (params?.merchant_id) query.set('merchant_id', params.merchant_id);
+  if (params?.actor_type) query.set('actor_type', params.actor_type);
+  if (params?.action) query.set('action', params.action);
+  if (params?.sort_order) query.set('sort_order', params.sort_order);
+  if (params?.skip !== undefined) query.set('skip', String(params.skip));
+  if (params?.limit !== undefined) query.set('limit', String(params.limit));
+
+  const res = await fetch(`${API_BASE_URL}/admin/audit?${query.toString()}`);
+  if (!res.ok) throw new Error('Failed to fetch admin audit events');
+  return res.json();
+}
+
+
 

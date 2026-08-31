@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.audit import AuditPaginatedResponse, AuditEventRead
 from app.services.audit_service import AuditService
+from app.routers.admin import mask_sensitive_pii
 
 router = APIRouter(prefix="/audit", tags=["audit"])
 
@@ -19,7 +20,7 @@ def get_audit_events(
     db: Session = Depends(get_db)
 ):
     """
-    Fetches paginated, filterable audit events in chronological order.
+    Fetches paginated, filterable audit events in chronological order with PII masking.
     Auto-seeds demo audit events if database has < 3 events.
     """
     AuditService.seed_demo_audit_events(db)
@@ -32,9 +33,25 @@ def get_audit_events(
         limit=limit,
         sort_order=sort_order
     )
+    
+    sanitized_items = []
+    for item in items:
+        event_dict = {
+            "id": item.id,
+            "merchant_id": item.merchant_id,
+            "actor_type": item.actor_type,
+            "actor_id": item.actor_id,
+            "action": item.action,
+            "decision": item.decision,
+            "reasoning": item.reasoning,
+            "input": mask_sensitive_pii(item.input or {}),
+            "created_at": item.created_at
+        }
+        sanitized_items.append(AuditEventRead.model_validate(event_dict))
+
     return AuditPaginatedResponse(
         total=total,
-        items=[AuditEventRead.model_validate(item) for item in items],
+        items=sanitized_items,
         skip=skip,
         limit=limit
     )

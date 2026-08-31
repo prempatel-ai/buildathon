@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routers import health, merchant, catalog, policy, payment, audit, agent, auth, webhook, customer, customer_chat, address
+from app.routers import health, merchant, catalog, policy, payment, audit, agent, auth, webhook, customer, customer_chat, address, admin
 
 from app.core.database import Base, engine
 import app.models  # Ensure all models are registered in Base.metadata
@@ -58,6 +58,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Include routers
 app.include_router(health.router)
 app.include_router(auth.router)
@@ -71,6 +72,7 @@ app.include_router(webhook.router)
 app.include_router(customer.router)
 app.include_router(customer_chat.router)
 app.include_router(address.router)
+app.include_router(admin.router)
 
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration

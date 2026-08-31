@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/custom-icons';
 import CommandSearchModal from '@/components/CommandSearchModal';
 import { removeAuthToken, getMerchantMe, Merchant } from '@/lib/api';
-import { ChevronDown, Search, ExternalLink, ShieldCheck, User, LogOut, Check, ShoppingBag, MapPin } from 'lucide-react';
+import { ChevronDown, Search, ExternalLink, ShieldCheck, Shield, User, LogOut, Check, ShoppingBag, MapPin } from 'lucide-react';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -215,6 +215,14 @@ export default function Navigation() {
                     >
                       <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
                       <span>Store Governance</span>
+                    </Link>
+                    <Link
+                      href="/admin"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center space-x-2 px-3 py-2 text-slate-700 hover:bg-slate-50 font-semibold"
+                    >
+                      <Shield className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Platform Admin</span>
                     </Link>
                     <div className="border-t border-slate-100 my-1" />
                     <button

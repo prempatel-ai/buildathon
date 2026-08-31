@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import {
   fetchMerchants,
   fetchAuditEvents,
+  getMerchantMe,
   Merchant,
   AuditEvent,
 } from '@/lib/api';
@@ -17,17 +18,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { RefreshCw, Code, Shield } from 'lucide-react';
+import { RefreshCw, Code, Shield, Lock, Store } from 'lucide-react';
 
 function AuditViewerContent() {
   const searchParams = useSearchParams();
   const initialMerchantId = searchParams.get('merchant_id') || '';
 
-  const [merchants, setMerchants] = useState<Merchant[]>([]);
+  const [currentMerchant, setCurrentMerchant] = useState<Merchant | null>(null);
   const [selectedMerchantId, setSelectedMerchantId] = useState<string>(initialMerchantId);
   const [actorTypeFilter, setActorTypeFilter] = useState<string>('');
   const [actionFilter, setActionFilter] = useState<string>('');
-  const [sortOrder, setSortOrder] = useState<string>('asc');
+  const [sortOrder, setSortOrder] = useState<string>('desc');
 
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [total, setTotal] = useState<number>(0);
@@ -36,23 +37,26 @@ function AuditViewerContent() {
 
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
 
-  const loadMerchants = async () => {
+  const loadMerchantIdentity = async () => {
     try {
-      const data = await fetchMerchants();
-      setMerchants(data);
+      const me = await getMerchantMe();
+      if (me && me.id) {
+        setCurrentMerchant(me);
+        setSelectedMerchantId(me.id);
+      }
     } catch (err: any) {
-      console.error('Failed to load merchants', err);
+      console.error('Failed to load merchant identity', err);
     }
   };
 
-  useAuthGuard(loadMerchants);
+  useAuthGuard(loadMerchantIdentity);
 
   const loadEvents = async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetchAuditEvents({
-        merchant_id: selectedMerchantId || undefined,
+        merchant_id: selectedMerchantId || (currentMerchant ? currentMerchant.id : undefined),
         actor_type: actorTypeFilter || undefined,
         action: actionFilter || undefined,
         sort_order: sortOrder,
@@ -68,8 +72,10 @@ function AuditViewerContent() {
   };
 
   useEffect(() => {
-    loadEvents();
-  }, [selectedMerchantId, actorTypeFilter, actionFilter, sortOrder]);
+    if (selectedMerchantId || currentMerchant) {
+      loadEvents();
+    }
+  }, [selectedMerchantId, currentMerchant, actorTypeFilter, actionFilter, sortOrder]);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -96,45 +102,47 @@ function AuditViewerContent() {
         <PageHeader
           category="Governance & Security"
           title="Immutable Audit Trail"
-          subtitle="Every catalog change, policy decision, and payment state transition logged in real time."
-          badge="Append-Only Log"
+          subtitle="Real-time chronological ledger of policy decisions, agent settlements, and catalog operations for your store."
+          badge="Store Isolated Log"
           actions={
             <Button variant="outline" size="sm" onClick={loadEvents} loading={loading}>
-              <RefreshCw className="w-3.5 h-3.5 text-indigo-600 mr-1.5" />
+              <RefreshCw className="w-3.5 h-3.5 text-slate-700 mr-1.5" />
               Refresh Trail
             </Button>
           }
         />
 
-        {/* Filter Controls Bar */}
-        <div className="mb-6 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div>
-            <label className="block text-[11px] font-mono font-bold uppercase text-slate-400 mb-1">Filter Merchant</label>
-            <select
-              value={selectedMerchantId}
-              onChange={(e) => setSelectedMerchantId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:bg-white focus:border-slate-400"
-            >
-              <option value="">All Merchants</option>
-              {merchants.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
+        {/* Tenant Scope & Privacy Notice Banner */}
+        <div className="mb-6 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-slate-100 rounded-xl text-slate-700">
+              <Store className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold text-slate-900">{currentMerchant?.name || 'Verified Merchant Store'}</span>
+              <p className="text-[11px] text-slate-500">Tenant-isolated audit scope. Only activity for this store is visible.</p>
+            </div>
           </div>
+          <div className="flex items-center gap-1.5 text-slate-500 font-mono text-[11px] bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/60">
+            <Lock className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Consumer PII Masked & Redacted</span>
+          </div>
+        </div>
 
+        {/* Filter Controls Bar */}
+        <div className="mb-6 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label className="block text-[11px] font-mono font-bold uppercase text-slate-400 mb-1">Actor Type</label>
             <select
               value={actorTypeFilter}
               onChange={(e) => setActorTypeFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:bg-white focus:border-slate-400"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-hidden focus:bg-white focus:border-slate-400"
             >
               <option value="">All Actors</option>
-              <option value="merchant">merchant</option>
-              <option value="agent">agent</option>
-              <option value="system">system</option>
+              <option value="merchant">Merchant Admin</option>
+              <option value="agent">AI Agent Key</option>
+              <option value="system">Policy Engine / System</option>
+              <option value="customer">Consumer Gating</option>
             </select>
           </div>
 
@@ -143,19 +151,15 @@ function AuditViewerContent() {
             <select
               value={actionFilter}
               onChange={(e) => setActionFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:bg-white focus:border-slate-400"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-hidden focus:bg-white focus:border-slate-400"
             >
               <option value="">All Actions</option>
+              <option value="policy_evaluated">policy_evaluated</option>
+              <option value="payment_settled">payment_settled</option>
+              <option value="payment_order_created">payment_order_created</option>
               <option value="catalog_item_created">catalog_item_created</option>
               <option value="catalog_item_updated">catalog_item_updated</option>
-              <option value="catalog_item_deleted">catalog_item_deleted</option>
-              <option value="policy_created">policy_created</option>
-              <option value="policy_evaluated">policy_evaluated</option>
-              <option value="payment_proposed">payment_proposed</option>
-              <option value="payment_approved">payment_approved</option>
-              <option value="payment_executing">payment_executing</option>
-              <option value="payment_settled">payment_settled</option>
-              <option value="payment_failed">payment_failed</option>
+              <option value="agent_key_created">agent_key_created</option>
             </select>
           </div>
 
@@ -164,10 +168,10 @@ function AuditViewerContent() {
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:bg-white focus:border-slate-400 font-mono"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-hidden focus:bg-white focus:border-slate-400"
             >
-              <option value="asc">Oldest First (ASC)</option>
               <option value="desc">Newest First (DESC)</option>
+              <option value="asc">Oldest First (ASC)</option>
             </select>
           </div>
         </div>
