@@ -32,7 +32,7 @@ export default function LoginPage() {
   const fillDemoMerchant = () => {
     setIsRegister(false);
     setEmail('demo@agentpay.dev');
-    setPassword('DemoStore123!');
+    setPassword('Demo@1234');
     setName('Boat Lifestyle Electronics');
     setError(null);
   };

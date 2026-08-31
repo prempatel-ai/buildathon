@@ -41,11 +41,14 @@ def seed_demo_merchant(db: Session = Depends(get_db)):
     if not demo_merchant:
         demo_merchant = db.query(Merchant).first()
 
+    from app.core.security import hash_password
+
     if not demo_merchant:
         # Create fresh demo merchant
         demo_merchant = Merchant(
             name="Boat Lifestyle Electronics",
             email="demo@agentpay.dev",
+            password_hash=hash_password("Demo@1234"),
             kyc_status="verified",
             environment="live",
             razorpay_key_id="rzp_test_51MzDemoKey99",
@@ -58,6 +61,10 @@ def seed_demo_merchant(db: Session = Depends(get_db)):
             }
         )
         db.add(demo_merchant)
+        db.commit()
+        db.refresh(demo_merchant)
+    elif not demo_merchant.password_hash:
+        demo_merchant.password_hash = hash_password("Demo@1234")
         db.commit()
         db.refresh(demo_merchant)
 
