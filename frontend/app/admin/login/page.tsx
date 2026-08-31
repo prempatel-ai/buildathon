@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminLogin, getAdminToken } from '@/lib/api';
-import { Shield, Lock, ArrowRight, Loader2, KeyRound } from 'lucide-react';
+import { Shield, Lock, Eye, EyeOff, Loader2, KeyRound, Check } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,33 +36,39 @@ export default function AdminLoginPage() {
     }
   };
 
+  const handleQuickFill = () => {
+    setUsername('admin');
+    setPassword('Admin@Agentpay2026');
+    setError(null);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center px-4 font-sans selection:bg-slate-800">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-center items-center px-4 font-sans selection:bg-slate-200">
       <div className="max-w-md w-full">
-        {/* Security Shield Logo Header */}
-        <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 text-slate-100 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-black/40">
+        {/* Brand Header */}
+        <div className="text-center mb-6">
+          <div className="w-11 h-11 rounded-xl bg-slate-900 text-white flex items-center justify-center mx-auto mb-3 shadow-sm">
             <Lock className="w-5 h-5 text-emerald-400" />
           </div>
-          <span className="text-[10px] font-mono font-bold tracking-widest text-emerald-400 uppercase bg-emerald-950/60 border border-emerald-800/40 px-3 py-1 rounded-full">
-            Restricted System Access
-          </span>
-          <h1 className="text-xl font-bold text-white tracking-tight mt-3">Platform Governance Gateway</h1>
-          <p className="text-xs text-slate-400 mt-1">Super administrator authentication required.</p>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-2">
+            <span>Restricted Governance Portal</span>
+          </div>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Super Admin Authentication</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Secure multi-tenant platform controls & audit gateway</p>
         </div>
 
-        {/* Login Box */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+        {/* Card */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-7 shadow-sm">
           {error && (
-            <div className="mb-5 p-3.5 rounded-xl bg-red-950/50 border border-red-800/50 text-red-400 text-xs flex items-center justify-between">
+            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center justify-between">
               <span>{error}</span>
-              <button onClick={() => setError(null)} className="text-red-400 hover:text-red-200 font-bold ml-2">×</button>
+              <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 font-bold ml-2">×</button>
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
                 Admin Username
               </label>
               <input
@@ -70,44 +77,62 @@ export default function AdminLoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="admin"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-950/70 text-slate-200 text-xs font-mono focus:border-slate-400 focus:outline-hidden transition"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-xs font-mono focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                Master Security Key / Password
-              </label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-950/70 text-slate-200 text-xs font-mono focus:border-slate-400 focus:outline-hidden transition"
-              />
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                  Master Security Key
+                </label>
+                <button
+                  type="button"
+                  onClick={handleQuickFill}
+                  className="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+                >
+                  Quick Fill Demo Key
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter master password..."
+                  className="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-xs font-mono focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <div className="pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-xl shadow-md transition-all active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl shadow-2xs transition-all active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin text-slate-300" /> : <KeyRound className="w-4 h-4" />}
                 <span>Authenticate Session</span>
               </button>
             </div>
           </form>
 
-          <div className="mt-6 pt-4 border-t border-slate-800/80 text-center">
-            <span className="text-[11px] text-slate-500 font-mono">
-              Demo Master Key: <code className="text-slate-300">Admin@Agentpay2026</code>
-            </span>
+          <div className="mt-5 pt-3.5 border-t border-slate-100 text-center">
+            <p className="text-[11px] text-slate-400 font-mono">
+              Master Key: <code className="text-slate-700 font-semibold bg-slate-100 px-1.5 py-0.5 rounded">Admin@Agentpay2026</code>
+            </p>
           </div>
         </div>
 
-        <div className="text-center mt-6 text-[11px] text-slate-600 font-mono">
+        <div className="text-center mt-5 text-[11px] text-slate-400 font-mono">
           Agentpay AI Platform Governance • Protocol v1.4
         </div>
       </div>
