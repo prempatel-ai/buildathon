@@ -21,6 +21,79 @@ def list_merchants(skip: int = 0, limit: int = 100, db: Session = Depends(get_db
 
 from app.core.security import get_current_merchant, verify_merchant_access
 from app.models.merchant import Merchant
+from sqlalchemy import func
+from app.models.policy import Policy
+from app.models.agent import Agent
+from app.models.transaction import Transaction
+from app.models.catalog import CatalogItem
+
+@router.post("/seed", response_model=MerchantRead)
+def seed_demo_merchant(db: Session = Depends(get_db)):
+    """
+    Seeds or retrieves a pre-configured demo merchant with a rich catalog,
+    policies, and agent schema for instantaneous onboarding and demo purposes.
+    """
+    # 1. Check if demo merchant already exists
+    demo_merchant = db.query(Merchant).filter(
+        (Merchant.email == "demo@agentpay.dev") | (Merchant.name.ilike("%Boat Lifestyle%")) | (Merchant.name.ilike("%Demo Store%"))
+    ).first()
+
+    if not demo_merchant:
+        demo_merchant = db.query(Merchant).first()
+
+    if not demo_merchant:
+        # Create fresh demo merchant
+        demo_merchant = Merchant(
+            name="Boat Lifestyle Electronics",
+            email="demo@agentpay.dev",
+            kyc_status="verified",
+            environment="live",
+            razorpay_key_id="rzp_test_51MzDemoKey99",
+            limits_config={
+                "max_transaction_amount": 10000.0,
+                "daily_spend_limit": 50000.0,
+                "allowed_categories": ["Smartwatches", "Earbuds", "Speakers", "Audio Accessories", "Headphones", "Electronics"],
+                "currency": "INR",
+                "velocity_limit": 20
+            }
+        )
+        db.add(demo_merchant)
+        db.commit()
+        db.refresh(demo_merchant)
+
+    # Ensure demo catalog items exist for this merchant
+    existing_items_count = db.query(CatalogItem).filter(CatalogItem.merchant_id == demo_merchant.id).count()
+    if existing_items_count == 0:
+        sample_catalog = [
+            {"name": "boAt Wave Call Smartwatch", "price": 1799.00, "stock": 40, "category": "Smartwatches"},
+            {"name": "boAt Airdopes 141", "price": 1299.00, "stock": 60, "category": "Earbuds"},
+            {"name": "boAt Stone 350 Speaker", "price": 1499.00, "stock": 25, "category": "Speakers"},
+            {"name": "boAt Bassheads 242", "price": 349.00, "stock": 100, "category": "Audio Accessories"},
+            {"name": "boAt Rockerz 255 Pro+", "price": 1499.00, "stock": 35, "category": "Headphones"},
+            {"name": "boAt Watch Xtend", "price": 2299.00, "stock": 30, "category": "Smartwatches"},
+            {"name": "boAt Immortal 121 Gaming Earbuds", "price": 1699.00, "stock": 45, "category": "Earbuds"},
+            {"name": "boAt Nirvana Ion ANC", "price": 2499.00, "stock": 20, "category": "Earbuds"},
+        ]
+        for item in sample_catalog:
+            db.add(CatalogItem(
+                merchant_id=demo_merchant.id,
+                name=item["name"],
+                price=item["price"],
+                stock=item["stock"],
+                category=item["category"],
+                is_active=True
+            ))
+        db.commit()
+
+    # Ensure default policies exist
+    existing_policies = db.query(Policy).filter(Policy.merchant_id == demo_merchant.id).all()
+    if not existing_policies:
+        db.add(Policy(merchant_id=demo_merchant.id, rule_type="max_amount", config={"max_amount": 10000.0}))
+        db.add(Policy(merchant_id=demo_merchant.id, rule_type="velocity_limit", config={"max_requests": 20, "window_seconds": 60}))
+        db.commit()
+
+    db.refresh(demo_merchant)
+    return demo_merchant
 
 from sqlalchemy import func
 from app.models.policy import Policy

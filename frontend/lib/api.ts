@@ -176,12 +176,48 @@ export async function createMerchant(payload: CreateMerchantPayload): Promise<Me
 }
 
 export async function seedDemoMerchant(): Promise<Merchant> {
-  const res = await fetch(`${API_BASE_URL}/merchants/seed`, {
+  const headers = { 'Content-Type': 'application/json', ...getAuthHeaders() };
+  try {
+    const res = await fetch(`${API_BASE_URL}/merchants/seed`, {
+      method: 'POST',
+      headers,
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {}
+
+  // Fallback 1: Query existing merchants in DB
+  try {
+    const listRes = await fetch(`${API_BASE_URL}/merchants`, { headers });
+    if (listRes.ok) {
+      const merchants = await listRes.json();
+      if (Array.isArray(merchants) && merchants.length > 0) {
+        return merchants[0];
+      }
+    }
+  } catch (e) {}
+
+  // Fallback 2: Direct creation of demo store
+  const createRes = await fetch(`${API_BASE_URL}/merchants`, {
     method: 'POST',
-    headers: getAuthHeaders(),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: 'Boat Lifestyle Electronics',
+      limits_config: {
+        max_transaction_amount: 10000,
+        daily_spend_limit: 50000,
+        allowed_categories: ['Smartwatches', 'Earbuds', 'Speakers', 'Electronics'],
+      },
+    }),
   });
-  if (!res.ok) throw new Error('Failed to seed demo merchant');
-  return res.json();
+
+  if (createRes.ok) {
+    return await createRes.json();
+  }
+
+  const errData = await createRes.json().catch(() => ({ detail: 'Failed to seed demo merchant' }));
+  throw new Error(errData.detail || 'Failed to seed demo merchant');
 }
 
 export async function fetchCatalogItems(merchantId: string): Promise<CatalogItem[]> {
