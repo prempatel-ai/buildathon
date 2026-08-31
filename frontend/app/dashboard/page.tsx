@@ -11,20 +11,13 @@ import {
   updateCatalogItem,
   deleteCatalogItem,
   fetchAgentSchema,
-  getAuthToken,
   Merchant,
   CatalogItem,
 } from '@/lib/api';
 import { useAuthGuard } from '@/lib/useAuthGuard';
 
 import Navigation from '@/components/Navigation';
-import PageHeader from '@/components/PageHeader';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { MetricCard } from '@/components/ui/metric-card';
-import { StatusBadge } from '@/components/ui/status-badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Edit2, Trash2, Code, Package, Store, Upload, FileCode2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Code, Package, Upload, X, Loader2, Check, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 
 function DashboardContent() {
   const router = useRouter();
@@ -35,6 +28,10 @@ function DashboardContent() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Pagination for catalog
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
 
   // Add / Edit Modal state
   const [showModal, setShowModal] = useState(false);
@@ -55,8 +52,6 @@ function DashboardContent() {
 ]`);
   const [bulkError, setBulkError] = useState<string | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
-
-
 
   const handleBulkImport = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,198 +206,267 @@ function DashboardContent() {
   };
 
   const limitsConfig = merchant?.limits_config || {};
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const paginatedItems = items.slice((page - 1) * pageSize, page * pageSize);
+  const startIdx = items.length === 0 ? 0 : (page - 1) * pageSize + 1;
+  const endIdx = Math.min(page * pageSize, items.length);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-slate-200">
+    <div className="min-h-screen bg-white text-neutral-900 font-sans antialiased selection:bg-neutral-200 pb-16">
       <Navigation />
 
       {/* Main Content */}
       <main className="max-w-6xl w-full mx-auto px-6 py-8 flex-1">
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-xs font-medium">
+          <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 rounded text-xs font-medium">
             {error}
           </div>
         )}
 
-        {/* Store Header Banner */}
-        {loading ? (
-          <div className="mb-6 bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Skeleton className="w-10 h-10 rounded-2xl" />
-              <div className="space-y-2">
-                <Skeleton className="h-5 w-40" />
-                <Skeleton className="h-3 w-60" />
-              </div>
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-neutral-200">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Store Overview</span>
+              <span className="text-neutral-300">•</span>
+              <span className="text-xs text-neutral-500 font-mono font-medium">{merchant?.id}</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <Skeleton className="h-9 w-28 rounded-xl" />
-              <Skeleton className="h-9 w-36 rounded-xl" />
-            </div>
+            <h1 className="text-xl font-bold text-neutral-900 tracking-tight">
+              {merchant?.name || 'Merchant Dashboard'}
+            </h1>
+            <p className="text-xs text-neutral-500 mt-0.5 max-w-xl">
+              Manage live product catalog and verify machine-readable schema for AI buyer agents.
+            </p>
           </div>
-        ) : (
-          merchant && (
-            <div className="mb-6 bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm">
-                    <Store className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-                      {merchant.name}
-                    </h1>
-                    <p className="text-xs text-slate-500 font-mono">
-                      ID: {merchant.id} &bull; {merchant.email || 'Merchant Store'}
-                    </p>
-                  </div>
-                </div>
-              </div>
 
-              <div className="flex items-center space-x-2 border-t md:border-t-0 pt-4 md:pt-0 border-slate-100">
-                <Button
-                  variant={activeTab === 'catalog' ? 'default' : 'secondary'}
-                  size="sm"
-                  onClick={() => setActiveTab('catalog')}
-                >
-                  <Package className="w-3.5 h-3.5 mr-1.5" />
-                  Catalog ({items.length})
-                </Button>
-                <Button
-                  variant={activeTab === 'schema' ? 'default' : 'secondary'}
-                  size="sm"
-                  onClick={() => setActiveTab('schema')}
-                >
-                  <Code className="w-3.5 h-3.5 mr-1.5" />
-                  Agent JSON-LD Schema
-                </Button>
-              </div>
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setShowBulkModal(true)}
+              className="h-8 px-3 rounded-md border border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-medium text-neutral-700 transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Upload className="w-3.5 h-3.5 text-neutral-600" />
+              <span>Bulk Import</span>
+            </button>
+            <button
+              onClick={handleOpenCreateModal}
+              className="h-8 px-3.5 rounded-md bg-neutral-900 hover:bg-black text-white text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Product</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Unified 4-Metric Bar */}
+        <div className="grid grid-cols-1 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 border border-neutral-200 rounded-lg bg-white overflow-hidden mb-6">
+          <div className="p-4">
+            <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Total Products</span>
+            <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
+              {items.length}
             </div>
-          )
-        )}
+            <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
+              Discoverable by AI
+            </span>
+          </div>
 
-        {/* Overview Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-          <MetricCard
-            title="Total Products"
-            value={items.length}
-            unit="items"
-            footerRight="Discoverable by AI"
-            loading={loading}
-          />
-          <MetricCard
-            title="Max Order Cap"
-            value={`₹${limitsConfig.max_transaction_amount ? Number(limitsConfig.max_transaction_amount).toLocaleString('en-IN') : '10,000'}`}
-            footerRight="Policy Engine"
-            loading={loading}
-          />
-          <MetricCard
-            title="Daily Spend Cap"
-            value={`₹${limitsConfig.daily_spend_limit ? Number(limitsConfig.daily_spend_limit).toLocaleString('en-IN') : '50,000'}`}
-            footerRight="24h Window"
-            loading={loading}
-          />
-          <MetricCard
-            title="Razorpay Key"
-            value={merchant?.razorpay_key_id ? 'Custom Key' : 'Sandbox'}
-            footerRight="Razorpay Live API"
-            loading={loading}
-          />
+          <div className="p-4">
+            <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Max Order Cap</span>
+            <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
+              ₹{limitsConfig.max_transaction_amount ? Number(limitsConfig.max_transaction_amount).toLocaleString('en-IN') : '10,000'}
+            </div>
+            <span className="text-[11px] text-neutral-600 mt-1 block">
+              Policy Engine Gated
+            </span>
+          </div>
+
+          <div className="p-4">
+            <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Daily Spend Cap</span>
+            <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
+              ₹{limitsConfig.daily_spend_limit ? Number(limitsConfig.daily_spend_limit).toLocaleString('en-IN') : '50,000'}
+            </div>
+            <span className="text-[11px] text-neutral-600 mt-1 block">
+              24-Hour Rolling Window
+            </span>
+          </div>
+
+          <div className="p-4">
+            <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Gateway Protocol</span>
+            <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
+              {merchant?.razorpay_key_id ? 'Custom Key' : 'Sandbox'}
+            </div>
+            <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
+              Razorpay Live API
+            </span>
+          </div>
+        </div>
+
+        {/* Navigation Underline Tabs for Catalog vs Schema */}
+        <div className="flex items-center gap-6 border-b border-neutral-200 mb-6">
+          <button
+            onClick={() => setActiveTab('catalog')}
+            className={`pb-2.5 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+              activeTab === 'catalog'
+                ? 'border-neutral-900 text-neutral-900'
+                : 'border-transparent text-neutral-500 hover:text-neutral-900'
+            }`}
+          >
+            <Package className="w-3.5 h-3.5" />
+            <span>Catalog Inventory ({items.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('schema')}
+            className={`pb-2.5 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+              activeTab === 'schema'
+                ? 'border-neutral-900 text-neutral-900'
+                : 'border-transparent text-neutral-500 hover:text-neutral-900'
+            }`}
+          >
+            <Code className="w-3.5 h-3.5" />
+            <span>Agent JSON-LD Schema</span>
+          </button>
         </div>
 
         {/* Tab 1: Catalog Items Table */}
         {activeTab === 'catalog' && (
-          <div className="bg-white border border-slate-200/90 rounded-3xl shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+          <div className="border border-neutral-200 rounded-lg overflow-hidden bg-white">
+            <div className="px-6 py-3.5 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between">
               <div>
-                <h2 className="text-base font-bold text-slate-900">Catalog Products</h2>
-                <p className="text-xs text-slate-500">Manage products available for autonomous AI agent transactions.</p>
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-600">
+                  Live Catalog Items
+                </h2>
               </div>
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" size="sm" onClick={() => setShowBulkModal(true)}>
-                  <Upload className="w-3.5 h-3.5 mr-1.5" />
-                  Bulk Import / Sync
-                </Button>
-                <Button variant="indigo" size="sm" onClick={handleOpenCreateModal}>
-                  <Plus className="w-3.5 h-3.5 mr-1.5" />
-                  Add Product
-                </Button>
-              </div>
+              <span className="text-[11px] font-mono text-neutral-400">
+                {items.length} SKUs in Store
+              </span>
             </div>
 
             {loading ? (
-              <div className="p-6 space-y-4">
-                <Skeleton className="h-8 w-full rounded-xl" />
-                <Skeleton className="h-8 w-full rounded-xl" />
-                <Skeleton className="h-8 w-full rounded-xl" />
+              <div className="py-20 flex flex-col items-center justify-center text-neutral-400 gap-2">
+                <Loader2 className="w-5 h-5 animate-spin text-neutral-600" />
+                <p className="text-xs">Loading store catalog...</p>
               </div>
             ) : items.length === 0 ? (
-              <div className="p-12 text-center">
-                <p className="text-sm font-semibold text-slate-800">No products in catalog</p>
-                <p className="text-xs text-slate-400 mt-1 mb-4">Add catalog items for AI agents to discover.</p>
-                <Button variant="default" size="sm" onClick={handleOpenCreateModal}>
-                  + Add First Product
-                </Button>
+              <div className="p-14 text-center">
+                <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-3 text-neutral-600 font-mono text-xs font-bold">
+                  SKU
+                </div>
+                <p className="text-xs font-semibold text-neutral-800">No products in catalog</p>
+                <p className="text-[11px] text-neutral-400 mt-0.5 mb-4">Add products for autonomous AI buyer agents to discover and settle.</p>
+                <button
+                  onClick={handleOpenCreateModal}
+                  className="h-8 px-3.5 bg-neutral-900 hover:bg-black text-white text-xs font-medium rounded transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add First Product</span>
+                </button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50/80 border-b border-slate-100 text-slate-400 uppercase font-mono tracking-wider text-[10px]">
-                    <tr>
-                      <th className="px-6 py-3.5">Product Name</th>
-                      <th className="px-6 py-3.5">Category</th>
-                      <th className="px-6 py-3.5">Price (INR ₹)</th>
-                      <th className="px-6 py-3.5">Stock</th>
-                      <th className="px-6 py-3.5">AI Discovery Status</th>
-                      <th className="px-6 py-3.5 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {items.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="px-6 py-4 font-bold text-slate-900">{item.name}</td>
-                        <td className="px-6 py-4 text-slate-600">
-                          <Badge variant="secondary">{item.category}</Badge>
-                        </td>
-                        <td className="px-6 py-4 font-mono font-bold text-slate-900 text-sm">
-                          ₹{Number(item.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-6 py-4 font-mono font-semibold">
-                          {item.stock > 0 ? (
-                            <span className="text-slate-800">{item.stock} units</span>
-                          ) : (
-                            <span className="text-red-600 font-bold">Out of stock</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <StatusBadge status={item.stock > 0 ? 'Transactable' : 'Out of Stock'} />
-                        </td>
-                        <td className="px-6 py-4 text-right space-x-2">
-                          <Button variant="ghost" size="xs" onClick={() => handleOpenEditModal(item)}>
-                            <Edit2 className="w-3 h-3 mr-1" />
-                            Edit
-                          </Button>
-                          <Button variant="destructive" size="xs" onClick={() => handleDeleteItem(item.id)}>
-                            <Trash2 className="w-3 h-3 mr-1" />
-                            Delete
-                          </Button>
-                        </td>
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[760px] text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-neutral-50 border-b border-neutral-200 text-neutral-500 font-semibold uppercase tracking-wider text-[11px]">
+                        <th className="py-3 px-6 whitespace-nowrap">Product Name</th>
+                        <th className="py-3 px-4 whitespace-nowrap">Category</th>
+                        <th className="py-3 px-4 whitespace-nowrap">Price (INR)</th>
+                        <th className="py-3 px-4 whitespace-nowrap">Stock Level</th>
+                        <th className="py-3 px-4 whitespace-nowrap">AI Discovery</th>
+                        <th className="py-3 pr-6 pl-4 text-right whitespace-nowrap">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-100">
+                      {paginatedItems.map((item) => (
+                        <tr key={item.id} className="hover:bg-neutral-50/70 transition-colors">
+                          <td className="py-3.5 px-6 font-semibold text-neutral-900 whitespace-nowrap">
+                            {item.name}
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <span className="px-2 py-0.5 bg-neutral-100 text-neutral-800 border border-neutral-200 rounded text-[10px] font-medium">
+                              {item.category}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono font-medium text-neutral-900 text-[11px] whitespace-nowrap">
+                            ₹{Number(item.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-[11px] whitespace-nowrap">
+                            {item.stock > 0 ? (
+                              <span className="text-neutral-800">{item.stock} units</span>
+                            ) : (
+                              <span className="text-red-700 font-medium">Out of stock</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-emerald-700">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                              TRANSACTABLE
+                            </span>
+                          </td>
+                          <td className="py-3.5 pr-6 pl-4 text-right space-x-2 whitespace-nowrap">
+                            <button
+                              onClick={() => handleOpenEditModal(item)}
+                              className="h-6 px-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded font-medium text-[11px] transition-colors cursor-pointer border border-neutral-200 inline-flex items-center gap-1"
+                            >
+                              <Edit2 className="w-3 h-3 text-neutral-600" />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteItem(item.id)}
+                              className="h-6 px-2.5 bg-neutral-50 hover:bg-red-50 text-neutral-600 hover:text-red-700 rounded font-medium text-[11px] transition-colors cursor-pointer border border-neutral-200 inline-flex items-center gap-1"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              <span>Delete</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls */}
+                {items.length > pageSize && (
+                  <div className="px-6 py-3 border-t border-neutral-200 bg-neutral-50/40 flex items-center justify-between text-xs">
+                    <div className="text-neutral-600">
+                      Showing <span className="font-semibold text-neutral-900 font-mono">{startIdx}</span>–<span className="font-semibold text-neutral-900 font-mono">{endIdx}</span> of <span className="font-semibold text-neutral-900 font-mono">{items.length}</span> SKUs
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="h-7 px-2.5 rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer flex items-center gap-1"
+                      >
+                        <ChevronLeft className="w-3 h-3" />
+                        <span>Previous</span>
+                      </button>
+                      <span className="px-2 font-mono text-neutral-600">
+                        Page {page} of {totalPages}
+                      </span>
+                      <button
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={page === totalPages}
+                        className="h-7 px-2.5 rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer flex items-center gap-1"
+                      >
+                        <span>Next</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
 
         {/* Tab 2: Live Agent Schema JSON-LD */}
         {activeTab === 'schema' && (
-          <div className="bg-white border border-slate-200/90 rounded-3xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+          <div className="border border-neutral-200 rounded-lg p-6 bg-white space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-100">
               <div>
-                <h2 className="text-base font-bold text-slate-900">Agent-Readable Schema (`schema.org` JSON-LD)</h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Live schema output consumed by Groq LLM buyer agents during product discovery.
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-600">
+                  Agent-Readable Schema (`schema.org` JSON-LD)
+                </h2>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  Live machine-readable catalog payload queried autonomously by LLM buyer agents.
                 </p>
               </div>
               {merchant?.id && (
@@ -410,21 +474,25 @@ function DashboardContent() {
                   href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/catalog/agent-schema?merchant_id=${merchant.id}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200/80 text-slate-800 rounded-xl text-xs font-mono font-bold transition-colors"
+                  className="h-8 px-3 rounded-md bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-mono font-medium transition-colors inline-flex items-center gap-1.5 border border-neutral-200"
                 >
-                  Open Endpoint &nearr;
+                  <span>Raw Schema Endpoint</span>
+                  <ExternalLink className="w-3 h-3" />
                 </a>
               )}
             </div>
 
             {loading ? (
-              <Skeleton className="h-64 w-full rounded-2xl" />
+              <div className="py-16 flex items-center justify-center text-neutral-400 gap-2">
+                <Loader2 className="w-5 h-5 animate-spin text-neutral-600" />
+                <p className="text-xs">Generating agent schema...</p>
+              </div>
             ) : agentSchema ? (
-              <pre className="p-4 bg-slate-900 text-slate-100 rounded-2xl text-xs font-mono overflow-x-auto max-h-[500px] leading-relaxed">
-                {JSON.stringify(agentSchema, null, 2)}
-              </pre>
+              <div className="p-4 bg-neutral-950 text-neutral-100 rounded-lg text-xs font-mono overflow-x-auto max-h-[500px] leading-relaxed">
+                <pre>{JSON.stringify(agentSchema, null, 2)}</pre>
+              </div>
             ) : (
-              <div className="p-8 text-center text-xs text-slate-400 font-mono">No schema available.</div>
+              <div className="p-8 text-center text-xs text-neutral-400 font-mono">No schema available.</div>
             )}
           </div>
         )}
@@ -432,37 +500,46 @@ function DashboardContent() {
 
       {/* Modal for Add / Edit Catalog Item */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-base font-bold text-slate-900 mb-1">
-              {editingItem ? 'Edit Catalog Product' : 'Add New Catalog Product'}
-            </h3>
-            <p className="text-xs text-slate-500 mb-4">
-              Specify product pricing and stock for AI agent transactions.
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-neutral-200 rounded-lg max-w-md w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-100">
+              <h3 className="text-sm font-semibold text-neutral-900">
+                {editingItem ? 'Edit Catalog Product' : 'Add New Catalog Product'}
+              </h3>
+              <button onClick={() => setShowModal(false)} className="text-neutral-400 hover:text-neutral-700 cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-neutral-500 mb-4">
+              Specify product pricing and stock inventory for autonomous agent settlement.
             </p>
 
             {formError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-medium">
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded text-xs font-medium">
                 {formError}
               </div>
             )}
 
             <form onSubmit={handleSaveItem} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Product Name *</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">
+                  Product Name *
+                </label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Wireless Headphones"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-slate-400"
+                  placeholder="e.g. Wireless Noise-Cancelling Headphones"
+                  className="w-full h-9 px-3 bg-neutral-50/50 border border-neutral-200 rounded-md text-xs text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-sans"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Price (INR ₹) *</label>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">
+                    Price (INR ₹) *
+                  </label>
                   <input
                     type="number"
                     step="0.01"
@@ -470,12 +547,14 @@ function DashboardContent() {
                     required
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                    placeholder="1200.00"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none focus:bg-white focus:border-slate-400"
+                    placeholder="1299.00"
+                    className="w-full h-9 px-3 bg-neutral-50/50 border border-neutral-200 rounded-md text-xs text-neutral-900 font-mono focus:outline-none focus:bg-white focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Stock Quantity *</label>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">
+                    Stock Quantity *
+                  </label>
                   <input
                     type="number"
                     min="0"
@@ -483,121 +562,99 @@ function DashboardContent() {
                     value={stock}
                     onChange={(e) => setStock(e.target.value)}
                     placeholder="50"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none focus:bg-white focus:border-slate-400"
+                    className="w-full h-9 px-3 bg-neutral-50/50 border border-neutral-200 rounded-md text-xs text-neutral-900 font-mono focus:outline-none focus:bg-white focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Category *</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">
+                  Category *
+                </label>
                 <input
                   type="text"
                   required
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   placeholder="Electronics"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-slate-400"
+                  className="w-full h-9 px-3 bg-neutral-50/50 border border-neutral-200 rounded-md text-xs text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-sans"
                 />
               </div>
 
-              <div className="pt-3 flex justify-end space-x-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowModal(false)}>
+              <div className="pt-2 flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="h-8 px-3 rounded-md border border-neutral-200 text-xs font-medium text-neutral-700 hover:bg-neutral-50 transition cursor-pointer"
+                >
                   Cancel
-                </Button>
-                <Button type="submit" variant="default" size="sm" loading={formLoading}>
-                  Save Product
-                </Button>
+                </button>
+                <button
+                  type="submit"
+                  disabled={formLoading}
+                  className="h-8 px-4 rounded-md bg-neutral-900 hover:bg-black text-white text-xs font-medium transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {formLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{editingItem ? 'Save Changes' : 'Create Product'}</span>
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Bulk Import / Sync Modal */}
+      {/* Modal for Bulk Import */}
       {showBulkModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 max-w-xl w-full shadow-2xl animate-fade-in">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-                  <Upload className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">Bulk Product Catalog Import / Sync</h3>
-                  <p className="text-xs text-slate-500">Paste JSON or CSV catalog exported from Shopify, WooCommerce, or custom store.</p>
-                </div>
-              </div>
-              <button onClick={() => setShowBulkModal(false)} className="text-slate-400 hover:text-slate-600 font-bold text-sm">
-                ✕
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-neutral-200 rounded-lg max-w-lg w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-100">
+              <h3 className="text-sm font-semibold text-neutral-900">Bulk Import Products</h3>
+              <button onClick={() => setShowBulkModal(false)} className="text-neutral-400 hover:text-neutral-700 cursor-pointer">
+                <X className="w-4 h-4" />
               </button>
             </div>
+            <p className="text-xs text-neutral-500 mb-4">
+              Paste JSON or CSV (Name, Price, Stock, Category) to seed multiple items in one request.
+            </p>
 
             {bulkError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-mono">
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded text-xs font-medium">
                 {bulkError}
               </div>
             )}
 
             <form onSubmit={handleBulkImport} className="space-y-4">
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-slate-700 font-mono">
-                    JSON Array or CSV Catalog Data
-                  </label>
-                  <span className="text-[10px] font-mono text-slate-400">Name, Price, Stock, Category</span>
-                </div>
                 <textarea
-                  rows={8}
-                  required
                   value={bulkJson}
                   onChange={(e) => setBulkJson(e.target.value)}
-                  placeholder={`[`}
-                  className="w-full p-3 font-mono text-xs bg-slate-900 text-emerald-400 rounded-xl border border-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  rows={8}
+                  className="w-full p-3 bg-neutral-50/50 border border-neutral-200 rounded-md text-xs font-mono text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all leading-relaxed"
+                  required
                 />
               </div>
 
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex space-x-2">
-                  <button
-                    type="button"
-                    onClick={() => setBulkJson(`[
-  { "name": "boAt Wave Call Smartwatch", "price": 1799, "stock": 40, "category": "Smartwatches" },
-  { "name": "boAt Airdopes 141", "price": 1299, "stock": 60, "category": "Earbuds" },
-  { "name": "boAt Stone 350 Speaker", "price": 1499, "stock": 25, "category": "Speakers" }
-]`)}
-                    className="px-2.5 py-1 text-[11px] font-mono bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg"
-                  >
-                    Preset: JSON
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBulkJson(`boAt Rockerz 550, 1999, 30, Headphones
-JBL Tune 760NC, 5499, 15, Headphones`)}
-                    className="px-2.5 py-1 text-[11px] font-mono bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg"
-                  >
-                    Preset: CSV
-                  </button>
-                </div>
-
-                <div className="flex space-x-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => setShowBulkModal(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" variant="default" size="sm" loading={bulkLoading}>
-                    Import All Products
-                  </Button>
-                </div>
+              <div className="pt-2 flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowBulkModal(false)}
+                  className="h-8 px-3 rounded-md border border-neutral-200 text-xs font-medium text-neutral-700 hover:bg-neutral-50 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={bulkLoading}
+                  className="h-8 px-4 rounded-md bg-neutral-900 hover:bg-black text-white text-xs font-medium transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {bulkLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Import SKUs</span>
+                </button>
               </div>
             </form>
-
           </div>
         </div>
       )}
-
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-400">
-        Agentpay &bull; Merchant Control Center &bull; Razorpay AI Protocol
-      </footer>
     </div>
   );
 }
@@ -605,8 +662,8 @@ JBL Tune 760NC, 5499, 15, Headphones`)}
 export default function DashboardPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-12 text-slate-400 font-mono text-xs">
-        Loading Merchant Dashboard...
+      <div className="min-h-screen bg-white flex items-center justify-center p-12 text-neutral-400 font-mono text-xs">
+        Loading Overview Dashboard...
       </div>
     }>
       <DashboardContent />
