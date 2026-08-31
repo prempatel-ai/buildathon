@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routers import health, merchant, catalog, policy, payment, audit, agent, auth, webhook, customer, customer_chat
+from app.routers import health, merchant, catalog, policy, payment, audit, agent, auth, webhook, customer, customer_chat, address
 
 from app.core.database import Base, engine
 import app.models  # Ensure all models are registered in Base.metadata
@@ -11,6 +11,8 @@ try:
     Base.metadata.create_all(bind=engine)
     with engine.connect() as conn:
         conn.execute(text("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();"))
+        conn.execute(text("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS address_id UUID REFERENCES addresses(id) ON DELETE SET NULL;"))
+        conn.execute(text("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS estimated_delivery_date TIMESTAMP WITH TIME ZONE;"))
         conn.commit()
 except Exception as e:
     print(f"Database initialization info: {e}")
@@ -68,6 +70,7 @@ app.include_router(agent.router)
 app.include_router(webhook.router)
 app.include_router(customer.router)
 app.include_router(customer_chat.router)
+app.include_router(address.router)
 
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration

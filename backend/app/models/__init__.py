@@ -6,6 +6,7 @@ from app.models.transaction import Transaction
 from app.models.audit import AuditEvent
 from app.models.customer import Customer
 from app.models.spend_authorization import SpendAuthorization
+from app.models.address import Address
 
 __all__ = [
     "Merchant",
@@ -16,4 +17,5 @@ __all__ = [
     "AuditEvent",
     "Customer",
     "SpendAuthorization",
+    "Address",
 ]

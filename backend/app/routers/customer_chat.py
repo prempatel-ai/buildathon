@@ -17,6 +17,7 @@ router = APIRouter(prefix="/customer", tags=["Customer Chat AI"])
 class CustomerChatRequest(BaseModel):
     prompt: str = Field(..., min_length=1, description="Natural language prompt from consumer")
     thread_id: Optional[str] = Field(None, description="Optional thread/session ID for multi-turn context")
+    address_id: Optional[str] = Field(None, description="Optional selected delivery address ID")
 
 class ProductOptionCard(BaseModel):
     option_index: int
@@ -41,6 +42,8 @@ class CustomerChatResponse(BaseModel):
     razorpay_order_id: Optional[str] = None
     razorpay_payment_id: Optional[str] = None
     payment_link_url: Optional[str] = None
+    estimated_delivery_date: Optional[str] = None
+    delivery_address: Optional[str] = None
 
 # In-memory session store for cross-turn search options per thread
 session_search_memory: Dict[str, List[Dict[str, Any]]] = {}
@@ -138,6 +141,7 @@ def customer_chat(
                 category=target_opt.get("category", "General"),
                 customer_id=str(customer.id),
                 thread_id=thread_id,
+                address_id=req.address_id,
             )
 
             return CustomerChatResponse(
@@ -152,7 +156,9 @@ def customer_chat(
                 transaction_id=final_state.get("transaction_id"),
                 razorpay_order_id=final_state.get("razorpay_order_id"),
                 razorpay_payment_id=final_state.get("razorpay_payment_id"),
-                payment_link_url=final_state.get("payment_link_url")
+                payment_link_url=final_state.get("payment_link_url"),
+                estimated_delivery_date=final_state.get("estimated_delivery_date"),
+                delivery_address=final_state.get("delivery_address_summary")
             )
 
     # Discovery / Search Flow
@@ -165,7 +171,8 @@ def customer_chat(
         agent_id="consumer_shopping_agent",
         prompt=req.prompt,
         customer_id=str(customer.id),
-        thread_id=thread_id
+        thread_id=thread_id,
+        address_id=req.address_id
     )
 
     search_res = final_state.get("search_results") or []
@@ -198,5 +205,7 @@ def customer_chat(
         transaction_id=final_state.get("transaction_id"),
         razorpay_order_id=final_state.get("razorpay_order_id"),
         razorpay_payment_id=final_state.get("razorpay_payment_id"),
-        payment_link_url=final_state.get("payment_link_url")
+        payment_link_url=final_state.get("payment_link_url"),
+        estimated_delivery_date=final_state.get("estimated_delivery_date"),
+        delivery_address=final_state.get("delivery_address_summary")
     )

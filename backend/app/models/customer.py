@@ -16,3 +16,4 @@ class Customer(Base):
 
     # Relationships
     authorizations = relationship("SpendAuthorization", back_populates="customer", cascade="all, delete-orphan")
+    addresses = relationship("Address", back_populates="customer", cascade="all, delete-orphan")

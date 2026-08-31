@@ -125,6 +125,19 @@ def update_merchant_settings(
             pol = Policy(merchant_id=current_merchant.id, rule_type="velocity_limit", config={"max_requests": settings_in.velocity_limit, "window_seconds": 60})
             db.add(pol)
 
+    if settings_in.shipping_config is not None:
+        limits_config["shipping_config"] = settings_in.shipping_config
+    else:
+        ship_cfg = dict(limits_config.get("shipping_config") or {})
+        if settings_in.processing_days is not None:
+            ship_cfg["processing_days"] = settings_in.processing_days
+        if settings_in.standard_shipping_days is not None:
+            ship_cfg["standard_shipping_days"] = settings_in.standard_shipping_days
+        if settings_in.per_category_overrides is not None:
+            ship_cfg["per_category_overrides"] = settings_in.per_category_overrides
+        if ship_cfg:
+            limits_config["shipping_config"] = ship_cfg
+
     current_merchant.limits_config = limits_config
     flag_modified(current_merchant, "limits_config")
     db.commit()

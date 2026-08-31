@@ -430,6 +430,47 @@ def customer_auth_node(state: Dict[str, Any]) -> Dict[str, Any]:
             )
             return state
 
+        # ── Mandatory Delivery Address Gate ──────────────────────────────────────
+        from app.models.address import Address
+        from app.services.address_service import AddressService
+
+        chosen_addr = None
+        req_address_id = state.get("address_id") or tool_args.get("address_id")
+        if req_address_id:
+            try:
+                addr_uuid = uuid.UUID(str(req_address_id))
+                chosen_addr = db.query(Address).filter(
+                    Address.id == addr_uuid,
+                    Address.customer_id == cust_uuid
+                ).first()
+            except ValueError:
+                chosen_addr = None
+
+        if not chosen_addr:
+            chosen_addr = AddressService.get_default_address(db, cust_uuid)
+
+        if not chosen_addr:
+            state["customer_auth_decision"] = "DENY"
+            state["policy_decision"] = "DENY"
+            state["reasoning"] = f"Delivery address required: No delivery address on file for customer {customer_id}."
+            state["status"] = "BLOCKED_NO_DELIVERY_ADDRESS"
+            state["response_message"] = "⚠️ **Delivery Address Required**\n\nPlease add or select a delivery address in your profile before confirming this purchase."
+
+            AuditService.log_event(
+                db=db,
+                actor_type="customer",
+                actor_id=str(customer_id),
+                action="customer_authorization_evaluated",
+                input={"customer_id": str(customer_id), "amount": str(amount), "reason": "missing_address"},
+                decision="DENY",
+                reasoning="Purchase rejected: No delivery address on file for customer.",
+                merchant_id=merchant_id
+            )
+            return state
+
+        state["address_id"] = str(chosen_addr.id)
+        state["delivery_address_summary"] = f"{chosen_addr.recipient_name}, {chosen_addr.line1}, {chosen_addr.city}, {chosen_addr.state} ({chosen_addr.postal_code})"
+
         # Customer Authorization Approved
         state["customer_auth_decision"] = "ALLOW"
         AuditService.log_event(
@@ -440,10 +481,11 @@ def customer_auth_node(state: Dict[str, Any]) -> Dict[str, Any]:
             input={
                 "customer_id": str(customer_id),
                 "amount": str(amount),
-                "remaining_limit": str(auth.remaining_limit)
+                "remaining_limit": str(auth.remaining_limit),
+                "address_id": str(chosen_addr.id)
             },
             decision="ALLOW",
-            reasoning=f"Customer spend authorization verified (Remaining balance: INR {auth.remaining_limit}).",
+            reasoning=f"Customer spend authorization and delivery address verified (Remaining balance: INR {auth.remaining_limit}).",
             merchant_id=merchant_id
         )
     finally:
@@ -630,6 +672,24 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 receipt=f"rcpt_{uuid.uuid4().hex[:8]}"
             ))
 
+            # Calculate deterministic Estimated Delivery Date from merchant shipping config
+            from app.services.delivery_service import DeliveryService
+            from app.models.merchant import Merchant
+            merchant_obj = db.query(Merchant).filter(Merchant.id == merchant_id).first()
+            shipping_cfg = (merchant_obj.limits_config or {}).get("shipping_config") if merchant_obj else {}
+            category = tool_args.get("category", "General")
+            est_date = DeliveryService.calculate_delivery_date(shipping_cfg, category=category)
+            state["estimated_delivery_date"] = est_date.isoformat()
+
+            # Attach address_id and estimated_delivery_date to transaction
+            tx.estimated_delivery_date = est_date
+            if state.get("address_id"):
+                try:
+                    tx.address_id = uuid.UUID(str(state["address_id"]))
+                except Exception:
+                    pass
+            db.commit()
+
             # Step 2: Autonomous AI Payment Execution on Razorpay
             # Executes the payment directly against the created Razorpay Order,
             # verifies capture on Razorpay servers, and settles the transaction in DB.
@@ -793,6 +853,7 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                             "item_name": item_name,
                             "razorpay_order_id": settled_tx.razorpay_order_id,
                             "razorpay_payment_id": real_pay_id,
+                            "estimated_delivery_date": est_date.isoformat(),
                             "method": "autonomous_agent_payment"
                         },
                         decision="SETTLED",
@@ -800,7 +861,7 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                         merchant_id=merchant_id
                     )
 
-                    print(f"[AUTONOMOUS_PAYMENT_SUCCESS]: INR {amount} for '{item_name}' | Order='{tx.razorpay_order_id}' | Payment='{real_pay_id}'")
+                    print(f"[AUTONOMOUS_PAYMENT_SUCCESS]: INR {amount} for '{item_name}' | Order='{tx.razorpay_order_id}' | Payment='{real_pay_id}' | Delivery='{est_date.isoformat()}'")
 
                     state["transaction_id"] = str(settled_tx.id)
                     state["razorpay_order_id"] = settled_tx.razorpay_order_id
@@ -812,7 +873,9 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                         f"AI Agent authorized and executed payment of **₹{amount:,.2f}** for **{item_name}** on Razorpay.\n\n"
                         f"🧾 **Razorpay Order ID**: `{settled_tx.razorpay_order_id}`\n"
                         f"💳 **Razorpay Payment ID**: `{real_pay_id}`\n"
-                        f"📦 **Status**: Paid & Captured\n\n"
+                        f"📦 **Status**: Paid & Captured\n"
+                        f"🚚 **Estimated Delivery**: **{est_date.strftime('%A, %d %b %Y')}**\n"
+                        f"📍 **Delivering To**: {state.get('delivery_address_summary', 'Saved Delivery Address')}\n\n"
                         f"No manual human action required — transaction has been settled directly on Razorpay."
                     )
                     autonomous_settled = True

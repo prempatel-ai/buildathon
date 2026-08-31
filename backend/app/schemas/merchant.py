@@ -33,6 +33,10 @@ class MerchantSettingsUpdate(BaseModel):
     allowed_categories: Optional[list[str]] = None
     blocked_categories: Optional[list[str]] = None
     velocity_limit: Optional[int] = Field(None, ge=1)
+    shipping_config: Optional[Dict[str, Any]] = None
+    processing_days: Optional[int] = Field(None, ge=0)
+    standard_shipping_days: Optional[int] = Field(None, ge=1)
+    per_category_overrides: Optional[Dict[str, int]] = None
 
 class MerchantUsageRead(BaseModel):
     merchant_id: UUID

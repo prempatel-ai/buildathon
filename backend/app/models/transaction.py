@@ -15,6 +15,8 @@ class Transaction(Base):
     razorpay_order_id = Column(String(255), nullable=True)
     razorpay_payment_id = Column(String(255), nullable=True)
     razorpay_signature = Column(String(255), nullable=True)
+    address_id = Column(UUID(as_uuid=True), ForeignKey("addresses.id", ondelete="SET NULL"), nullable=True)
+    estimated_delivery_date = Column(DateTime(timezone=True), nullable=True)
     idempotency_key = Column(String(255), nullable=True, unique=True, index=True)
     error_details = Column(JSONB, server_default='{}', nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=True, index=True)
@@ -22,3 +24,4 @@ class Transaction(Base):
     # Relationships
     merchant = relationship("Merchant", back_populates="transactions")
     agent = relationship("Agent", back_populates="transactions")
+    address = relationship("Address", back_populates="transactions")

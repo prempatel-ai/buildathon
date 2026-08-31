@@ -20,6 +20,9 @@ class AgentGraphState(TypedDict, total=False):
     razorpay_payment_id: Optional[str]
     payment_link_url: Optional[str]
     pending_approval_id: Optional[str]
+    address_id: Optional[str]
+    estimated_delivery_date: Optional[str]
+    delivery_address_summary: Optional[str]
     catalog_results: Optional[List[Dict[str, Any]]]
     search_results: Optional[List[Dict[str, Any]]]
     status: str
@@ -78,7 +81,8 @@ def run_agent_workflow(
     agent_id: str,
     prompt: str,
     customer_id: Optional[str] = None,
-    thread_id: Optional[str] = None
+    thread_id: Optional[str] = None,
+    address_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Executes the full agent graph workflow for a user/agent prompt with state checkpointing.
@@ -102,6 +106,9 @@ def run_agent_workflow(
         "razorpay_order_id": None,
         "razorpay_payment_id": None,
         "payment_link_url": None,
+        "address_id": address_id,
+        "estimated_delivery_date": None,
+        "delivery_address_summary": None,
         "status": "INITIALIZED"
     }
 
@@ -125,6 +132,7 @@ def run_direct_purchase_workflow(
     customer_id: Optional[str] = None,
     thread_id: Optional[str] = None,
     agent_id: str = "consumer_shopping_agent",
+    address_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     DIRECT Purchase Workflow: Bypasses llm_node entirely.
@@ -153,6 +161,7 @@ def run_direct_purchase_workflow(
             "item_name": item_name,
             "category": category,
             "quantity": 1,
+            "address_id": address_id
         },
         "customer_auth_decision": None,
         "policy_decision": None,
@@ -161,6 +170,9 @@ def run_direct_purchase_workflow(
         "razorpay_order_id": None,
         "razorpay_payment_id": None,
         "payment_link_url": None,
+        "address_id": address_id,
+        "estimated_delivery_date": None,
+        "delivery_address_summary": None,
         "status": "INITIALIZED"
     }
 

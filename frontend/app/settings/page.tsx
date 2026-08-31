@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getMerchantMe, updateMerchantSettings, getAuthToken, Merchant } from '@/lib/api';
 import { useAuthGuard } from '@/lib/useAuthGuard';
-import { ShieldCheck, RefreshCw } from 'lucide-react';
+import { ShieldCheck, RefreshCw, Truck } from 'lucide-react';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -25,6 +25,11 @@ export default function SettingsPage() {
   const [allowedCatStr, setAllowedCatStr] = useState('');
   const [blockedCatStr, setBlockedCatStr] = useState('');
   const [velocityLimit, setVelocityLimit] = useState<number | ''>('');
+
+  // Shipping Configuration State
+  const [processingDays, setProcessingDays] = useState<number | ''>(1);
+  const [standardShippingDays, setStandardShippingDays] = useState<number | ''>(4);
+  const [categoryOverridesStr, setCategoryOverridesStr] = useState('');
 
   useAuthGuard(loadProfile);
 
@@ -46,6 +51,17 @@ export default function SettingsPage() {
       setAllowedCatStr(Array.isArray(cfg.allowed_categories) ? cfg.allowed_categories.join(', ') : '');
       setBlockedCatStr(Array.isArray(cfg.blocked_categories) ? cfg.blocked_categories.join(', ') : '');
       setVelocityLimit(cfg.velocity_limit ?? '');
+
+      const shipCfg = cfg.shipping_config || {};
+      setProcessingDays(shipCfg.processing_days ?? 1);
+      setStandardShippingDays(shipCfg.standard_shipping_days ?? 4);
+
+      if (shipCfg.per_category_overrides && typeof shipCfg.per_category_overrides === 'object') {
+        const strPairs = Object.entries(shipCfg.per_category_overrides).map(([cat, days]) => `${cat}: ${days}`);
+        setCategoryOverridesStr(strPairs.join(', '));
+      } else {
+        setCategoryOverridesStr('');
+      }
     } catch (err: any) {
       router.push('/onboarding');
       return;
@@ -63,6 +79,20 @@ export default function SettingsPage() {
       const allowedArr = allowedCatStr.split(',').map(s => s.trim()).filter(Boolean);
       const blockedArr = blockedCatStr.split(',').map(s => s.trim()).filter(Boolean);
 
+      const catOverrides: Record<string, number> = {};
+      if (categoryOverridesStr.trim()) {
+        categoryOverridesStr.split(',').forEach(pair => {
+          const parts = pair.split(':');
+          if (parts.length === 2) {
+            const cat = parts[0].trim();
+            const days = parseInt(parts[1].trim(), 10);
+            if (cat && !isNaN(days)) {
+              catOverrides[cat] = days;
+            }
+          }
+        });
+      }
+
       const updated = await updateMerchantSettings({
         name,
         razorpay_key_id: razorpayKeyId || undefined,
@@ -71,10 +101,13 @@ export default function SettingsPage() {
         allowed_categories: allowedArr.length > 0 ? allowedArr : undefined,
         blocked_categories: blockedArr.length > 0 ? blockedArr : undefined,
         velocity_limit: velocityLimit !== '' ? Number(velocityLimit) : undefined,
+        processing_days: processingDays !== '' ? Number(processingDays) : undefined,
+        standard_shipping_days: standardShippingDays !== '' ? Number(standardShippingDays) : undefined,
+        per_category_overrides: Object.keys(catOverrides).length > 0 ? catOverrides : undefined,
       });
 
       setMerchant(updated);
-      setMsg({ type: 'success', text: 'Policy rules & spend limits saved successfully.' });
+      setMsg({ type: 'success', text: 'Policy rules & shipping lead times saved successfully.' });
     } catch (err: any) {
       setMsg({ type: 'error', text: err.message || 'Failed to save settings' });
     } finally {
@@ -251,6 +284,55 @@ export default function SettingsPage() {
                   className={monoInputCls}
                 />
                 <p className={hintCls}>Recommended: 5–20 for production, up to 100 for sandbox testing.</p>
+              </div>
+            </div>
+
+            {/* Section: Shipping & Delivery Lead Times */}
+            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
+              <h2 className="text-sm font-extrabold text-slate-900 mb-1 flex items-center gap-2">
+                <Truck className="w-4 h-4 text-indigo-500" />
+                Shipping & Delivery Logistics
+              </h2>
+              <p className="text-xs text-slate-500 mb-5">Parameters used to compute explainable, deterministic delivery dates for autonomous AI orders.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Order Processing Days</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="30"
+                    value={processingDays}
+                    onChange={(e) => setProcessingDays(e.target.value ? Number(e.target.value) : '')}
+                    placeholder="e.g. 1"
+                    className={monoInputCls}
+                  />
+                  <p className={hintCls}>Warehouse packaging and fulfillment preparation lead time.</p>
+                </div>
+                <div>
+                  <label className={labelCls}>Standard Shipping Transit Days</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={standardShippingDays}
+                    onChange={(e) => setStandardShippingDays(e.target.value ? Number(e.target.value) : '')}
+                    placeholder="e.g. 4"
+                    className={monoInputCls}
+                  />
+                  <p className={hintCls}>Standard domestic courier transit time to destination.</p>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-slate-100">
+                <label className={labelCls}>Category Transit Overrides (Format: Category: Days)</label>
+                <input
+                  type="text"
+                  value={categoryOverridesStr}
+                  onChange={(e) => setCategoryOverridesStr(e.target.value)}
+                  placeholder="e.g. Electronics: 2, Heavy Appliances: 7, Groceries: 1"
+                  className={inputCls}
+                />
+                <p className={hintCls}>Custom transit duration overrides for specific product categories.</p>
               </div>
             </div>
 
