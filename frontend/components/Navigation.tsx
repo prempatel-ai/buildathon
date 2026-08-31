@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import CommandSearchModal from '@/components/CommandSearchModal';
+import { AgentpayLogo } from '@/components/Logo';
 import { removeAuthToken, getMerchantMe, Merchant } from '@/lib/api';
 import {
   ChevronDown,
@@ -111,32 +112,30 @@ export default function Navigation() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white border-b border-neutral-200/90 shadow-2xs">
+      <header className="sticky top-0 z-40 bg-white border-b border-neutral-200 shadow-2xs">
         {/* Tier 1: Main Global Header */}
         <div className="max-w-7xl mx-auto px-6 h-12 flex items-center justify-between">
           {/* Brand & Store Selector */}
-          <div className="flex items-center space-x-2.5">
-            <Link href="/" className="flex items-center space-x-2 group">
-              <div className="w-5.5 h-5.5 rounded bg-neutral-950 flex items-center justify-center font-bold text-white text-[10px] font-mono shadow-xs">
-                AP
-              </div>
-              <span className="font-bold text-neutral-900 tracking-tight text-xs">Agentpay</span>
+          <div className="flex items-center space-x-3 min-w-0">
+            <Link href="/" className="flex items-center space-x-2 shrink-0 group">
+              <AgentpayLogo size={22} />
+              <span className="font-bold text-neutral-900 tracking-tight text-sm font-sans">Agentpay</span>
             </Link>
 
-            <span className="text-neutral-300 font-mono text-xs">/</span>
+            <span className="text-neutral-300 font-mono text-xs shrink-0">/</span>
 
             {isMerchantContext && pathname !== '/onboarding' ? (
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
                   onClick={() => setStoreMenuOpen(!storeMenuOpen)}
                   className="flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-neutral-100/70 hover:bg-neutral-100 border border-neutral-200/80 text-xs font-medium text-neutral-800 transition-colors select-none cursor-pointer"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
                   <span className="truncate max-w-[140px] font-semibold text-neutral-900 text-[11px]">{merchant?.name || 'Merchant Store'}</span>
-                  <span className="px-1 py-0.2 rounded text-[8.5px] font-mono font-bold uppercase tracking-wider bg-neutral-200/60 text-neutral-600">
+                  <span className="px-1 py-0.2 rounded text-[8.5px] font-mono font-bold uppercase tracking-wider bg-neutral-200/60 text-neutral-600 shrink-0">
                     {merchant?.environment === 'live' ? 'LIVE' : 'SANDBOX'}
                   </span>
-                  <ChevronDown className="w-3 h-3 text-neutral-400" />
+                  <ChevronDown className="w-3 h-3 text-neutral-400 shrink-0" />
                 </button>
 
                 {storeMenuOpen && (
@@ -167,19 +166,19 @@ export default function Navigation() {
                 )}
               </div>
             ) : (
-              <span className="text-xs font-mono text-neutral-500">
+              <span className="text-xs font-mono text-neutral-500 truncate">
                 {pathname === '/onboarding' ? 'Account Setup' : (isCustomerContext ? 'Consumer Portal' : 'Razorpay AI Protocol')}
               </span>
             )}
           </div>
 
           {/* Global Action Utilities */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 shrink-0">
             {/* Command Search Button */}
             {pathname !== '/onboarding' && (
               <button
                 onClick={() => setSearchOpen(true)}
-                className="flex items-center space-x-2 px-2.5 py-1 bg-neutral-50 hover:bg-neutral-100 active:scale-98 border border-neutral-200 rounded-md text-neutral-400 text-xs select-none transition-all cursor-pointer h-7"
+                className="flex items-center space-x-2 px-2.5 py-1 bg-neutral-50 hover:bg-neutral-100 active:scale-98 border border-neutral-200 rounded-md text-neutral-400 text-xs select-none transition-all cursor-pointer h-7 shrink-0"
               >
                 <Search className="w-3 h-3 text-neutral-400 shrink-0" />
                 <span className="text-neutral-500 text-[11px] hidden sm:inline">Search...</span>
@@ -190,10 +189,10 @@ export default function Navigation() {
             )}
 
             {isMerchantContext && pathname !== '/onboarding' ? (
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="w-6.5 h-6.5 rounded-full bg-neutral-900 text-white font-mono font-bold text-[11px] flex items-center justify-center hover:bg-black transition-colors cursor-pointer"
+                  className="w-7 h-7 min-w-[28px] aspect-square rounded-full bg-neutral-950 text-white font-mono font-bold text-[11px] flex items-center justify-center hover:bg-black transition-colors cursor-pointer shadow-2xs"
                 >
                   {merchant?.name ? merchant.name[0].toUpperCase() : 'M'}
                 </button>
@@ -224,7 +223,7 @@ export default function Navigation() {
                 )}
               </div>
             ) : customerName ? (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 shrink-0">
                 {pathname !== '/customer/chat' && (
                   <Link
                     href="/customer/chat"
@@ -233,12 +232,12 @@ export default function Navigation() {
                     Shopping Chat
                   </Link>
                 )}
-                <div className="relative">
+                <div className="relative shrink-0">
                   <button
                     onClick={() => setCustomerMenuOpen(!customerMenuOpen)}
                     className="flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-neutral-100 hover:bg-neutral-200/80 border border-neutral-200 text-xs font-medium text-neutral-800 transition-colors cursor-pointer"
                   >
-                    <div className="w-4.5 h-4.5 rounded-full bg-neutral-900 text-white flex items-center justify-center text-[9px] font-bold">
+                    <div className="w-5 h-5 min-w-[20px] aspect-square rounded-full bg-neutral-900 text-white flex items-center justify-center text-[9px] font-bold">
                       {customerName[0].toUpperCase()}
                     </div>
                     <span className="truncate max-w-[90px] font-semibold text-neutral-900 text-[11px]">{customerName}</span>
@@ -288,7 +287,7 @@ export default function Navigation() {
                 </div>
               </div>
             ) : (
-              <nav className="flex items-center space-x-2">
+              <nav className="flex items-center space-x-2 shrink-0">
                 <Link
                   href="/customer/chat"
                   className="px-2.5 py-1 rounded-md text-xs font-medium bg-neutral-900 text-white hover:bg-black transition-colors"
@@ -306,7 +305,7 @@ export default function Navigation() {
           </div>
         </div>
 
-        {/* Tier 2: Horizontal Sub-Navigation Strip (Directly Merged with Bottom Border) */}
+        {/* Tier 2: Horizontal Sub-Navigation Strip */}
         {isMerchantContext && pathname !== '/onboarding' && (
           <div className="border-t border-neutral-100 bg-white">
             <div className="max-w-7xl mx-auto px-6 flex items-center space-x-6 overflow-x-auto no-scrollbar -mb-px">
