@@ -217,9 +217,39 @@ def get_platform_overview(
     total_policies_enforced = db.query(Policy).count()
     total_audit_events = db.query(AuditEvent).count()
 
-    settled_txs = db.query(Transaction).filter(Transaction.status == "SETTLED").all()
+    from sqlalchemy import func
+
+    # 1. Query settled transactions from transactions table (case-insensitive & payment id checks)
+    settled_txs = db.query(Transaction).filter(
+        (func.lower(Transaction.status) == "settled") |
+        (Transaction.status == "SETTLED") |
+        (Transaction.status == "settled") |
+        (func.lower(Transaction.status) == "executed") |
+        (Transaction.razorpay_payment_id.isnot(None))
+    ).all()
+    
     total_settled_volume = sum(float(tx.amount) for tx in settled_txs)
     total_settled_count = len(settled_txs)
+
+    # 2. Also check audit stream for payment_settled / SETTLED events if transactions table is empty or missing entries
+    settled_audit_events = db.query(AuditEvent).filter(
+        (AuditEvent.action == "payment_settled") |
+        (func.upper(AuditEvent.decision) == "SETTLED")
+    ).all()
+
+    if settled_audit_events and total_settled_count == 0:
+        seen_order_ids = set()
+        for ev in settled_audit_events:
+            inp = ev.input or {}
+            oid = inp.get("razorpay_order_id") or inp.get("transaction_id") or str(ev.id)
+            if oid not in seen_order_ids:
+                seen_order_ids.add(oid)
+                try:
+                    amt = float(inp.get("amount", 0))
+                    total_settled_volume += amt
+                    total_settled_count += 1
+                except Exception:
+                    pass
 
     return PlatformOverviewResponse(
         total_merchants=total_merchants,
@@ -228,7 +258,7 @@ def get_platform_overview(
         total_catalog_items=total_catalog_items,
         total_policies_enforced=total_policies_enforced,
         total_audit_events=total_audit_events,
-        total_settled_volume_inr=total_settled_volume,
+        total_settled_volume_inr=round(total_settled_volume, 2),
         total_settled_transactions=total_settled_count
     )
 
