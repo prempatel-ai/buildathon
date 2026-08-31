@@ -24,7 +24,11 @@ import {
   Building2,
   ShieldCheck,
   ShoppingBag,
-  Activity
+  Activity,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 
 /* ─── Skeleton Loading Components ─────────────────────────────────────────── */
@@ -119,16 +123,20 @@ export default function PlatformAdminPage() {
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [loadingOverview, setLoadingOverview] = useState(true);
 
-  // Merchants State
+  // Merchants State & Pagination
   const [merchants, setMerchants] = useState<AdminMerchant[]>([]);
   const [loadingMerchants, setLoadingMerchants] = useState(false);
   const [merchantSearch, setMerchantSearch] = useState('');
+  const [merchantPage, setMerchantPage] = useState<number>(1);
+  const [merchantLimit, setMerchantLimit] = useState<number>(10);
   const [updatingKYC, setUpdatingKYC] = useState<string | null>(null);
 
-  // Audit Stream State
+  // Audit Stream State & Pagination
   const [auditEvents, setAuditEvents] = useState<AdminAuditItem[]>([]);
   const [totalAudit, setTotalAudit] = useState(0);
   const [loadingAudit, setLoadingAudit] = useState(false);
+  const [auditPage, setAuditPage] = useState<number>(1);
+  const [auditLimit, setAuditLimit] = useState<number>(10);
   const [actorFilter, setActorFilter] = useState('');
   const [actionFilter, setActionFilter] = useState('');
   const [sortOrder, setSortOrder] = useState('desc');
@@ -157,7 +165,7 @@ export default function PlatformAdminPage() {
     } else if (activeTab === 'audit') {
       loadAudit();
     }
-  }, [activeTab, actorFilter, actionFilter, sortOrder]);
+  }, [activeTab, actorFilter, actionFilter, sortOrder, auditPage, auditLimit]);
 
   const loadOverview = async () => {
     try {
@@ -194,11 +202,13 @@ export default function PlatformAdminPage() {
     try {
       setLoadingAudit(true);
       setError(null);
+      const skip = (auditPage - 1) * auditLimit;
       const data = await fetchAdminAuditEvents({
         actor_type: actorFilter || undefined,
         action: actionFilter || undefined,
         sort_order: sortOrder,
-        limit: 100
+        skip,
+        limit: auditLimit
       });
       setAuditEvents(data.items);
       setTotalAudit(data.total);
@@ -513,7 +523,7 @@ export default function PlatformAdminPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-100">
-                      {filteredMerchants.map((m) => (
+                      {filteredMerchants.slice((merchantPage - 1) * merchantLimit, merchantPage * merchantLimit).map((m) => (
                         <tr key={m.id} className="hover:bg-neutral-50/70 transition-colors">
                           <td className="py-3 px-4 font-semibold text-neutral-900">
                             {m.name}
@@ -564,6 +574,74 @@ export default function PlatformAdminPage() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Merchants Pagination Bar */}
+                {filteredMerchants.length > 0 && (
+                  <div className="px-6 py-3.5 border-t border-neutral-200 bg-neutral-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+                    <div className="text-neutral-600 font-medium">
+                      Showing <span className="font-semibold text-neutral-900 font-mono">{(merchantPage - 1) * merchantLimit + 1}</span>–<span className="font-semibold text-neutral-900 font-mono">{Math.min(merchantPage * merchantLimit, filteredMerchants.length)}</span> of <span className="font-semibold text-neutral-900 font-mono">{filteredMerchants.length}</span> stores
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-neutral-500 text-[11px]">Rows per page:</span>
+                        <select
+                          value={merchantLimit}
+                          onChange={(e) => {
+                            setMerchantLimit(Number(e.target.value));
+                            setMerchantPage(1);
+                          }}
+                          className="h-7 px-2 bg-white border border-neutral-200 rounded text-xs font-mono font-medium text-neutral-800 focus:outline-none cursor-pointer"
+                        >
+                          <option value={10}>10</option>
+                          <option value={25}>25</option>
+                          <option value={50}>50</option>
+                          <option value={100}>100</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setMerchantPage(1)}
+                          disabled={merchantPage === 1}
+                          title="First Page"
+                          className="h-7 w-7 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
+                        >
+                          <ChevronsLeft className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setMerchantPage((p) => Math.max(1, p - 1))}
+                          disabled={merchantPage === 1}
+                          title="Previous Page"
+                          className="h-7 w-7 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+
+                        <span className="px-2 text-xs font-mono text-neutral-700">
+                          Page {merchantPage} of {Math.ceil(filteredMerchants.length / merchantLimit) || 1}
+                        </span>
+
+                        <button
+                          onClick={() => setMerchantPage((p) => Math.min(Math.ceil(filteredMerchants.length / merchantLimit) || 1, p + 1))}
+                          disabled={merchantPage >= Math.ceil(filteredMerchants.length / merchantLimit)}
+                          title="Next Page"
+                          className="h-7 w-7 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
+                        >
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setMerchantPage(Math.ceil(filteredMerchants.length / merchantLimit) || 1)}
+                          disabled={merchantPage >= Math.ceil(filteredMerchants.length / merchantLimit)}
+                          title="Last Page"
+                          className="h-7 w-7 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
+                        >
+                          <ChevronsRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -576,7 +654,10 @@ export default function PlatformAdminPage() {
             <div className="flex flex-wrap items-center gap-3">
               <select
                 value={actorFilter}
-                onChange={(e) => setActorFilter(e.target.value)}
+                onChange={(e) => {
+                  setActorFilter(e.target.value);
+                  setAuditPage(1);
+                }}
                 className="h-8 px-2.5 bg-white border border-neutral-200 rounded text-xs font-medium text-neutral-800 focus:outline-none"
               >
                 <option value="">All Actors</option>
@@ -588,13 +669,17 @@ export default function PlatformAdminPage() {
 
               <select
                 value={actionFilter}
-                onChange={(e) => setActionFilter(e.target.value)}
+                onChange={(e) => {
+                  setActionFilter(e.target.value);
+                  setAuditPage(1);
+                }}
                 className="h-8 px-2.5 bg-white border border-neutral-200 rounded text-xs font-medium text-neutral-800 focus:outline-none"
               >
                 <option value="">All Actions</option>
                 <option value="payment_settled">payment_settled</option>
                 <option value="payment_executing">payment_executing</option>
                 <option value="payment_approved">payment_approved</option>
+                <option value="payment_proposed">payment_proposed</option>
                 <option value="policy_evaluated">policy_evaluated</option>
                 <option value="spend_authorization_created">spend_authorization_created</option>
                 <option value="catalog_item_created">catalog_item_created</option>
@@ -602,7 +687,10 @@ export default function PlatformAdminPage() {
 
               <select
                 value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
+                onChange={(e) => {
+                  setSortOrder(e.target.value);
+                  setAuditPage(1);
+                }}
                 className="h-8 px-2.5 bg-white border border-neutral-200 rounded text-xs font-medium text-neutral-800 focus:outline-none"
               >
                 <option value="desc">Newest First (DESC)</option>
@@ -668,9 +756,10 @@ export default function PlatformAdminPage() {
                           <td className="py-3.5 pr-6 pl-4 text-right whitespace-nowrap">
                             <button
                               onClick={() => setSelectedJsonEvent(ev)}
-                              className="h-6 px-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded font-medium text-[11px] transition-colors cursor-pointer border border-neutral-200"
+                              className="h-6 px-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded font-medium text-[11px] transition-colors cursor-pointer border border-neutral-200 inline-flex items-center gap-1"
                             >
-                              Inspect
+                              <Code className="w-3 h-3 text-neutral-600" />
+                              <span>Inspect</span>
                             </button>
                           </td>
                         </tr>
@@ -678,6 +767,76 @@ export default function PlatformAdminPage() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Audit Stream Pagination Bar */}
+                {!loadingAudit && totalAudit > 0 && (
+                  <div className="px-6 py-3.5 border-t border-neutral-200 bg-neutral-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+                    <div className="text-neutral-600 font-medium">
+                      Showing <span className="font-semibold text-neutral-900 font-mono">{(auditPage - 1) * auditLimit + 1}</span>–<span className="font-semibold text-neutral-900 font-mono">{Math.min(auditPage * auditLimit, totalAudit)}</span> of <span className="font-semibold text-neutral-900 font-mono">{totalAudit}</span> events
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      {/* Rows per page selector */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-neutral-500 text-[11px]">Rows per page:</span>
+                        <select
+                          value={auditLimit}
+                          onChange={(e) => {
+                            setAuditLimit(Number(e.target.value));
+                            setAuditPage(1);
+                          }}
+                          className="h-7 px-2 bg-white border border-neutral-200 rounded text-xs font-mono font-medium text-neutral-800 focus:outline-none cursor-pointer"
+                        >
+                          <option value={10}>10</option>
+                          <option value={25}>25</option>
+                          <option value={50}>50</option>
+                          <option value={100}>100</option>
+                        </select>
+                      </div>
+
+                      {/* Page controls */}
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setAuditPage(1)}
+                          disabled={auditPage === 1}
+                          title="First Page"
+                          className="h-7 w-7 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
+                        >
+                          <ChevronsLeft className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setAuditPage((p) => Math.max(1, p - 1))}
+                          disabled={auditPage === 1}
+                          title="Previous Page"
+                          className="h-7 w-7 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+
+                        <span className="px-2 text-xs font-mono text-neutral-700">
+                          Page {auditPage} of {Math.ceil(totalAudit / auditLimit) || 1}
+                        </span>
+
+                        <button
+                          onClick={() => setAuditPage((p) => Math.min(Math.ceil(totalAudit / auditLimit) || 1, p + 1))}
+                          disabled={auditPage >= Math.ceil(totalAudit / auditLimit)}
+                          title="Next Page"
+                          className="h-7 w-7 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
+                        >
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setAuditPage(Math.ceil(totalAudit / auditLimit) || 1)}
+                          disabled={auditPage >= Math.ceil(totalAudit / auditLimit)}
+                          title="Last Page"
+                          className="h-7 w-7 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
+                        >
+                          <ChevronsRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
