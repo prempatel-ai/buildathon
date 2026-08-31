@@ -463,26 +463,37 @@ export interface UpdateAddressPayload {
   is_default?: boolean;
 }
 
+export function getCustomerToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('customer_token') || localStorage.getItem('agentpay_customer_token') || null;
+}
+
+export function getCustomerAuthHeaders(): Record<string, string> {
+  const token = getCustomerToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 export async function fetchCustomerAddresses(): Promise<CustomerAddress[]> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('agentpay_customer_token') : null;
   const res = await fetch(`${API_BASE_URL}/customer/addresses`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    },
+    headers: getCustomerAuthHeaders(),
     cache: 'no-store'
   });
-  if (!res.ok) throw new Error('Failed to fetch delivery addresses');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to fetch delivery addresses' }));
+    throw new Error(err.detail || 'Failed to fetch delivery addresses');
+  }
   return res.json();
 }
 
 export async function fetchDefaultAddress(): Promise<CustomerAddress | null> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('agentpay_customer_token') : null;
   const res = await fetch(`${API_BASE_URL}/customer/addresses/default`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    },
+    headers: getCustomerAuthHeaders(),
     cache: 'no-store'
   });
   if (!res.ok) return null;
@@ -490,13 +501,9 @@ export async function fetchDefaultAddress(): Promise<CustomerAddress | null> {
 }
 
 export async function createCustomerAddress(payload: CreateAddressPayload): Promise<CustomerAddress> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('agentpay_customer_token') : null;
   const res = await fetch(`${API_BASE_URL}/customer/addresses`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    },
+    headers: getCustomerAuthHeaders(),
     body: JSON.stringify(payload)
   });
   if (!res.ok) {
@@ -507,13 +514,9 @@ export async function createCustomerAddress(payload: CreateAddressPayload): Prom
 }
 
 export async function updateCustomerAddress(addressId: string, payload: UpdateAddressPayload): Promise<CustomerAddress> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('agentpay_customer_token') : null;
   const res = await fetch(`${API_BASE_URL}/customer/addresses/${addressId}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    },
+    headers: getCustomerAuthHeaders(),
     body: JSON.stringify(payload)
   });
   if (!res.ok) {
@@ -524,28 +527,26 @@ export async function updateCustomerAddress(addressId: string, payload: UpdateAd
 }
 
 export async function setDefaultAddress(addressId: string): Promise<CustomerAddress> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('agentpay_customer_token') : null;
   const res = await fetch(`${API_BASE_URL}/customer/addresses/${addressId}/default`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    }
+    headers: getCustomerAuthHeaders()
   });
-  if (!res.ok) throw new Error('Failed to set default address');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to set default address' }));
+    throw new Error(err.detail || 'Failed to set default address');
+  }
   return res.json();
 }
 
 export async function deleteCustomerAddress(addressId: string): Promise<void> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('agentpay_customer_token') : null;
   const res = await fetch(`${API_BASE_URL}/customer/addresses/${addressId}`, {
     method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    }
+    headers: getCustomerAuthHeaders()
   });
-  if (!res.ok) throw new Error('Failed to delete address');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to delete address' }));
+    throw new Error(err.detail || 'Failed to delete address');
+  }
 }
 
 

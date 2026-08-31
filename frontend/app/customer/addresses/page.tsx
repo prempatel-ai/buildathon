@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Navigation from '@/components/Navigation';
 import {
   fetchCustomerAddresses,
   createCustomerAddress,
   updateCustomerAddress,
   setDefaultAddress,
   deleteCustomerAddress,
+  getCustomerToken,
   CustomerAddress,
   CreateAddressPayload
 } from '@/lib/api';
@@ -16,18 +18,16 @@ import {
   Plus,
   Trash2,
   Edit2,
-  CheckCircle2,
+  CheckCircle,
+  Building2,
   Home,
   Briefcase,
-  Building,
-  ArrowLeft,
-  ShieldCheck,
   Phone,
   User,
-  Sparkles,
   Loader2,
-  MessageSquare,
-  CreditCard
+  X,
+  ArrowLeft,
+  ShieldCheck
 } from 'lucide-react';
 
 export default function ConsumerAddressesPage() {
@@ -55,8 +55,13 @@ export default function ConsumerAddressesPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    const token = getCustomerToken();
+    if (!token) {
+      router.push('/customer/login');
+      return;
+    }
     loadAddresses();
-  }, []);
+  }, [router]);
 
   const loadAddresses = async () => {
     try {
@@ -65,8 +70,8 @@ export default function ConsumerAddressesPage() {
       const data = await fetchCustomerAddresses();
       setAddresses(data);
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Failed to load delivery addresses');
+      console.error('Failed to load addresses:', err);
+      setError(err.message || 'Unable to retrieve delivery addresses.');
     } finally {
       setLoading(false);
     }
@@ -113,24 +118,24 @@ export default function ConsumerAddressesPage() {
       setError(null);
 
       if (!formData.recipient_name || !formData.phone || !formData.line1 || !formData.city || !formData.state || !formData.postal_code) {
-        setError('Please fill in all mandatory address fields.');
+        setError('All required address fields must be filled.');
         setSubmitting(false);
         return;
       }
 
       if (editingId) {
         await updateCustomerAddress(editingId, formData);
-        setSuccessMsg('Address updated successfully.');
+        setSuccessMsg('Address updated.');
       } else {
         await createCustomerAddress(formData);
-        setSuccessMsg('New delivery address saved.');
+        setSuccessMsg('Address added.');
       }
 
       setIsModalOpen(false);
       await loadAddresses();
       setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err: any) {
-      setError(err.message || 'Failed to save address');
+      setError(err.message || 'Failed to save address.');
     } finally {
       setSubmitting(false);
     }
@@ -144,7 +149,7 @@ export default function ConsumerAddressesPage() {
       await loadAddresses();
       setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err: any) {
-      setError(err.message || 'Failed to set default address');
+      setError(err.message || 'Failed to set default address.');
     }
   };
 
@@ -153,321 +158,271 @@ export default function ConsumerAddressesPage() {
     try {
       setError(null);
       await deleteCustomerAddress(id);
-      setSuccessMsg('Address deleted.');
+      setSuccessMsg('Address removed.');
       await loadAddresses();
       setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err: any) {
-      setError(err.message || 'Failed to delete address');
+      setError(err.message || 'Failed to delete address.');
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      {/* Top Navbar */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push('/customer/chat')}
-              className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
-              title="Back to Chat"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-200">
-                <MapPin className="w-5 h-5" />
-              </div>
-              <div>
-                <h1 className="text-base font-semibold text-slate-900 leading-tight">Delivery Addresses</h1>
-                <p className="text-xs text-slate-500">Manage shipping destinations for autonomous purchases</p>
-              </div>
+      <Navigation />
+
+      {/* Main Container */}
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8">
+        {/* Header Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Consumer Account</span>
             </div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Delivery Addresses</h1>
+            <p className="text-xs text-slate-500 mt-1">
+              Manage shipping destinations used by AI agents for autonomous order execution.
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push('/customer/chat')}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors"
+              className="px-3.5 py-2 text-xs font-medium text-slate-700 hover:text-slate-900 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs"
             >
-              <MessageSquare className="w-3.5 h-3.5" />
-              AI Shopping Chat
-            </button>
-            <button
-              onClick={() => router.push('/customer/authorizations')}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <CreditCard className="w-3.5 h-3.5" />
-              Spend Limits
+              Back to Shopping Chat
             </button>
             <button
               onClick={handleOpenAddModal}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm shadow-blue-200 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-xs transition-colors"
             >
-              <Plus className="w-4 h-4" />
-              Add New Address
+              <Plus className="w-3.5 h-3.5" />
+              Add Address
             </button>
           </div>
         </div>
-      </header>
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
         {/* Banner Alert Messages */}
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-center justify-between shadow-xs">
+          <div className="mt-6 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center justify-between">
             <span>{error}</span>
-            <button onClick={() => setError(null)} className="text-rose-500 hover:text-rose-700 font-bold">×</button>
+            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 font-bold ml-2">×</button>
           </div>
         )}
         {successMsg && (
-          <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-2 shadow-xs">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="mt-6 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>{successMsg}</span>
           </div>
         )}
 
-        {/* Hero Card */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 mb-8 text-white shadow-md shadow-blue-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles className="w-4 h-4 text-amber-300" />
-              <span className="text-xs font-semibold tracking-wider text-blue-100 uppercase">Autonomous Agent Shipping</span>
-            </div>
-            <h2 className="text-xl font-bold">Your Saved Shipping Destinations</h2>
-            <p className="text-sm text-blue-100 mt-1 max-w-xl">
-              When your AI shopping agent executes purchases on your behalf, it automatically ships items to your default address with verified transit dates.
-            </p>
-          </div>
-          <button
-            onClick={handleOpenAddModal}
-            className="px-4 py-2.5 bg-white text-blue-700 hover:bg-blue-50 rounded-xl font-semibold text-sm shadow-sm transition-colors shrink-0 flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add Address
-          </button>
-        </div>
-
         {/* Addresses Grid */}
-        {loading ? (
-          <div className="py-20 flex flex-col items-center justify-center text-slate-500 gap-3">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-            <p className="text-sm">Loading your delivery addresses...</p>
-          </div>
-        ) : addresses.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-xs">
-            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <MapPin className="w-8 h-8" />
+        <div className="mt-8">
+          {loading ? (
+            <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-2">
+              <Loader2 className="w-6 h-6 animate-spin text-slate-600" />
+              <p className="text-xs">Loading addresses...</p>
             </div>
-            <h3 className="text-lg font-bold text-slate-900 mb-1">No Delivery Addresses Found</h3>
-            <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">
-              You need at least one saved delivery address before your AI shopping assistant can confirm autonomous orders.
-            </p>
-            <button
-              onClick={handleOpenAddModal}
-              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-sm shadow-blue-200 transition-colors inline-flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add Your First Address
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {addresses.map((addr) => (
-              <div
-                key={addr.id}
-                className={`bg-white rounded-2xl border transition-all duration-200 relative flex flex-col justify-between p-5 ${
-                  addr.is_default
-                    ? 'border-blue-500 ring-2 ring-blue-100 shadow-sm'
-                    : 'border-slate-200 hover:border-slate-300 shadow-xs'
-                }`}
-              >
-                <div>
-                  {/* Top Bar inside card */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
-                        {addr.label.toLowerCase() === 'work' || addr.label.toLowerCase() === 'office' ? (
-                          <Briefcase className="w-4 h-4" />
-                        ) : addr.label.toLowerCase() === 'warehouse' ? (
-                          <Building className="w-4 h-4" />
-                        ) : (
-                          <Home className="w-4 h-4" />
-                        )}
-                      </div>
-                      <span className="font-semibold text-sm text-slate-900">{addr.label}</span>
-                    </div>
-
-                    {addr.is_default ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
-                        <CheckCircle2 className="w-3 h-3" /> Default
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleSetDefault(addr.id)}
-                        className="text-[11px] font-medium text-slate-500 hover:text-blue-600 hover:underline"
-                      >
-                        Set as Default
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Recipient & Address Details */}
-                  <div className="space-y-1.5 text-sm text-slate-700">
-                    <div className="font-semibold text-slate-900 flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-slate-400" />
-                      {addr.recipient_name}
-                    </div>
-                    <div className="text-xs text-slate-500 flex items-center gap-1.5">
-                      <Phone className="w-3.5 h-3.5 text-slate-400" />
-                      {addr.phone}
-                    </div>
-                    <div className="pt-2 text-xs leading-relaxed text-slate-600">
-                      <p>{addr.line1}</p>
-                      {addr.line2 && <p>{addr.line2}</p>}
-                      <p className="font-medium text-slate-800">
-                        {addr.city}, {addr.state} - {addr.postal_code}
-                      </p>
-                      <p className="text-[11px] text-slate-400">{addr.country === 'IN' ? 'India' : addr.country}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom Actions */}
-                <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-end gap-2">
-                  <button
-                    onClick={() => handleOpenEditModal(addr)}
-                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Edit Address"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(addr.id)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                    title="Delete Address"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+          ) : addresses.length === 0 ? (
+            <div className="bg-white border border-slate-200 rounded-xl p-10 text-center shadow-2xs">
+              <div className="w-12 h-12 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <MapPin className="w-5 h-5" />
               </div>
-            ))}
-          </div>
-        )}
+              <h3 className="text-sm font-semibold text-slate-900 mb-1">No saved addresses</h3>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto mb-5">
+                Add a delivery address to enable AI agents to execute and ship purchases automatically.
+              </p>
+              <button
+                onClick={handleOpenAddModal}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Address
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {addresses.map((addr) => (
+                <div
+                  key={addr.id}
+                  className={`bg-white rounded-xl border p-4.5 transition-all flex flex-col justify-between ${
+                    addr.is_default
+                      ? 'border-slate-400 shadow-xs'
+                      : 'border-slate-200 hover:border-slate-300 shadow-2xs'
+                  }`}
+                >
+                  <div>
+                    {/* Header line inside card */}
+                    <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-900">{addr.label}</span>
+                      </div>
+
+                      {addr.is_default ? (
+                        <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded">
+                          Default
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleSetDefault(addr.id)}
+                          className="text-[11px] font-medium text-slate-500 hover:text-slate-900 transition-colors"
+                        >
+                          Set default
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Recipient & Address Details */}
+                    <div className="space-y-1 text-xs text-slate-700">
+                      <p className="font-semibold text-slate-900">{addr.recipient_name}</p>
+                      <p className="text-slate-500">{addr.phone}</p>
+                      <div className="pt-2 text-slate-600 leading-relaxed">
+                        <p>{addr.line1}</p>
+                        {addr.line2 && <p>{addr.line2}</p>}
+                        <p className="font-medium text-slate-800 mt-1">
+                          {addr.city}, {addr.state} {addr.postal_code}
+                        </p>
+                        <p className="text-[11px] text-slate-400">{addr.country === 'IN' ? 'India' : addr.country}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions Footer */}
+                  <div className="pt-3 mt-4 border-t border-slate-100 flex items-center justify-end gap-1 text-slate-400">
+                    <button
+                      onClick={() => handleOpenEditModal(addr)}
+                      className="p-1.5 hover:text-slate-800 hover:bg-slate-100 rounded-md transition-colors text-xs font-medium flex items-center gap-1"
+                      title="Edit"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      <span className="text-[11px] text-slate-600">Edit</span>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(addr.id)}
+                      className="p-1.5 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors text-xs font-medium flex items-center gap-1 ml-2"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span className="text-[11px] text-red-600">Delete</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
 
       {/* Add / Edit Address Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-bold text-slate-900">
-                {editingId ? 'Edit Delivery Address' : 'Add New Delivery Address'}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-2xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900">
+                {editingId ? 'Edit Address' : 'New Delivery Address'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold text-lg"
+                className="p-1 text-slate-400 hover:text-slate-600 rounded"
               >
-                ×
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3.5">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Address Label</label>
+                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">Label</label>
                   <select
                     value={formData.label}
                     onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                    className="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                    className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden"
                   >
                     <option value="Home">Home</option>
                     <option value="Work">Work</option>
                     <option value="Office">Office</option>
-                    <option value="Primary">Primary</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Phone Number *</label>
+                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">Phone *</label>
                   <input
                     type="tel"
                     required
                     placeholder="+91 9876543210"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                    className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Recipient Full Name *</label>
+                <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">Recipient Name *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Prem Patel"
+                  placeholder="Full Name"
                   value={formData.recipient_name}
                   onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })}
-                  className="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                  className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Flat / House No. / Building *</label>
+                <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">Address Line 1 *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Flat 402, Skyline Residency"
+                  placeholder="Street, flat, building"
                   value={formData.line1}
                   onChange={(e) => setFormData({ ...formData, line1: e.target.value })}
-                  className="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                  className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Street / Area / Landmark (Optional)</label>
+                <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">Address Line 2 (Optional)</label>
                 <input
                   type="text"
-                  placeholder="e.g. MG Road, Indiranagar"
+                  placeholder="Area, landmark"
                   value={formData.line2}
                   onChange={(e) => setFormData({ ...formData, line2: e.target.value })}
-                  className="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                  className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden"
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2.5">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">City *</label>
+                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">City *</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Bengaluru"
+                    placeholder="Bengaluru"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                    className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">State *</label>
+                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">State *</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Karnataka"
+                    placeholder="Karnataka"
                     value={formData.state}
                     onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                    className="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                    className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">PIN Code *</label>
+                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">PIN Code *</label>
                   <input
                     type="text"
                     required
-                    placeholder="560038"
+                    placeholder="560001"
                     value={formData.postal_code}
                     onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                    className="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                    className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden font-mono"
                   />
                 </div>
               </div>
@@ -475,28 +430,28 @@ export default function ConsumerAddressesPage() {
               <div className="flex items-center gap-2 pt-2">
                 <input
                   type="checkbox"
-                  id="is_default_check"
+                  id="modal_is_default"
                   checked={formData.is_default}
                   onChange={(e) => setFormData({ ...formData, is_default: e.target.checked })}
-                  className="rounded-sm border-slate-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
                 />
-                <label htmlFor="is_default_check" className="text-xs text-slate-700 font-medium">
-                  Set as default delivery address for agent purchases
+                <label htmlFor="modal_is_default" className="text-xs text-slate-700">
+                  Set as default delivery address
                 </label>
               </div>
 
-              <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+              <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-100 mt-4">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                  className="px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm shadow-blue-200 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-xs transition-colors disabled:opacity-50 flex items-center gap-1.5"
                 >
                   {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {editingId ? 'Save Changes' : 'Save Address'}

@@ -454,7 +454,7 @@ def customer_auth_node(state: Dict[str, Any]) -> Dict[str, Any]:
             state["policy_decision"] = "DENY"
             state["reasoning"] = f"Delivery address required: No delivery address on file for customer {customer_id}."
             state["status"] = "BLOCKED_NO_DELIVERY_ADDRESS"
-            state["response_message"] = "⚠️ **Delivery Address Required**\n\nPlease add or select a delivery address in your profile before confirming this purchase."
+            state["response_message"] = "**Delivery Address Required**\n\nPlease add or select a delivery address in your profile before confirming this purchase."
 
             AuditService.log_event(
                 db=db,
@@ -869,14 +869,14 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     state["payment_link_url"] = None
                     state["status"] = "PAYMENT_SETTLED"
                     state["response_message"] = (
-                        f"✅ **Payment Completed Autonomously!**\n\n"
+                        f"**Payment Completed Autonomously**\n\n"
                         f"AI Agent authorized and executed payment of **₹{amount:,.2f}** for **{item_name}** on Razorpay.\n\n"
-                        f"🧾 **Razorpay Order ID**: `{settled_tx.razorpay_order_id}`\n"
-                        f"💳 **Razorpay Payment ID**: `{real_pay_id}`\n"
-                        f"📦 **Status**: Paid & Captured\n"
-                        f"🚚 **Estimated Delivery**: **{est_date.strftime('%A, %d %b %Y')}**\n"
-                        f"📍 **Delivering To**: {state.get('delivery_address_summary', 'Saved Delivery Address')}\n\n"
-                        f"No manual human action required — transaction has been settled directly on Razorpay."
+                        f"• **Razorpay Order ID**: `{settled_tx.razorpay_order_id}`\n"
+                        f"• **Razorpay Payment ID**: `{real_pay_id}`\n"
+                        f"• **Status**: Paid & Captured\n"
+                        f"• **Estimated Delivery**: **{est_date.strftime('%A, %d %b %Y')}**\n"
+                        f"• **Delivering To**: {state.get('delivery_address_summary', 'Saved Delivery Address')}\n\n"
+                        f"Transaction settled directly on Razorpay."
                     )
                     autonomous_settled = True
 
