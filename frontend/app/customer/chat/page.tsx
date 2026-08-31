@@ -23,7 +23,8 @@ import {
   Truck,
   Loader2,
   Check,
-  MessageSquare
+  MessageSquare,
+  Trash2
 } from 'lucide-react';
 import { CustomerAddress, fetchCustomerAddresses, getCustomerToken } from '@/lib/api';
 
@@ -62,6 +63,7 @@ interface ChatThreadHistory {
   id: string;
   title: string;
   timestamp: string;
+  updatedAt?: number;
   messages: ChatMessage[];
 }
 
@@ -83,26 +85,7 @@ export default function ConsumerChatPage() {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   // History State
-  const [historyThreads, setHistoryThreads] = useState<ChatThreadHistory[]>([
-    {
-      id: 'thread_hist_1',
-      title: 'Find cheap headphones',
-      timestamp: 'Today',
-      messages: [],
-    },
-    {
-      id: 'thread_hist_2',
-      title: 'Gaming Laptop under ₹80k',
-      timestamp: 'Yesterday',
-      messages: [],
-    },
-    {
-      id: 'thread_hist_3',
-      title: 'Wireless Earbuds with ANC',
-      timestamp: '3 days ago',
-      messages: [],
-    },
-  ]);
+  const [historyThreads, setHistoryThreads] = useState<ChatThreadHistory[]>([]);
 
   // Spend Authorization Balance State
   const [spendLimit, setSpendLimit] = useState<number>(0);
@@ -126,6 +109,7 @@ export default function ConsumerChatPage() {
   const [recentPurchases, setRecentPurchases] = useState<RecentPurchase[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // Load Initial User & Restores Chat History from localStorage
   useEffect(() => {
     const token = getCustomerToken();
     const name = (typeof window !== 'undefined' && localStorage.getItem('customer_name')) || 'Rahul Sharma';
@@ -138,9 +122,45 @@ export default function ConsumerChatPage() {
     setCustomerName(name);
     setCustomerEmail(email);
 
+    // Restore persistent threads from localStorage
+    try {
+      const storedThreadsRaw = localStorage.getItem(`agentpay_threads_${email}`);
+      const activeThreadId = localStorage.getItem(`agentpay_active_thread_${email}`);
+      
+      let parsedThreads: ChatThreadHistory[] = [];
+      if (storedThreadsRaw) {
+        parsedThreads = JSON.parse(storedThreadsRaw);
+        setHistoryThreads(parsedThreads);
+      }
+
+      if (activeThreadId && parsedThreads.length > 0) {
+        const found = parsedThreads.find((t) => t.id === activeThreadId);
+        if (found && found.messages && found.messages.length > 0) {
+          setThreadId(found.id);
+          setMessages(found.messages);
+        }
+      }
+    } catch (err) {
+      console.log('Error restoring stored chat threads:', err);
+    }
+
     fetchAuthLimit(token);
     loadAddresses();
   }, [router]);
+
+  const saveThreadsToStorage = (threads: ChatThreadHistory[], activeId: string | null) => {
+    const email = (typeof window !== 'undefined' && localStorage.getItem('customer_email')) || 'rahul@example.com';
+    try {
+      localStorage.setItem(`agentpay_threads_${email}`, JSON.stringify(threads));
+      if (activeId) {
+        localStorage.setItem(`agentpay_active_thread_${email}`, activeId);
+      } else {
+        localStorage.removeItem(`agentpay_active_thread_${email}`);
+      }
+    } catch (e) {
+      console.log('Error saving threads to localStorage:', e);
+    }
+  };
 
   const loadAddresses = async () => {
     try {
@@ -177,15 +197,6 @@ export default function ConsumerChatPage() {
         if (data.recent_purchases && Array.isArray(data.recent_purchases)) {
           setRecentPurchases(data.recent_purchases);
         }
-
-        if (data.recent_searches && Array.isArray(data.recent_searches) && data.recent_searches.length > 0) {
-          setHistoryThreads(data.recent_searches.map((s: any) => ({
-            id: s.id,
-            title: s.title,
-            timestamp: s.timestamp,
-            messages: []
-          })));
-        }
       }
     } catch (e) {
       console.log('Error fetching limit info:', e);
@@ -200,6 +211,26 @@ export default function ConsumerChatPage() {
     setMessages([]);
     setThreadId(null);
     setInputPrompt('');
+    const email = (typeof window !== 'undefined' && localStorage.getItem('customer_email')) || 'rahul@example.com';
+    localStorage.removeItem(`agentpay_active_thread_${email}`);
+  };
+
+  const handleSelectThread = (thread: ChatThreadHistory) => {
+    setThreadId(thread.id);
+    setMessages(thread.messages || []);
+    const email = (typeof window !== 'undefined' && localStorage.getItem('customer_email')) || 'rahul@example.com';
+    localStorage.setItem(`agentpay_active_thread_${email}`, thread.id);
+  };
+
+  const handleDeleteThread = (e: React.MouseEvent, targetThreadId: string) => {
+    e.stopPropagation();
+    const updated = historyThreads.filter((t) => t.id !== targetThreadId);
+    setHistoryThreads(updated);
+    if (threadId === targetThreadId) {
+      startNewChat();
+    } else {
+      saveThreadsToStorage(updated, threadId);
+    }
   };
 
   const handleSendMessage = async (customPrompt?: string) => {
@@ -229,6 +260,11 @@ export default function ConsumerChatPage() {
       return;
     }
 
+    const currentThreadId = threadId || `thread_${Date.now()}`;
+    if (!threadId) {
+      setThreadId(currentThreadId);
+    }
+
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       sender: 'user',
@@ -236,19 +272,32 @@ export default function ConsumerChatPage() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
     if (!customPrompt) setInputPrompt('');
     setLoading(true);
 
-    if (messages.length === 0) {
-      const newHistItem: ChatThreadHistory = {
-        id: `thread_${Date.now()}`,
-        title: promptToSend.length > 25 ? `${promptToSend.substring(0, 25)}...` : promptToSend,
-        timestamp: 'Just now',
-        messages: [userMsg],
+    // Update history threads
+    let updatedThreads = [...historyThreads];
+    const existingIdx = updatedThreads.findIndex((t) => t.id === currentThreadId);
+    if (existingIdx >= 0) {
+      updatedThreads[existingIdx] = {
+        ...updatedThreads[existingIdx],
+        messages: newMessages,
+        updatedAt: Date.now(),
       };
-      setHistoryThreads((prev) => [newHistItem, ...prev]);
+    } else {
+      const newThread: ChatThreadHistory = {
+        id: currentThreadId,
+        title: promptToSend.length > 28 ? `${promptToSend.substring(0, 28)}...` : promptToSend,
+        timestamp: 'Just now',
+        updatedAt: Date.now(),
+        messages: newMessages,
+      };
+      updatedThreads = [newThread, ...updatedThreads];
     }
+    setHistoryThreads(updatedThreads);
+    saveThreadsToStorage(updatedThreads, currentThreadId);
 
     try {
       const res = await fetch(`${API_BASE_URL}/customer/chat`, {
@@ -259,7 +308,7 @@ export default function ConsumerChatPage() {
         },
         body: JSON.stringify({
           prompt: promptToSend,
-          thread_id: threadId,
+          thread_id: currentThreadId,
           address_id: selectedAddressId,
         }),
       });
@@ -269,7 +318,7 @@ export default function ConsumerChatPage() {
         throw new Error(data.detail || 'Chat request failed');
       }
 
-      if (data.thread_id) {
+      if (data.thread_id && data.thread_id !== currentThreadId) {
         setThreadId(data.thread_id);
       }
 
@@ -293,18 +342,42 @@ export default function ConsumerChatPage() {
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
-      setMessages((prev) => [...prev, assistantMsg]);
+      const finalMessages = [...newMessages, assistantMsg];
+      setMessages(finalMessages);
+
+      // Persist completed conversation turn to localStorage
+      const threadToUpdateIdx = updatedThreads.findIndex((t) => t.id === currentThreadId);
+      if (threadToUpdateIdx >= 0) {
+        updatedThreads[threadToUpdateIdx] = {
+          ...updatedThreads[threadToUpdateIdx],
+          messages: finalMessages,
+          updatedAt: Date.now(),
+        };
+      }
+      setHistoryThreads(updatedThreads);
+      saveThreadsToStorage(updatedThreads, currentThreadId);
+
       fetchAuthLimit(token);
     } catch (err: any) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          sender: 'assistant',
-          text: `Error processing query: ${err.message || 'Failed to complete task.'}`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
+      const errMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        sender: 'assistant',
+        text: `Error processing query: ${err.message || 'Failed to complete task.'}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      const finalMessages = [...newMessages, errMsg];
+      setMessages(finalMessages);
+
+      const threadToUpdateIdx = updatedThreads.findIndex((t) => t.id === currentThreadId);
+      if (threadToUpdateIdx >= 0) {
+        updatedThreads[threadToUpdateIdx] = {
+          ...updatedThreads[threadToUpdateIdx],
+          messages: finalMessages,
+          updatedAt: Date.now(),
+        };
+      }
+      setHistoryThreads(updatedThreads);
+      saveThreadsToStorage(updatedThreads, currentThreadId);
     } finally {
       setLoading(false);
     }
@@ -406,23 +479,40 @@ export default function ConsumerChatPage() {
             </div>
           )}
 
-          {/* RECENT SEARCHES SECTION */}
+          {/* RECENT CONVERSATIONS / THREADS SECTION */}
           <div>
             <span className="px-2.5 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider block mb-1.5">
-              Recent Searches
+              Recent Conversations
             </span>
-            <div className="space-y-0.5">
-              {historyThreads.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleSendMessage(item.title)}
-                  className="w-full flex items-center space-x-2 px-2.5 py-1.5 hover:bg-neutral-100/80 rounded-md text-xs text-neutral-700 hover:text-neutral-900 transition-colors text-left truncate cursor-pointer"
-                >
-                  <MessageSquare className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                  <span className="truncate flex-1 font-medium">{item.title}</span>
-                </button>
-              ))}
-            </div>
+            {historyThreads.length === 0 ? (
+              <div className="px-2.5 py-2 text-[11px] text-neutral-400 font-mono">
+                No saved chats yet.
+              </div>
+            ) : (
+              <div className="space-y-0.5">
+                {historyThreads.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => handleSelectThread(item)}
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors text-left truncate cursor-pointer group ${
+                      threadId === item.id ? 'bg-neutral-200/80 text-neutral-900 font-medium' : 'text-neutral-700 hover:bg-neutral-100/80'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2 truncate min-w-0">
+                      <MessageSquare className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                      <span className="truncate flex-1">{item.title}</span>
+                    </div>
+                    <button
+                      onClick={(e) => handleDeleteThread(e, item.id)}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 rounded transition-opacity cursor-pointer shrink-0"
+                      title="Delete thread"
+                    >
+                      <Trash2 className="w-3 h-3 text-neutral-400 hover:text-red-600" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
