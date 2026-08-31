@@ -378,7 +378,7 @@ export default function ConsumerChatPage() {
             <span>Delivery Addresses</span>
           </button>
           <button
-            onClick={() => router.push('/customer/authorizations')}
+            onClick={() => router.push('/customer/dashboard')}
             className="w-full flex items-center space-x-2.5 px-3 py-2 hover:bg-slate-200/50 rounded-lg transition-colors text-left"
           >
             <CreditCard className="w-4 h-4 text-slate-500" />
