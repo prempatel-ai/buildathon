@@ -106,8 +106,9 @@ export default function ConsumerChatPage() {
   ]);
 
   // Spend Authorization Balance State
-  const [spendLimit, setSpendLimit] = useState<number>(5000);
-  const [remainingLimit, setRemainingLimit] = useState<number>(3800);
+  const [spendLimit, setSpendLimit] = useState<number>(0);
+  const [remainingLimit, setRemainingLimit] = useState<number | null>(null);
+  const [hasActiveAuth, setHasActiveAuth] = useState<boolean>(false);
   const [cardLast4, setCardLast4] = useState<string>('4242');
 
   // Address Selection & Gating State
@@ -162,9 +163,17 @@ export default function ConsumerChatPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        if (data.initial_limit) setSpendLimit(data.initial_limit);
-        if (data.remaining_limit !== undefined) setRemainingLimit(data.remaining_limit);
-        if (data.card_last4) setCardLast4(data.card_last4);
+        const activeAuth = data.active_authorization;
+        if (activeAuth) {
+          setHasActiveAuth(true);
+          setSpendLimit(Number(activeAuth.spend_limit) || 0);
+          setRemainingLimit(Number(activeAuth.remaining_limit) || 0);
+          if (activeAuth.card_last4) setCardLast4(activeAuth.card_last4);
+        } else {
+          setHasActiveAuth(false);
+          setSpendLimit(0);
+          setRemainingLimit(0);
+        }
 
         if (data.recent_purchases && Array.isArray(data.recent_purchases)) {
           setRecentPurchases(data.recent_purchases);
@@ -426,7 +435,7 @@ export default function ConsumerChatPage() {
                 <p className="font-semibold text-neutral-900 truncate text-xs">{customerName}</p>
                 <p className="text-[10px] text-neutral-400 truncate mt-0.5 font-mono">{customerEmail}</p>
                 <span className="inline-block mt-1.5 px-2 py-0.5 bg-neutral-100 text-neutral-800 font-mono font-medium text-[10px] rounded border border-neutral-200">
-                  Limit: ₹{remainingLimit.toLocaleString('en-IN')}
+                  {hasActiveAuth ? `Limit: ₹${(remainingLimit || 0).toLocaleString('en-IN')}` : 'Limit: Not Configured'}
                 </span>
               </div>
               <button
@@ -521,8 +530,8 @@ export default function ConsumerChatPage() {
               onClick={() => router.push('/customer/dashboard')}
               className="inline-flex items-center space-x-1.5 px-2.5 py-1 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-neutral-800 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <span>Limit: ₹{remainingLimit.toLocaleString('en-IN')}</span>
+              <span className={`w-1.5 h-1.5 rounded-full ${hasActiveAuth ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+              <span>{hasActiveAuth ? `Limit: ₹${(remainingLimit || 0).toLocaleString('en-IN')}` : 'Set Spend Limit'}</span>
             </button>
 
             <button
@@ -898,7 +907,7 @@ export default function ConsumerChatPage() {
                   <div className="space-y-4">
                     <div>
                       <h3 className="font-semibold text-neutral-900 mb-1">Active Spend Authorization</h3>
-                      <p className="font-mono text-neutral-800">Remaining Balance: ₹{remainingLimit.toLocaleString('en-IN')}</p>
+                      <p className="font-mono text-neutral-800">Remaining Balance: ₹{(remainingLimit || 0).toLocaleString('en-IN')}</p>
                     </div>
                     <button
                       onClick={() => {
