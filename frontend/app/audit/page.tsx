@@ -192,21 +192,21 @@ function AuditViewerContent() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full min-w-[960px] text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-neutral-50 border-b border-neutral-200 text-neutral-500 font-semibold uppercase tracking-wider text-[11px]">
-                    <th className="py-2.5 px-4 w-36 whitespace-nowrap">Timestamp</th>
-                    <th className="py-2.5 px-4 w-24">Actor</th>
-                    <th className="py-2.5 px-4 w-44">Action</th>
-                    <th className="py-2.5 px-4 w-28">Decision</th>
-                    <th className="py-2.5 px-4">Human-Readable Reasoning</th>
-                    <th className="py-2.5 px-4 w-24 text-right whitespace-nowrap">Payload</th>
+                    <th className="py-3 px-6 w-48 whitespace-nowrap">Timestamp</th>
+                    <th className="py-3 px-4 w-28 whitespace-nowrap">Actor</th>
+                    <th className="py-3 px-4 w-48 whitespace-nowrap">Action</th>
+                    <th className="py-3 px-4 w-28 whitespace-nowrap">Decision</th>
+                    <th className="py-3 px-4 min-w-[280px]">Human-Readable Reasoning</th>
+                    <th className="py-3 pr-6 pl-4 w-28 text-right whitespace-nowrap">Payload</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
                   {events.map((ev) => (
                     <tr key={ev.id} className="hover:bg-neutral-50/70 transition-colors">
-                      <td className="py-3 px-4 text-neutral-500 whitespace-nowrap font-mono text-[11px]">
+                      <td className="py-3.5 px-6 text-neutral-600 whitespace-nowrap font-mono text-[11px]">
                         {ev.created_at ? new Date(ev.created_at).toLocaleString('en-IN', {
                           month: 'short',
                           day: '2-digit',
@@ -216,15 +216,15 @@ function AuditViewerContent() {
                           hour12: false
                         }) : 'N/A'}
                       </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td className="py-3.5 px-4 whitespace-nowrap">
                         <span className="px-1.5 py-0.5 bg-neutral-100 text-neutral-700 rounded text-[10px] font-mono uppercase">
                           {ev.actor_type}
                         </span>
                       </td>
-                      <td className="py-3 px-4 whitespace-nowrap font-mono font-medium text-neutral-900 text-[11px]">
+                      <td className="py-3.5 px-4 whitespace-nowrap font-mono font-medium text-neutral-900 text-[11px]">
                         {ev.action}
                       </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td className="py-3.5 px-4 whitespace-nowrap">
                         <span className={`inline-flex items-center gap-1 text-[11px] font-mono font-semibold ${
                           ev.decision === 'ALLOW' || ev.decision === 'ACTIVE' || ev.decision === 'REGISTERED' || ev.decision === 'SETTLED'
                             ? 'text-emerald-700'
@@ -235,13 +235,13 @@ function AuditViewerContent() {
                           {ev.decision}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-neutral-600 leading-relaxed max-w-md truncate" title={ev.reasoning}>
+                      <td className="py-3.5 px-4 text-neutral-600 leading-relaxed" title={ev.reasoning}>
                         {ev.reasoning}
                       </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <td className="py-3.5 pr-6 pl-4 text-right whitespace-nowrap">
                         <button
                           onClick={() => setSelectedJsonEvent(ev)}
-                          className="h-6 px-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded font-medium text-[11px] transition-colors cursor-pointer border border-neutral-200 inline-flex items-center gap-1"
+                          className="h-6 px-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded font-medium text-[11px] transition-colors cursor-pointer border border-neutral-200 inline-flex items-center gap-1"
                         >
                           <Code className="w-3 h-3 text-neutral-600" />
                           <span>Inspect</span>
