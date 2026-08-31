@@ -18,7 +18,7 @@ import {
   Plus,
   Trash2,
   Edit2,
-  CheckCircle,
+  Check,
   Building2,
   Home,
   Briefcase,
@@ -26,8 +26,10 @@ import {
   User,
   Loader2,
   X,
-  ArrowLeft,
-  ShieldCheck
+  ArrowRight,
+  ShieldCheck,
+  Truck,
+  Compass
 } from 'lucide-react';
 
 export default function ConsumerAddressesPage() {
@@ -128,7 +130,7 @@ export default function ConsumerAddressesPage() {
         setSuccessMsg('Address updated.');
       } else {
         await createCustomerAddress(formData);
-        setSuccessMsg('Address added.');
+        setSuccessMsg('New delivery address saved.');
       }
 
       setIsModalOpen(false);
@@ -166,36 +168,47 @@ export default function ConsumerAddressesPage() {
     }
   };
 
+  const getLabelIcon = (label: string) => {
+    const l = label.toLowerCase();
+    if (l === 'work' || l === 'office') return <Briefcase className="w-3.5 h-3.5 text-slate-500" />;
+    if (l === 'warehouse' || l === 'building') return <Building2 className="w-3.5 h-3.5 text-slate-500" />;
+    return <Home className="w-3.5 h-3.5 text-slate-500" />;
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#fafafa] text-slate-900 flex flex-col font-sans selection:bg-slate-200">
       <Navigation />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8">
-        {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-200/80">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Consumer Account</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Consumer Account</span>
+              <span className="text-slate-300">•</span>
+              <span className="text-xs text-slate-500 font-medium">
+                {addresses.length} {addresses.length === 1 ? 'Saved Destination' : 'Saved Destinations'}
+              </span>
             </div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Delivery Addresses</h1>
-            <p className="text-xs text-slate-500 mt-1">
-              Manage shipping destinations used by AI agents for autonomous order execution.
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Delivery Addresses</h1>
+            <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+              Configure and manage shipping destinations. The default address is automatically selected by AI agents for autonomous order execution.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => router.push('/customer/chat')}
-              className="px-3.5 py-2 text-xs font-medium text-slate-700 hover:text-slate-900 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs"
+              className="px-4 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors shadow-2xs"
             >
               Back to Shopping Chat
             </button>
             <button
               onClick={handleOpenAddModal}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-xs transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-xs transition-all active:scale-[0.98]"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
               Add Address
             </button>
           </div>
@@ -203,110 +216,143 @@ export default function ConsumerAddressesPage() {
 
         {/* Banner Alert Messages */}
         {error && (
-          <div className="mt-6 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center justify-between">
+          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200/80 text-red-700 text-xs flex items-center justify-between shadow-2xs">
             <span>{error}</span>
             <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 font-bold ml-2">×</button>
           </div>
         )}
         {successMsg && (
-          <div className="mt-6 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-            <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs flex items-center gap-2 shadow-2xs">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-600"></div>
             <span>{successMsg}</span>
           </div>
         )}
 
         {/* Addresses Grid */}
-        <div className="mt-8">
+        <div>
           {loading ? (
-            <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-2">
-              <Loader2 className="w-6 h-6 animate-spin text-slate-600" />
-              <p className="text-xs">Loading addresses...</p>
+            <div className="py-24 flex flex-col items-center justify-center text-slate-400 gap-3">
+              <Loader2 className="w-7 h-7 animate-spin text-slate-600" />
+              <p className="text-xs font-medium">Loading saved addresses...</p>
             </div>
           ) : addresses.length === 0 ? (
-            <div className="bg-white border border-slate-200 rounded-xl p-10 text-center shadow-2xs">
-              <div className="w-12 h-12 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <MapPin className="w-5 h-5" />
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-12 text-center shadow-xs max-w-md mx-auto my-8">
+              <div className="w-12 h-12 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <MapPin className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-semibold text-slate-900 mb-1">No saved addresses</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto mb-5">
-                Add a delivery address to enable AI agents to execute and ship purchases automatically.
+              <h3 className="text-sm font-bold text-slate-900 mb-1">No Delivery Addresses Added</h3>
+              <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+                Add at least one delivery destination so your AI shopping agent can automatically confirm and route purchases.
               </p>
               <button
                 onClick={handleOpenAddModal}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5"
+                className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors inline-flex items-center gap-2"
               >
-                <Plus className="w-3.5 h-3.5" />
-                Add Address
+                <Plus className="w-4 h-4" />
+                Add Your First Address
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {addresses.map((addr) => (
                 <div
                   key={addr.id}
-                  className={`bg-white rounded-xl border p-4.5 transition-all flex flex-col justify-between ${
+                  className={`bg-white rounded-2xl border transition-all duration-200 flex flex-col justify-between p-6 ${
                     addr.is_default
-                      ? 'border-slate-400 shadow-xs'
-                      : 'border-slate-200 hover:border-slate-300 shadow-2xs'
+                      ? 'border-slate-400 shadow-sm ring-1 ring-slate-200'
+                      : 'border-slate-200/90 hover:border-slate-300 shadow-2xs hover:shadow-xs'
                   }`}
                 >
                   <div>
-                    {/* Header line inside card */}
-                    <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-slate-100">
+                    {/* Top Row: Label Pill & Default Tag */}
+                    <div className="flex items-center justify-between gap-2 pb-4 mb-4 border-b border-slate-100">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900">{addr.label}</span>
+                        <div className="p-1.5 bg-slate-100 rounded-lg">
+                          {getLabelIcon(addr.label)}
+                        </div>
+                        <span className="text-xs font-bold text-slate-900 tracking-wide uppercase">{addr.label}</span>
                       </div>
 
                       {addr.is_default ? (
-                        <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
                           Default
                         </span>
                       ) : (
                         <button
                           onClick={() => handleSetDefault(addr.id)}
-                          className="text-[11px] font-medium text-slate-500 hover:text-slate-900 transition-colors"
+                          className="text-xs font-medium text-slate-500 hover:text-slate-900 transition-colors"
                         >
-                          Set default
+                          Make default
                         </button>
                       )}
                     </div>
 
-                    {/* Recipient & Address Details */}
-                    <div className="space-y-1 text-xs text-slate-700">
-                      <p className="font-semibold text-slate-900">{addr.recipient_name}</p>
-                      <p className="text-slate-500">{addr.phone}</p>
-                      <div className="pt-2 text-slate-600 leading-relaxed">
-                        <p>{addr.line1}</p>
-                        {addr.line2 && <p>{addr.line2}</p>}
-                        <p className="font-medium text-slate-800 mt-1">
-                          {addr.city}, {addr.state} {addr.postal_code}
-                        </p>
-                        <p className="text-[11px] text-slate-400">{addr.country === 'IN' ? 'India' : addr.country}</p>
+                    {/* Recipient Details */}
+                    <div className="space-y-1.5">
+                      <h2 className="text-base font-bold text-slate-900 tracking-tight">
+                        {addr.recipient_name}
+                      </h2>
+                      <div className="text-xs text-slate-500 flex items-center gap-1.5 font-mono">
+                        <Phone className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{addr.phone}</span>
                       </div>
+                    </div>
+
+                    {/* Street & Postal Information */}
+                    <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-600 leading-relaxed space-y-0.5">
+                      <p className="text-slate-800 font-medium">{addr.line1}</p>
+                      {addr.line2 && <p className="text-slate-600">{addr.line2}</p>}
+                      <p className="text-slate-900 font-semibold pt-1">
+                        {addr.city}, {addr.state} <span className="font-mono text-slate-600 font-normal">{addr.postal_code}</span>
+                      </p>
+                      <p className="text-[11px] text-slate-400 uppercase tracking-wider">{addr.country === 'IN' ? 'India' : addr.country}</p>
                     </div>
                   </div>
 
                   {/* Actions Footer */}
-                  <div className="pt-3 mt-4 border-t border-slate-100 flex items-center justify-end gap-1 text-slate-400">
-                    <button
-                      onClick={() => handleOpenEditModal(addr)}
-                      className="p-1.5 hover:text-slate-800 hover:bg-slate-100 rounded-md transition-colors text-xs font-medium flex items-center gap-1"
-                      title="Edit"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                      <span className="text-[11px] text-slate-600">Edit</span>
-                    </button>
-                    <button
-                      onClick={() => handleDelete(addr.id)}
-                      className="p-1.5 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors text-xs font-medium flex items-center gap-1 ml-2"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span className="text-[11px] text-red-600">Delete</span>
-                    </button>
+                  <div className="pt-4 mt-5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                    <span className="text-[11px] text-slate-400">
+                      {addr.is_default ? 'Active for autonomous orders' : 'Secondary destination'}
+                    </span>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleOpenEditModal(addr)}
+                        className="px-2.5 py-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors font-medium flex items-center gap-1"
+                        title="Edit address"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        onClick={() => handleDelete(addr.id)}
+                        className="px-2.5 py-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium flex items-center gap-1"
+                        title="Delete address"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
+
+              {/* Add New Address Dashed Card Slot */}
+              <button
+                onClick={handleOpenAddModal}
+                className="border-2 border-dashed border-slate-200 hover:border-slate-400 rounded-2xl p-8 flex flex-col items-center justify-center text-center transition-all group bg-white/50 hover:bg-white min-h-[220px]"
+              >
+                <div className="w-10 h-10 rounded-xl bg-slate-100 group-hover:bg-slate-900 text-slate-600 group-hover:text-white flex items-center justify-center mb-3 transition-colors">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <span className="text-sm font-semibold text-slate-900 group-hover:text-slate-900 transition-colors">
+                  Add New Address
+                </span>
+                <span className="text-xs text-slate-400 mt-1">
+                  Add a work, home, or secondary delivery location
+                </span>
+              </button>
             </div>
           )}
         </div>
@@ -315,114 +361,118 @@ export default function ConsumerAddressesPage() {
       {/* Add / Edit Address Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-2xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-slate-900">
-                {editingId ? 'Edit Address' : 'New Delivery Address'}
-              </h3>
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-100">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  {editingId ? 'Edit Delivery Address' : 'Add Delivery Address'}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">Enter verified delivery location details</p>
+              </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded"
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-3.5">
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">Label</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Address Label</label>
                   <select
                     value={formData.label}
                     onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                    className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden"
+                    className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
                   >
                     <option value="Home">Home</option>
                     <option value="Work">Work</option>
                     <option value="Office">Office</option>
+                    <option value="Primary">Primary</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">Phone *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Phone Number *</label>
                   <input
                     type="tel"
                     required
                     placeholder="+91 9876543210"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden font-mono"
+                    className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden font-mono transition"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">Recipient Name *</label>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Recipient Full Name *</label>
                 <input
                   type="text"
                   required
-                  placeholder="Full Name"
+                  placeholder="e.g. Prem Patel"
                   value={formData.recipient_name}
                   onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })}
-                  className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden"
+                  className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">Address Line 1 *</label>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Flat / Building / House No. *</label>
                 <input
                   type="text"
                   required
-                  placeholder="Street, flat, building"
+                  placeholder="e.g. Flat 402, Block B, Tech Residency"
                   value={formData.line1}
                   onChange={(e) => setFormData({ ...formData, line1: e.target.value })}
-                  className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden"
+                  className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">Address Line 2 (Optional)</label>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Street / Area / Landmark (Optional)</label>
                 <input
                   type="text"
-                  placeholder="Area, landmark"
+                  placeholder="e.g. Near Metro Station, Indiranagar"
                   value={formData.line2}
                   onChange={(e) => setFormData({ ...formData, line2: e.target.value })}
-                  className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden"
+                  className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">City *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">City *</label>
                   <input
                     type="text"
                     required
                     placeholder="Bengaluru"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden"
+                    className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">State *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">State *</label>
                   <input
                     type="text"
                     required
                     placeholder="Karnataka"
                     value={formData.state}
                     onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                    className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden"
+                    className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">PIN Code *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">PIN Code *</label>
                   <input
                     type="text"
                     required
                     placeholder="560001"
                     value={formData.postal_code}
                     onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                    className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden font-mono"
+                    className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden font-mono transition"
                   />
                 </div>
               </div>
@@ -435,23 +485,23 @@ export default function ConsumerAddressesPage() {
                   onChange={(e) => setFormData({ ...formData, is_default: e.target.checked })}
                   className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
                 />
-                <label htmlFor="modal_is_default" className="text-xs text-slate-700">
-                  Set as default delivery address
+                <label htmlFor="modal_is_default" className="text-xs text-slate-700 font-medium">
+                  Set as default delivery address for agent purchases
                 </label>
               </div>
 
-              <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-100 mt-4">
+              <div className="pt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 mt-5">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-xs transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-5 py-2.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-xs transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
                   {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {editingId ? 'Save Changes' : 'Save Address'}
