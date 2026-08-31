@@ -86,9 +86,34 @@ function SkeletonTable({ rows = 6, cols = 6 }: { rows?: number; cols?: number })
 
 export default function PlatformAdminPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'merchants' | 'audit'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'merchants' | 'audit'>(() => {
+    if (typeof window !== 'undefined') {
+      const urlTab = new URLSearchParams(window.location.search).get('tab');
+      const hashTab = window.location.hash.replace('#', '');
+      const storedTab = localStorage.getItem('admin_active_tab');
+      const cand = (urlTab || hashTab || storedTab) as any;
+      if (['overview', 'merchants', 'audit'].includes(cand)) {
+        return cand;
+      }
+    }
+    return 'overview';
+  });
   const [adminUser, setAdminUser] = useState<string>('admin');
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const switchTab = (tab: 'overview' | 'merchants' | 'audit') => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('admin_active_tab', tab);
+      const url = new URL(window.location.href);
+      if (tab === 'overview') {
+        url.searchParams.delete('tab');
+      } else {
+        url.searchParams.set('tab', tab);
+      }
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
 
   // Overview State
   const [overview, setOverview] = useState<AdminOverview | null>(null);
@@ -263,7 +288,7 @@ export default function PlatformAdminPage() {
         <div className="flex items-center justify-between border-b border-neutral-200 mb-6">
           <div className="flex space-x-6">
             <button
-              onClick={() => setActiveTab('overview')}
+              onClick={() => switchTab('overview')}
               className={`pb-3 text-xs font-semibold transition-all relative cursor-pointer ${
                 activeTab === 'overview'
                   ? 'text-neutral-900'
@@ -277,7 +302,7 @@ export default function PlatformAdminPage() {
             </button>
 
             <button
-              onClick={() => setActiveTab('merchants')}
+              onClick={() => switchTab('merchants')}
               className={`pb-3 text-xs font-semibold transition-all relative cursor-pointer ${
                 activeTab === 'merchants'
                   ? 'text-neutral-900'
@@ -291,7 +316,7 @@ export default function PlatformAdminPage() {
             </button>
 
             <button
-              onClick={() => setActiveTab('audit')}
+              onClick={() => switchTab('audit')}
               className={`pb-3 text-xs font-semibold transition-all relative cursor-pointer ${
                 activeTab === 'audit'
                   ? 'text-neutral-900'
