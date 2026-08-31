@@ -44,6 +44,9 @@ class CustomerChatResponse(BaseModel):
     payment_link_url: Optional[str] = None
     estimated_delivery_date: Optional[str] = None
     delivery_address: Optional[str] = None
+    amount: Optional[float] = None
+    item_name: Optional[str] = None
+    merchant_name: Optional[str] = None
 
 # In-memory session store for cross-turn search options per thread
 session_search_memory: Dict[str, List[Dict[str, Any]]] = {}
@@ -158,7 +161,10 @@ def customer_chat(
                 razorpay_payment_id=final_state.get("razorpay_payment_id"),
                 payment_link_url=final_state.get("payment_link_url"),
                 estimated_delivery_date=final_state.get("estimated_delivery_date"),
-                delivery_address=final_state.get("delivery_address_summary")
+                delivery_address=final_state.get("delivery_address_summary"),
+                amount=float(target_opt.get("price", 0)),
+                item_name=target_opt.get("item_name"),
+                merchant_name=target_opt.get("merchant_name")
             )
 
     # Discovery / Search Flow
@@ -207,5 +213,8 @@ def customer_chat(
         razorpay_payment_id=final_state.get("razorpay_payment_id"),
         payment_link_url=final_state.get("payment_link_url"),
         estimated_delivery_date=final_state.get("estimated_delivery_date"),
-        delivery_address=final_state.get("delivery_address_summary")
+        delivery_address=final_state.get("delivery_address_summary"),
+        amount=float(final_state.get("amount", 0)) if final_state.get("amount") else None,
+        item_name=final_state.get("item_name"),
+        merchant_name=final_state.get("merchant_name")
     )

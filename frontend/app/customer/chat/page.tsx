@@ -69,6 +69,9 @@ interface ChatMessage {
   paymentLinkUrl?: string;
   estimatedDeliveryDate?: string;
   deliveryAddress?: string;
+  amount?: number;
+  itemName?: string;
+  merchantName?: string;
   timestamp: string;
 }
 
@@ -232,7 +235,7 @@ export default function ConsumerChatPage() {
         {
           id: Date.now().toString(),
           sender: 'assistant',
-          text: '**Delivery Address Required**: Please add a shipping destination before confirming your purchase.',
+          text: 'Delivery Address Required: Please add a shipping destination before confirming your purchase.',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
@@ -298,6 +301,9 @@ export default function ConsumerChatPage() {
         paymentLinkUrl: data.payment_link_url,
         estimatedDeliveryDate: data.estimated_delivery_date,
         deliveryAddress: data.delivery_address,
+        amount: data.amount,
+        itemName: data.item_name,
+        merchantName: data.merchant_name,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
@@ -628,80 +634,98 @@ export default function ConsumerChatPage() {
                   )}
 
                   <div className={`flex flex-col max-w-[85%] ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                    <div
-                      className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                        msg.sender === 'user'
-                          ? 'bg-slate-900 text-white font-normal rounded-tr-none shadow-xs'
-                          : 'bg-slate-100/80 text-slate-800 rounded-tl-none border border-slate-200/60'
-                      }`}
-                    >
-                      <p className="whitespace-pre-wrap">{msg.text}</p>
-
-                      {/* Autonomous Execution / Gate Badges */}
-                      {msg.status && msg.status !== 'COMPLETED' && (
-                        <div className="mt-3 pt-3 border-t border-slate-200/80 text-xs space-y-1.5 font-mono">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-slate-500 font-semibold text-[11px]">Execution Status:</span>
-                            <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                msg.status === 'PAYMENT_SETTLED' || msg.status === 'SETTLED'
-                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                  : 'bg-amber-100 text-amber-800'
-                              }`}
-                            >
-                              {msg.status}
-                            </span>
+                    {msg.status === 'PAYMENT_SETTLED' || msg.status === 'SETTLED' ? (
+                      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4 w-full text-xs animate-in fade-in zoom-in-95 duration-150">
+                        {/* Header */}
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                            <span className="font-bold text-slate-900 text-xs tracking-tight">Autonomous Payment Settled</span>
                           </div>
-
-                          <div className="grid grid-cols-2 gap-2 text-[11px] bg-white p-2 rounded-lg border border-slate-200/80 mt-1">
-                            <div>
-                              <span className="text-slate-400 block text-[10px]">Customer Auth Gate</span>
-                              <span className="font-bold text-emerald-700">{msg.customerAuthDecision || 'ALLOW'}</span>
-                            </div>
-                            <div>
-                              <span className="text-slate-400 block text-[10px]">Merchant Policy Gate</span>
-                              <span className="font-bold text-emerald-700">{msg.policyDecision || 'ALLOW'}</span>
-                            </div>
-                          </div>
-
-                          {msg.razorpayOrderId && (
-                            <div className="text-[11px] text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-1">
-                              <div>Razorpay Order: <span className="font-mono font-bold text-slate-900">{msg.razorpayOrderId}</span></div>
-                              {msg.razorpayPaymentId && (
-                                <div className="text-emerald-700 font-semibold">
-                                  Payment Capture: <span className="font-mono font-bold">{msg.razorpayPaymentId}</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {msg.estimatedDeliveryDate && (
-                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs space-y-1.5 mt-2.5">
-                              <div className="flex items-center gap-1.5 font-semibold text-slate-900">
-                                <Truck className="w-3.5 h-3.5 text-slate-700 shrink-0" />
-                                <span>
-                                  Estimated Delivery:{' '}
-                                  <span className="font-bold text-slate-900">
-                                    {new Date(msg.estimatedDeliveryDate).toLocaleDateString('en-IN', {
-                                      weekday: 'short',
-                                      day: 'numeric',
-                                      month: 'short',
-                                      year: 'numeric'
-                                    })}
-                                  </span>
-                                </span>
-                              </div>
-                              {msg.deliveryAddress && (
-                                <div className="text-[11px] text-slate-600 flex items-start gap-1">
-                                  <MapPin className="w-3 h-3 text-slate-400 shrink-0 mt-0.5" />
-                                  <span className="truncate">Destination: {msg.deliveryAddress}</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
+                          <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            Paid & Captured
+                          </span>
                         </div>
-                      )}
-                    </div>
+
+                        {/* Product & Price */}
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <h4 className="font-bold text-slate-900 text-sm">
+                              {msg.itemName || (msg.text.includes('for') ? msg.text.split('for')[1].split('on')[0].trim() : 'Product Purchase')}
+                            </h4>
+                            {msg.merchantName ? (
+                              <p className="text-[11px] text-slate-500 mt-0.5">Merchant: {msg.merchantName}</p>
+                            ) : (
+                              <p className="text-[11px] text-slate-500 mt-0.5">Executed directly on Razorpay</p>
+                            )}
+                          </div>
+                          {msg.amount ? (
+                            <div className="text-base font-bold text-slate-900 font-mono shrink-0">
+                              ₹{Number(msg.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </div>
+                          ) : null}
+                        </div>
+
+                        {/* Razorpay Order & Payment ID */}
+                        {msg.razorpayOrderId && (
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1 font-mono text-[11px]">
+                            <div className="flex items-center justify-between text-slate-600">
+                              <span className="text-slate-400 font-sans">Razorpay Order</span>
+                              <span className="font-semibold text-slate-900">{msg.razorpayOrderId}</span>
+                            </div>
+                            {msg.razorpayPaymentId && (
+                              <div className="flex items-center justify-between text-slate-600">
+                                <span className="text-slate-400 font-sans">Payment ID</span>
+                                <span className="font-semibold text-emerald-700">{msg.razorpayPaymentId}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Shipping & Delivery */}
+                        {msg.estimatedDeliveryDate && (
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1.5">
+                            <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs">
+                              <Truck className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                              <span>
+                                Expected Delivery:{' '}
+                                <strong className="text-slate-900 font-bold">
+                                  {new Date(msg.estimatedDeliveryDate).toLocaleDateString('en-IN', {
+                                    weekday: 'long',
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })}
+                                </strong>
+                              </span>
+                            </div>
+                            {msg.deliveryAddress && (
+                              <div className="flex items-start gap-2 text-[11px] text-slate-600">
+                                <MapPin className="w-3 h-3 text-slate-400 shrink-0 mt-0.5" />
+                                <span className="leading-tight">{msg.deliveryAddress}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Gate Verification Footer */}
+                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                          <span>Customer Auth: <strong className="text-slate-700 font-medium">{msg.customerAuthDecision || 'Verified'}</strong></span>
+                          <span>Policy Gate: <strong className="text-slate-700 font-medium">{msg.policyDecision || 'Approved'}</strong></span>
+                          <span>Settlement: <strong className="text-slate-700 font-medium">Autonomous</strong></span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                          msg.sender === 'user'
+                            ? 'bg-slate-900 text-white font-normal rounded-tr-none shadow-xs'
+                            : 'bg-slate-100/80 text-slate-800 rounded-tl-none border border-slate-200/60'
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                      </div>
+                    )}
 
                     {/* Product Options Grid rendered in Assistant Response */}
                     {msg.cards && msg.cards.length > 0 && (

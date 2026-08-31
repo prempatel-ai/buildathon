@@ -868,16 +868,7 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     state["razorpay_payment_id"] = real_pay_id
                     state["payment_link_url"] = None
                     state["status"] = "PAYMENT_SETTLED"
-                    state["response_message"] = (
-                        f"**Payment Completed Autonomously**\n\n"
-                        f"AI Agent authorized and executed payment of **₹{amount:,.2f}** for **{item_name}** on Razorpay.\n\n"
-                        f"• **Razorpay Order ID**: `{settled_tx.razorpay_order_id}`\n"
-                        f"• **Razorpay Payment ID**: `{real_pay_id}`\n"
-                        f"• **Status**: Paid & Captured\n"
-                        f"• **Estimated Delivery**: **{est_date.strftime('%A, %d %b %Y')}**\n"
-                        f"• **Delivering To**: {state.get('delivery_address_summary', 'Saved Delivery Address')}\n\n"
-                        f"Transaction settled directly on Razorpay."
-                    )
+                    state["response_message"] = f"Payment of ₹{amount:,.2f} for {item_name} authorized and settled on Razorpay."
                     autonomous_settled = True
 
                 except Exception as auto_err:
