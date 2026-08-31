@@ -1,320 +1,402 @@
-  # Agentpay — Autonomous AI Commerce & Dual-Gated Settlement Protocol
+<div align="center">
 
-> **Razorpay AI Buildathon Submission**  
-> **Track**: Track 01 — AI Growth & Agentic Commerce  
-> **Core Principle**: *"LLM proposes, engine disposes."*
+# ⚡ Agentpay
+### The Autonomous Payment & Settlement Protocol for AI Shopping Agents
+
+[![Buildathon](https://img.shields.io/badge/Razorpay_AI_Buildathon_2026-Track_01:_AI_Growth_&_Agentic_Commerce-blue?style=for-the-badge&logo=razorpay)](https://buildathon-nu-eight.vercel.app)
+[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg?style=for-the-badge)](LICENSE)
+[![Next.js 16](https://img.shields.io/badge/Next.js_16-Turbopack-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-Multi--Agent_StateGraph-1C3C3C?style=for-the-badge&logo=langchain)](https://langchain-ai.github.io/langgraph/)
+[![Tests Passing](https://img.shields.io/badge/Pytest-30+_Tests_Passing-brightgreen?style=for-the-badge&logo=pytest)](backend/tests)
+
+<br />
+
+**"LLM proposes, engine disposes."**  
+*The open-source, dual-gated commerce infrastructure enabling autonomous AI buyer agents to discover, verify, and settle payments safely through Razorpay without human 2FA friction.*
+
+[🚀 Live Demo](https://buildathon-nu-eight.vercel.app) • [🛍️ AI Shopping Assistant](https://buildathon-nu-eight.vercel.app/customer/chat) • [🏪 Merchant Console](https://buildathon-nu-eight.vercel.app/dashboard) • [📖 Documentation](#-system-architecture)
+
+</div>
 
 ---
 
-## 1. Executive Summary & Mission
+## 📑 Table of Contents
 
-**Agentpay** is the first **dual-gated, agent-readable commerce infrastructure** designed to connect autonomous AI buyer agents with Razorpay payments safely, transparently, and deterministically.
-
-As AI agents (built on LangGraph, Groq Llama 3.3 70B, AutoGPT, OpenAI Assistants, and Anthropic Claude) evolve from basic recommendation bots into autonomous financial delegates, traditional e-commerce gateways fail. Giving raw credit card numbers or unrestricted API access to LLMs risks runaway spend loops, prompt injection attacks, unverified merchant stock depletion, and zero financial explainability.
-
-**Agentpay solves this paradigm shift** by introducing a **Dual-Gated Protocol**:
-1. **Consumer Spend Vault Gate**: Tokenized UPI e-mandates with strict user-configured spend limits, rolling velocity caps, and allowed category rules.
-2. **Merchant Policy Engine Gate**: High-throughput rule evaluation powered by Groq Llama 3.3 70B LLM checks, evaluating merchant max order limits, live catalog inventory, and Redis sliding-window velocity rate-limiting per agent key.
-3. **Razorpay Live Settlement & Webhooks**: 2-step payment capture signature verification (`Razorpay Order` -> `Payment Capture Verification`) and real-time HMAC SHA-256 signed HTTP POST webhooks.
-4. **Append-Only Multi-Actor Audit Ledger**: Immutable PostgreSQL audit trail recording every evaluation decision, reasoning payload, and transaction state across `Customer`, `Agent`, and `Merchant` actor types.
+- [Executive Summary & The Paradigm Shift](#-executive-summary--the-paradigm-shift)
+- [The Problem We Solve](#-the-problem-we-solve)
+- [Core Architectural Pillars](#-core-architectural-pillars)
+- [System Architecture & Flow](#-system-architecture--flow)
+- [Interactive LangGraph Multi-Agent Engine](#-interactive-langgraph-multi-agent-engine)
+- [Complete Feature Breakdown](#-complete-feature-breakdown)
+  - [1. Consumer Spend Vault & Virtual Limits](#1-consumer-spend-vault--virtual-limits)
+  - [2. Deterministic Merchant Risk Engine](#2-deterministic-merchant-risk-engine)
+  - [3. Excel & CSV Intelligent Product Importer](#3-excel--csv-intelligent-product-importer)
+  - [4. Machine-Readable Schema.org Feeds](#4-machine-readable-schemaorg-feeds)
+  - [5. Razorpay Settlement & Webhook Dispatcher](#5-razorpay-settlement--webhook-dispatcher)
+  - [6. Immutable Cryptographic Audit Ledger](#6-immutable-cryptographic-audit-ledger)
+- [Comparison Matrix: Legacy vs Agentpay](#-comparison-matrix-legacy-vs-agentpay)
+- [API Endpoints Reference](#-api-endpoints-reference)
+- [Project Directory Structure](#-project-directory-structure)
+- [Quickstart & Local Setup Guide](#-quickstart--local-setup-guide)
+- [Testing & Quality Assurance](#-testing--quality-assurance)
+- [Environment Variables](#-environment-variables)
+- [Demo Credentials](#-demo-credentials)
+- [License & Acknowledgments](#-license--acknowledgments)
 
 ---
 
-## 2. The Problem We Are Solving
+## 🌟 Executive Summary & The Paradigm Shift
+
+As LLM agents (LangGraph, OpenAI Assistants, Claude Computer Use, AutoGPT) evolve from basic conversational chatbots into **autonomous economic actors**, traditional payment gateways break:
+
+1. **Gateways demand interactive human 2FA** (SMS OTPs, biometric prompts, 3D-Secure iframes) which programmatic AI buyers cannot complete.
+2. **Unrestricted API access creates existential financial risk** — prompt injections, hallucinated order quantities, runaway spend loops, and stock manipulation.
+3. **Merchants have no machine-readable catalogs** — agents are forced to scrape brittle HTML pages, leading to price errors and checkout failures.
+
+**Agentpay** provides the missing infrastructure layer: a **Dual-Gated Protocol** that separates AI intent generation from financial execution. The AI agent searches, plans, and proposes transactions; the deterministic protocol verifies consumer authorization, enforces merchant policy rules, records an immutable audit trail, and programmatically captures settlements via Razorpay.
+
+---
+
+## 🚫 The Problem We Solve
 
 ```text
-    TRADITIONAL E-COMMERCE GATEWAY                      AGENTPAY DUAL-GATED PROTOCOL
- +----------------------------------+             +----------------------------------+
- | Human user enters card details   |             | AI Agent proposes structured     |
- | Interactive 2FA / 3DS OTP prompt |             | purchase intent (propose_order) |
- | Static HTML checkout forms       |             |                                  |
- +----------------------------------+             +----------------------------------+
-                  |                                                |
-                  v                                                v
-    Fails for Autonomous AI Agents!                +----------------------------------+
-   (Agents cannot answer SMS OTPs                  | Gate 1: Consumer Spend Vault     |
-    or click interactive 3DS frames)               | Gate 2: Merchant Policy Engine   |
-                                                   | Gate 3: Razorpay Live Capture     |
-                                                   +----------------------------------+
-                                                                   |
-                                                                   v
-                                                    Deterministic & Safe Settlement!
+       TRADITIONAL E-COMMERCE CHECKOUT                       AGENTPAY DUAL-GATED PROTOCOL
+  ┌────────────────────────────────────────┐            ┌────────────────────────────────────────┐
+  │ Human enters card details in form      │            │ AI Buyer proposes structured purchase  │
+  │ Gateways trigger 3D-Secure SMS OTP     │            │ { sku, price, qty, destination }      │
+  │ Human types 6-digit OTP on phone       │            └───────────────────┬────────────────────┘
+  └───────────────────┬────────────────────┘                                │
+                      │                                                     ▼
+                      ▼                                 ┌────────────────────────────────────────┐
+        ❌ FAILS FOR AUTONOMOUS AGENTS                  │ GATE 1: Consumer Spend Vault           │
+     (AI agents cannot read SMS OTPs                    │ • Remaining authorized balance check   │
+      or click interactive 3DS frames)                  │ • Merchant whitelist & expiry window   │
+                                                        └───────────────────┬────────────────────┘
+                                                                            │
+                                                                            ▼
+                                                        ┌────────────────────────────────────────┐
+                                                        │ GATE 2: Merchant Policy Engine         │
+                                                        │ • Per-transaction price cap check      │
+                                                        │ • Category restriction verification    │
+                                                        │ • Redis sliding-window velocity limit  │
+                                                        └───────────────────┬────────────────────┘
+                                                                            │
+                                                                            ▼
+                                                        ┌────────────────────────────────────────┐
+                                                        │ GATE 3: Razorpay Settlement & Audit    │
+                                                        │ • Programmatic Order Creation          │
+                                                        │ • HMAC-SHA256 Signed Webhook Dispatched│
+                                                        │ • Immutable SHA-256 Audit Trail Logged │
+                                                        └────────────────────────────────────────┘
 ```
-
-### Key Security & Architectural Challenges Solved:
-* **The LLM Hallucination Risk**: LLMs cannot be trusted with raw financial execution. Agentpay enforces *"LLM proposes, engine disposes"*. The LLM proposes structured intent (`propose_order`), but deterministic engine gates evaluate constraints before any money moves.
-* **Lack of Agent-Readable Catalogs**: Merchants currently host HTML sites for human eyes. Agentpay automatically generates standardized **Schema.org JSON-LD Agent Product Feeds** (`GET /catalog/agent-schema`) so any AI agent can inspect stock, prices, and variants instantly.
-* **Onboarding Friction**: Existing Shopify / WooCommerce merchants cannot rewrite their store for AI agents. Agentpay includes a **1-Click Live Shopify Store Auto-Sync Connector** (`POST /catalog/shopify-sync`) that fetches live products, variants, pricing, and stock in under 2 seconds.
-* **Regulatory Auditability**: Financial compliance requires complete traceability. Agentpay logs every intent, policy decision, reasoning payload, and Razorpay payment ID to an immutable PostgreSQL append-only audit ledger.
 
 ---
 
-## 3. Architecture & System Flow
+## 🏛️ Core Architectural Pillars
 
 ```text
-+---------------------------------------------------------------------------------------------------+
-|                                 CONSUMER & MERCHANT WEB CONSOLE                                   |
-|       (/  |  /customer/chat  |  /dashboard  |  /agents-list  |  /audit  |  /webhooks  |  /health)      |
-+-------------------------------------------------+-------------------------------------------------+
-                                                  | HTTP REST API
-                                                  v
-+---------------------------------------------------------------------------------------------------+
-|                                   FASTAPI BACKEND ROUTER ENGINE                                   |
-+-------------------------------------------------+-------------------------------------------------+
-                                                  |
-                                                  v
-+---------------------------------------------------------------------------------------------------+
-|                                   LANGGRAPH AGENT ORCHESTRATOR                                    |
-|                                (Groq Llama-3.3 70B + StateGraph)                                  |
-|                                                                                                   |
-|  +------------------------+      +------------------------+      +-----------------------------+  |
-|  |     Customer Vault     | ---> | Merchant Policy Gate   | ---> |   Razorpay Settlement Engine |  |
-|  |  (Tokenized Mandate)   |      |  (Groq + Redis Rate)   |      |   (2-Step Capture Verify)   |  |
-|  +------------------------+      +------------------------+      +-----------------------------+  |
-+-------------------------------------------------+-------------------------------------------------+
-                                                  |
-       +------------------------------------------+------------------------------------------+
-       |                                                                                     |
-       v                                                                                     v
-+-------------------------------+                                           +----------------------------------+
-|     Redis Rate Limiter        |                                           |     HMAC SHA-256 Webhook Service  |
-| (Sliding Window per Agent Key)|                                           |   (3-Attempt Exponential Backoff)|
-+---------------+---------------+                                           +----------------+-----------------+
-                |                                                                            |
-                +------------------------------------+---------------------------------------+
-                                                     |
-                                                     v
-                                      +------------------------------+
-                                      | PostgreSQL Immutable Ledger  |
-                                      |   (Append-Only Audit Trigger)|
-                                      +------------------------------+
+┌───────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                       AGENTPAY ARCHITECTURE                                       │
+├───────────────────────────────┬───────────────────────────────────┬───────────────────────────────┤
+│    1. CONSUMER SPEND VAULT    │     2. MERCHANT POLICY ENGINE     │   3. RAZORPAY SETTLEMENT      │
+│  • Tokenized UPI/Card limits  │   • Deterministic order cap rules │   • Programmatic Order APIs   │
+│  • Per-session spend ceilings │   • Allowed category filters      │   • HMAC-SHA256 Webhook logs  │
+│  • 1-Click delivery switching │   • Redis velocity rate limits    │   • SHA-256 Immutable Ledger  │
+└───────────────────────────────┴───────────────────────────────────┴───────────────────────────────┘
 ```
 
 ---
 
-## 4. Complete User & Operational Flows
+## 🔄 System Architecture & Flow
 
-### A. Consumer Journey (Buyer AI Delegated Purchasing)
-1. **Sign In & Vault Setup** (`/customer/dashboard`):
-   - The consumer logs in and creates a tokenized payment authorization (saved card or UPI e-mandate).
-   - Configures maximum per-transaction spend limit (e.g., ₹5,000.00).
-2. **Natural Language AI Shopping Assistant** (`/customer/chat`):
-   - Consumer prompts the AI agent: *"Buy boAt Rockerz 450 Wireless Headphones under ₹2,500"*.
-3. **Dual-Gate Execution**:
-   - **Gate 1**: System verifies consumer's remaining spend limit (₹2,499.00 <= ₹5,000.00 -> `ALLOW`).
-   - **Gate 2**: System verifies merchant max order cap and Groq Llama 3.3 70B policy check -> `ALLOW`.
-   - **Settlement**: System creates a Razorpay Order, executes 2-step payment capture signature verification, updates remaining balance to ₹2,501.00, and logs the PostgreSQL audit record.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Consumer / AI Agent
+    participant Chat as Shopping Assistant UI
+    participant Agent as LangGraph Orchestrator
+    participant Vault as Consumer Spend Vault
+    participant Policy as Merchant Policy Gate
+    participant RZP as Razorpay Gateway API
+    participant Audit as Append-Only Audit Ledger
 
-### B. Merchant Journey (Store Governance & Agent Integration)
-1. **Console Access & Onboarding** (`/dashboard`, `/login`):
-   - Merchant registers, sets KYC environment (`LIVE API` vs `SANDBOX API`), and configures payment settings.
-2. **Catalog Management & Shopify Sync**:
-   - **Single Item Management**: Add, edit, or delete individual catalog items with stock tracking.
-   - **Bulk CSV / JSON Import**: Paste bulk JSON/CSV product lists to import hundreds of items at once.
-   - **1-Click Live Shopify Store Auto-Sync** (`POST /catalog/shopify-sync`): Enter any Shopify store URL (e.g. `boat-lifestyle.myshopify.com` or custom domain) to auto-fetch live products, variant pricing, inventory stock, and categories in < 2 seconds.
-   - **Schema.org Agent Feed** (`GET /catalog/agent-schema`): Auto-generates a standardized JSON-LD product feed for external AI buyer agents.
-3. **Agent Key Lifecycle Management** (`/agents-list`):
-   - Issue external agent API keys with granular scopes (`read_catalog`, `propose_order`).
-   - Rotate key secrets or revoke key access in 1 click.
-4. **Merchant Policy Engine Settings** (`/settings`):
-   - Set max single transaction amount, auto-approve threshold, category whitelists/blacklists, and Redis velocity rate limits.
-5. **Webhook Deliverability** (`/webhooks`):
-   - Configure live HTTPS webhook endpoints, inspect HMAC SHA-256 signing secret (`X-Agentpay-Signature`), toggle secret visibility, and fire test deliveries.
-6. **Multi-Actor Audit Explorer** (`/audit`):
-   - Filter, search, and sort chronological audit records across `Customer`, `Agent`, and `Merchant` actor actions.
+    User->>Chat: "Buy boAt Wave Call Smartwatch for ₹1,799 to Home"
+    Chat->>Agent: POST /customer/chat (Thread Context + Intent)
+    
+    rect rgb(240, 248, 255)
+    Note over Agent: Step 1: Semantic Catalog Search & Relevance Scoring
+    Agent->>Agent: Filter 8 SKUs across merchants (Relevance Score: +10)
+    end
 
----
+    rect rgb(245, 255, 250)
+    Note over Agent,Vault: Step 2: Gate 1 — Consumer Spend Vault Authorization
+    Agent->>Vault: Check Active Pre-Authorized Limit (Limit: ₹3,800)
+    Vault-->>Agent: Limit Sufficient (Remaining after tx: ₹2,001.00)
+    end
 
-## 5. Exhaustive REST API Specifications
+    rect rgb(255, 250, 245)
+    Note over Agent,Policy: Step 3: Gate 2 — Merchant Risk & Policy Check
+    Agent->>Policy: Validate Order (Price: ₹1,799, Category: "Smartwatches")
+    Policy-->>Agent: Policy PASS (Cap: ₹10,000, Velocity: 1/20 req/min)
+    end
 
-### Agent & AI Execution Endpoints
+    rect rgb(255, 255, 240)
+    Note over Agent,RZP: Step 4: Programmatic Razorpay Settlement
+    Agent->>RZP: POST /v1/orders (amount: 179900, currency: "INR")
+    RZP-->>Agent: Order Created (id: "order_O5kP9x8...")
+    end
 
-#### 1. `POST /agent/chat`
-* **Description**: Primary endpoint for AI buyer agents to execute natural language shopping queries, evaluate dual-gates, and process Razorpay settlement.
-* **Authorization**: `Bearer agent_key_<hash>`
-* **Request Payload**:
-  ```json
-  {
-    "merchant_id": "fe9038dc-5d00-4171-a9d6-b292e5dae054",
-    "customer_id": "cust_99a80b7c",
-    "prompt": "Buy boAt Rockerz 450 Wireless Headphones under ₹2,500"
-  }
-  ```
-* **Response Payload (200 OK)**:
-  ```json
-  {
-    "reply": "Successfully ordered boAt Rockerz 450 Wireless Headphones for ₹2,499.00! Payment captured via Razorpay ID pay_Q9y0nM3nB1x.",
-    "policy_decision": "ALLOW",
-    "reasoning": "Dual-gated check passed: Customer spend limit valid (₹2499 <= ₹5000), Merchant max_amount valid (₹2499 <= ₹10000).",
-    "payment_details": {
-      "status": "SETTLED",
-      "razorpay_order_id": "order_P8x9kL2mA0z",
-      "razorpay_payment_id": "pay_Q9y0nM3nB1x",
-      "amount": 2499.00
-    }
-  }
-  ```
+    rect rgb(248, 248, 255)
+    Note over Agent,Audit: Step 5: Cryptographic Audit Logging
+    Agent->>Audit: Append Event (SHA-256 Hash, Decision: "SETTLED")
+    end
+
+    Agent-->>Chat: Render Dynamic Interactive Order Confirmation Card
+    Chat-->>User: "Order Confirmed & Settled via Razorpay!"
+```
 
 ---
 
-### Catalog & Shopify Sync Endpoints
+## 🤖 Interactive LangGraph Multi-Agent Engine
 
-#### 2. `GET /catalog/agent-schema`
-* **Description**: Returns a structured Schema.org / JSON-LD product catalog feed for external AI agents.
-* **Query Parameters**: `merchant_id` (UUID, required)
-* **Response Payload (200 OK)**:
-  ```json
-  {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    "name": "boAt Lifestyle Agent-Readable Catalog",
-    "numberOfItems": 4,
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "item": {
-          "@type": "Product",
-          "name": "boAt Rockerz 450 Headphones",
-          "offers": {
-            "@type": "Offer",
-            "price": "2499.00",
-            "priceCurrency": "INR",
-            "availability": "https://schema.org/InStock"
-          }
-        }
-      }
-    ]
-  }
-  ```
+The backend agent is powered by a stateful **LangGraph StateGraph** consisting of 4 deterministic execution nodes:
 
-#### 3. `POST /catalog/bulk-import`
-* **Description**: Bulk import catalog items for a merchant via JSON array or parsed CSV.
-* **Query Parameters**: `merchant_id` (UUID, required)
-* **Request Payload**:
-  ```json
-  [
-    { "name": "boAt Wave Call Smartwatch", "price": 1799.0, "stock": 40, "category": "Smartwatches" },
-    { "name": "boAt Airdopes 141", "price": 1299.0, "stock": 60, "category": "Earbuds" }
-  ]
-  ```
-
-#### 4. `POST /catalog/shopify-sync`
-* **Description**: Automatically fetches and syncs live products, prices, variants, and inventory from a Shopify store URL.
-* **Query Parameters**: `merchant_id` (UUID, required), `store_url` (string, required), `access_token` (string, optional)
-* **Response Payload (201 Created)**: Returns list of imported `CatalogItem` records.
+```text
+                 ┌────────────────────────┐
+                 │   User Prompt Input    │
+                 └───────────┬────────────┘
+                             │
+                             ▼
+                 ┌────────────────────────┐
+                 │     1. Router Node     │  --> Classifies intent: (Search | Policy | Buy | Conversational)
+                 └───────────┬────────────┘
+                             │
+            ┌────────────────┴────────────────┐
+            ▼                                 ▼
+┌────────────────────────┐       ┌────────────────────────┐
+│  2. Catalog Discovery  │       │  3. Policy & Spend Gate│
+│ (Relevance & Synonyms) │       │ (Vault + Merchant Cap) │
+└───────────┬────────────┘       └────────────┬───────────┘
+            │                                 │
+            └────────────────┬────────────────┘
+                             │
+                             ▼
+                 ┌────────────────────────┐
+                 │  4. Razorpay Executor  │  --> Creates programmatic Razorpay Order
+                 └───────────┬────────────┘
+                             │
+                             ▼
+                 ┌────────────────────────┐
+                 │    Audit Trail Node    │  --> Logs cryptographic event to PostgreSQL
+                 └────────────────────────┘
+```
 
 ---
 
-### Merchant Agent Key & Webhook Endpoints
+## ⚡ Complete Feature Breakdown
 
-#### 5. `POST /merchants/agents`
-* **Description**: Issues a new API key for an external AI agent with defined scopes (`read_catalog`, `propose_order`).
-* **Header**: `Authorization: Bearer <merchant_jwt>`
-* **Request Payload**:
-  ```json
-  {
-    "agent_name": "Procurement Agent Alpha",
-    "scopes": ["read_catalog", "propose_order"]
-  }
-  ```
+### 1. Consumer Spend Vault & Virtual Limits
+- **Bounded Autonomous Spending**: Shoppers configure rolling balances (e.g. ₹3,800) with a single click.
+- **Dynamic Spend Limit Pill**: Real-time badge (`🟢 Limit: ₹3,800` / `🟡 Set Spend Limit`) directly embedded in the shopping assistant.
+- **Delivery Destination Switcher**: 1-click address modal allowing agents to select or provision new delivery addresses inline.
+- **Persistent Discussion Threads**: Chat history is persisted in `localStorage` across reloads with multi-thread sidebar switching and instant thread deletion.
 
-#### 6. `DELETE /merchants/agents/{agent_id}`
-* **Description**: Revokes an issued agent key immediately, blocking all subsequent API calls.
+### 2. Deterministic Merchant Risk Engine
+- **Per-Transaction Price Ceilings**: Enforce maximum order amounts (e.g. ₹10,000 cap).
+- **Category Restriction Rules**: Restrict AI buyers to merchant-whitelisted categories (e.g. `Smartwatches`, `Audio`, `Electronics`).
+- **Sliding-Window Velocity Limiter**: Redis-backed velocity caps (e.g. max 20 order proposals/min per AI agent key).
+- **Instant 0ms Synchronous Hydration**: Uses Stale-While-Revalidate (SWR) localStorage caching for store metadata and catalog items to eliminate layout shift and spinner flash.
 
-#### 7. `POST /merchants/agents/{agent_id}/rotate`
-* **Description**: Rotates the secret string of an active agent key.
+### 3. Excel & CSV Intelligent Product Importer
+- **Drag-and-Drop File Upload**: Direct support for Excel spreadsheets (`.xlsx`, `.xls`), CSV (`.csv`, `.tsv`), and structured JSON.
+- **Fuzzy Column Header Normalization**: Automatically extracts rows regardless of naming conventions (`Name`/`Title`/`SKU`, `Price`/`MRP`/`Cost`, `Stock`/`Quantity`/`Units`, `Category`/`Dept`).
+- **Live Extracted Products Preview**: Interactive preview table with item count badge (`✨ 12 Products Successfully Extracted`) before committing to the catalog.
+- **1-Click Sample CSV Download**: Instant template download for merchant onboarding.
 
-#### 8. `POST /webhooks/test`
-* **Description**: Triggers an instant test webhook payload signed with HMAC SHA-256 to the merchant's configured endpoint.
+### 4. Machine-Readable Schema.org Feeds
+- **Zero-Friction AI Discovery**: Auto-generates standard `Schema.org/Product` JSON-LD feeds (`GET /catalog/agent-schema?merchant_id=...`).
+- **OpenAPI Tool Definitions**: LLM agents can inspect stock levels, pricing, specifications, and SKU availability without scraping HTML.
 
----
+### 5. Razorpay Settlement & Webhook Dispatcher
+- **Programmatic Order Creation**: Programmatically creates live orders with custom receipt IDs and notes.
+- **HMAC SHA-256 Webhook Verification**: Cryptographically signed webhooks dispatched to merchant callback endpoints.
+- **Automatic Exponential Backoff Retry**: Resilient 3-attempt retry pipeline for failing merchant webhook servers.
 
-### Audit & Customer Endpoints
-
-#### 9. `GET /audit/events`
-* **Description**: Queries chronological multi-actor audit events.
-* **Query Parameters**: `merchant_id`, `actor_type`, `action`, `sort_order` (`asc`/`desc`), `skip`, `limit`.
-
-#### 10. `POST /customer/authorizations`
-* **Description**: Sets or updates tokenized payment details and spend caps for a consumer.
-
-#### 11. `GET /health`
-* **Description**: Public health check returning backend connection status, database health, and server timestamp.
+### 6. Immutable Cryptographic Audit Ledger
+- **Multi-Actor Logging**: Traces all activities across `Customer`, `Agent`, `Merchant`, and `System` actors.
+- **Tamper-Evident SHA-256 Hashes**: Every policy pass/fail, price verification, and payment record generates a verifiable integrity hash.
+- **Audit REST API**: Queryable by merchant ID, date ranges, and actor types (`GET /audit`).
 
 ---
 
-## 6. Technology Stack
+## 📊 Comparison Matrix: Legacy vs Agentpay
 
-### Frontend Architecture
-* **Framework**: Next.js 16.3.3 (App Router), React 19.2.8, TypeScript
-* **Styling & Aesthetics**: Vanilla CSS + Tailwind CSS, High-Contrast Slate Dark Theme (`#090d16` / `#0d121f`), Zero oversaturated neon colors.
-* **Components**: Custom Bento Protocol Inspector, Command Palette Modal (`⌘K`), IntersectionObserver `ScrollReveal`, Interactive FAQ Accordion, Recharts Analytics.
-* **Icons**: Lucide React (`lucide-react@1.37.0`)
-
-### Backend Architecture
-* **Framework**: FastAPI (Python 3.11+), Pydantic v2, Uvicorn
-* **Database & ORM**: PostgreSQL 16, SQLAlchemy 2.0 ORM, Alembic migrations
-* **LLM Policy Engine**: Groq Llama 3.3 70B (`groq` SDK)
-* **Payment Gateway**: Razorpay Python SDK (Orders API, Payments API, HMAC SHA-256 Signature Verification)
-* **Rate Limiting & Caching**: Redis 7 (Sliding Window Velocity Limiter)
-* **HTTP Client**: HTTPX (Async & Sync Shopify Storefront crawler)
+| Feature / Capability | Legacy Gateways (Stripe, Razorpay Standard) | Scraping Bots (Browser Use) | **Agentpay Autonomous Protocol** |
+| :--- | :---: | :---: | :---: |
+| **Autonomous Execution** | ❌ Fails (Demands SMS OTP) | ⚠️ Brittle (Breaks on DOM changes) | **✅ 100% Programmatic Execution** |
+| **Spend Limit Controls** | ❌ None (Full card exposed) | ❌ None | **✅ Virtual Spend Vaults & Daily Caps** |
+| **Merchant Risk Guardrails** | ⚠️ Post-transaction fraud scoring | ❌ None | **✅ Deterministic Pre-Payment Policy Gate** |
+| **Catalog Discoverability** | ❌ Human HTML Pages | ⚠️ High-latency HTML Parsing | **✅ Instant Machine-Readable JSON-LD** |
+| **Bulk Catalog Ingestion** | ⚠️ Manual Single Form | ❌ None | **✅ Drag-and-Drop Excel/CSV Extraction** |
+| **Cryptographic Auditability** | ⚠️ Basic Dashboard Logs | ❌ None | **✅ Append-Only SHA-256 Audit Trail** |
 
 ---
 
-## 7. Local Setup & Quickstart Guide
+## 🔌 API Endpoints Reference
+
+### 🔐 Authentication & Merchant Onboarding
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/auth/register` | Register new merchant store with hashed credentials |
+| `POST` | `/auth/login` | Merchant login & JWT token issuance with auto-demo sync |
+| `POST` | `/merchants/seed` | 1-Click instant demo merchant & catalog provisioner |
+| `GET` | `/merchants/me` | Fetch authenticated merchant profile & policy limits |
+
+### 🛍️ Catalog & Agent Schema
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/catalog/items` | List all catalog products for a merchant |
+| `POST` | `/catalog/items` | Create a new catalog SKU |
+| `POST` | `/catalog/bulk-import` | Bulk import products parsed from Excel / CSV |
+| `GET` | `/catalog/agent-schema` | Machine-readable Schema.org JSON-LD agent feed |
+
+### 🤖 Consumer Shopping & Agent Chat
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/customer/chat` | Main LangGraph conversational agent interaction node |
+| `GET` | `/customer/authorizations/me` | Fetch active customer spend vault & balance |
+| `POST` | `/customer/authorizations` | Set or update customer pre-authorized spend limit |
+| `GET` | `/customer/addresses` | List saved consumer delivery addresses |
+| `POST` | `/customer/addresses` | Add a new delivery destination |
+
+### 🛡️ Policy & Audit Ledger
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/policies` | Fetch merchant risk & spending policies |
+| `PUT` | `/policies/{id}` | Update merchant max order caps or category rules |
+| `GET` | `/audit` | Query immutable multi-actor cryptographic audit trail |
+
+---
+
+## 📁 Project Directory Structure
+
+```text
+buildathon/
+├── backend/
+│   ├── app/
+│   │   ├── agents/            # LangGraph multi-agent StateGraph & prompt nodes
+│   │   ├── core/              # Config, DB connections, JWT security, Rate limiters
+│   │   ├── models/            # SQLAlchemy models (Merchant, Catalog, Policy, Audit, etc.)
+│   │   ├── routers/           # FastAPI REST endpoints (Auth, Catalog, Customer, etc.)
+│   │   ├── schemas/           # Pydantic validation schemas
+│   │   └── services/          # Business logic (Merchant, Audit, Catalog, Webhooks)
+│   ├── tests/                 # Comprehensive Pytest test suite (30+ tests)
+│   ├── main.py                # FastAPI ASGI application entrypoint
+│   ├── seed.py                # Database seeder (25 merchants & 150+ SKUs)
+│   └── requirements.txt       # Python dependencies
+│
+├── frontend/
+│   ├── app/
+│   │   ├── customer/
+│   │   │   ├── chat/          # ChatGPT-grade AI Shopping Chatbot with persistent threads
+│   │   │   ├── dashboard/     # Spend Vault & pre-authorized limit controls
+│   │   │   ├── addresses/     # Delivery address management
+│   │   │   └── login/         # Consumer portal authentication
+│   │   ├── dashboard/         # Merchant Overview, metrics, and Excel/CSV product importer
+│   │   ├── onboarding/        # Vercel-grade store creator & 1-click demo launch
+│   │   ├── settings/          # Policy & Governance risk management
+│   │   ├── agents-list/       # AI Agent API key manager
+│   │   ├── audit/             # Tamper-evident cryptographic audit logs
+│   │   ├── webhooks/          # Webhook endpoint configuration & delivery logs
+│   │   ├── usage/             # Analytics, velocity limits & order volume charts
+│   │   ├── login/             # Minimalist Merchant Portal Sign In
+│   │   └── page.tsx           # Modern monochrome landing page
+│   ├── components/            # Reusable UI components (Navigation, Logo, Modals, etc.)
+│   └── lib/                   # API client, SWR initializers & auth guards
+│
+├── README.md                  # Project documentation
+└── docker-compose.yml         # Containerized setup
+```
+
+---
+
+## 🚀 Quickstart & Local Setup Guide
 
 ### Prerequisites
-* Python 3.10+
-* Node.js 18+
-* PostgreSQL 16 (or Docker Desktop for local postgres container)
+- **Python**: `3.11+`
+- **Node.js**: `18.0+`
+- **PostgreSQL** & **Redis** (optional; SQLite fallback supported)
 
-### Step 1: Environment Configuration
-Create a `.env` file in the root directory:
-```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=agentpay
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/agentpay
-
-GROQ_API_KEY=your_groq_api_key_here
-RAZORPAY_KEY_ID=your_razorpay_key_id
-RAZORPAY_KEY_SECRET=your_razorpay_key_secret
-
-JWT_SECRET=super_secret_jwt_key_agentpay
-REDIS_HOST=localhost
-REDIS_PORT=6379
+### 1. Clone the Repository
+```bash
+git clone https://github.com/prempatel-ai/buildathon.git
+cd buildathon
 ```
 
-### Step 2: Launch Backend API Server
+### 2. Backend Setup
 ```bash
 cd backend
 python -m venv venv
 
-# On Windows:
+# Windows:
 .\venv\Scripts\activate
-# On Linux/macOS:
+# Linux/macOS:
 source venv/bin/activate
 
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-```
-* Backend interactive OpenAPI documentation available at: `http://localhost:8000/docs`
-* Health diagnostic route available at: `http://localhost:8000/health`
 
-### Step 3: Launch Frontend Web Application
+# Run initial database seeder
+python seed.py
+
+# Start FastAPI server
+uvicorn main:app --reload --port 8000
+```
+*API documentation will be available at: `http://localhost:8000/docs`*
+
+### 3. Frontend Setup
 ```bash
-cd frontend
-npm install --legacy-peer-deps
+cd ../frontend
+npm install
 npm run dev
 ```
-* Access the Agentpay application at: `http://localhost:3000`
+*Frontend application will be live at: `http://localhost:3000`*
 
 ---
 
-## 8. License & Acknowledgments
+## 🧪 Testing & Quality Assurance
 
-Built for the **Razorpay AI Buildathon 2026** under **Track 01 — AI Growth & Agentic Commerce**.  
-Designed with ultra-readable high-contrast typography, deterministic payment gating, and zero-trust security.
+Agentpay is backed by an automated **30+ Pytest suite** covering unit logic, LangGraph agent routing, policy evaluations, and Razorpay signature checks:
+
+```bash
+cd backend
+pytest -v
+```
+
+**Next.js Production Build Validation**:
+```bash
+cd frontend
+npm run build
+```
+*(Verified: 0 TypeScript errors across all 20 Next.js routes)*
+
+---
+
+## 🔑 Demo Credentials
+
+| Role | Portal URL | Email | Password | Pre-Configured State |
+| :--- | :--- | :--- | :--- | :--- |
+| **Merchant Store** | [`/login`](https://buildathon-nu-eight.vercel.app/login) | `demo@agentpay.dev` | `Demo@1234` | Boat Lifestyle Store, 8 SKUs, Live Policies |
+| **Consumer Buyer** | [`/customer/login`](https://buildathon-nu-eight.vercel.app/customer/login) | `rahul@example.com` | `Demo@1234` | ₹3,800 Spend Vault, Saved Home Address |
+
+---
+
+## 📄 License & Acknowledgments
+
+Distributed under the **MIT License**. See `LICENSE` for more information.
+
+Built with ❤️ for the **Razorpay AI Buildathon 2026** (Track 01: AI Growth & Agentic Commerce).
+
+<div align="center">
+  <sub>Engineered by <a href="https://github.com/prempatel-ai">Prem Patel</a> and the Agentpay Team.</sub>
+</div>
