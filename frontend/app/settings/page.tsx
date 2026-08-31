@@ -1,14 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
-import PageHeader from '@/components/PageHeader';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { getMerchantMe, updateMerchantSettings, getAuthToken, Merchant } from '@/lib/api';
+import { getMerchantMe, updateMerchantSettings, Merchant } from '@/lib/api';
 import { useAuthGuard } from '@/lib/useAuthGuard';
-import { ShieldCheck, RefreshCw, Truck } from 'lucide-react';
+import { RefreshCw, Check, Loader2 } from 'lucide-react';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -107,66 +104,90 @@ export default function SettingsPage() {
       });
 
       setMerchant(updated);
-      setMsg({ type: 'success', text: 'Policy rules & shipping lead times saved successfully.' });
+      setMsg({ type: 'success', text: 'Policy rules and shipping parameters saved successfully.' });
+      setTimeout(() => setMsg(null), 3000);
     } catch (err: any) {
-      setMsg({ type: 'error', text: err.message || 'Failed to save settings' });
+      setMsg({ type: 'error', text: err.message || 'Failed to save policy settings' });
     } finally {
       setSaving(false);
     }
   }
 
-  const inputCls = "w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-slate-400 transition font-sans";
+  const inputCls = "w-full h-9 px-3 bg-neutral-50/50 border border-neutral-200 rounded-md text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:bg-white focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-sans";
   const monoInputCls = inputCls + " font-mono";
-  const labelCls = "block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5";
-  const hintCls = "text-[10px] text-slate-400 mt-1";
+  const labelCls = "block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5";
+  const hintCls = "text-[11px] text-neutral-500 mt-1";
 
   return (
-    <div className="min-h-screen bg-[#fafafa] text-slate-900 font-sans selection:bg-indigo-100 pb-16">
+    <div className="min-h-screen bg-white text-neutral-900 font-sans antialiased selection:bg-neutral-200 pb-16">
       <Navigation />
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        <PageHeader
-          category="Store Configuration"
-          title="Policy & Spend Controls"
-          subtitle="Configure transaction caps, category governance, and velocity limits enforced live by the Bounded Policy Engine."
-          badge={merchant?.name}
-          actions={
-            <Button variant="outline" size="sm" onClick={loadProfile} loading={loading}>
-              <RefreshCw className="w-3.5 h-3.5 text-indigo-600 mr-1.5" />
-              Reload
-            </Button>
-          }
-        />
+      <main className="max-w-5xl mx-auto px-6 py-8">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-8 border-b border-neutral-200">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Store Governance</span>
+              <span className="text-neutral-300">•</span>
+              <span className="text-xs text-neutral-500 font-medium">Bounded Policy Engine</span>
+            </div>
+            <h1 className="text-xl font-bold text-neutral-900 tracking-tight">Policy & Spend Controls</h1>
+            <p className="text-xs text-neutral-500 mt-0.5 max-w-xl">
+              Configure transaction caps, category governance, and velocity limits enforced in real-time before agent settlements.
+            </p>
+          </div>
 
+          <div className="flex items-center gap-3">
+            {merchant?.name && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-neutral-50 border border-neutral-200 text-xs text-neutral-700 font-medium font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span>{merchant.name}</span>
+              </div>
+            )}
+            <button
+              onClick={loadProfile}
+              disabled={loading}
+              className="h-8 px-3 rounded-md border border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-medium text-neutral-700 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span>Reload</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Message Banner */}
         {msg && (
           <div
-            className={`mb-6 p-3.5 rounded-2xl text-xs font-medium ${
+            className={`mb-6 p-3.5 rounded-md text-xs font-medium flex items-center justify-between ${
               msg.type === 'success'
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                : 'bg-red-50 text-red-800 border border-red-200'
+                ? 'bg-neutral-50 border border-neutral-300 text-neutral-900'
+                : 'bg-red-50 border border-red-200 text-red-800'
             }`}
           >
-            {msg.text}
+            <div className="flex items-center gap-2">
+              {msg.type === 'success' && <Check className="w-4 h-4 text-neutral-900" />}
+              <span>{msg.text}</span>
+            </div>
+            <button onClick={() => setMsg(null)} className="text-neutral-400 hover:text-neutral-700 ml-2 text-sm font-bold">×</button>
           </div>
         )}
 
         {loading ? (
-          <div className="space-y-6">
-            <Skeleton className="h-48 w-full rounded-3xl" />
-            <Skeleton className="h-40 w-full rounded-3xl" />
-            <Skeleton className="h-40 w-full rounded-3xl" />
+          <div className="py-24 flex flex-col items-center justify-center text-neutral-400 gap-2">
+            <Loader2 className="w-6 h-6 animate-spin text-neutral-600" />
+            <p className="text-xs">Loading store governance profile...</p>
           </div>
         ) : (
           <form onSubmit={handleSaveSettings} className="space-y-6">
 
-            {/* Section: Store Info */}
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
-              <h2 className="text-sm font-extrabold text-slate-900 mb-1 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-indigo-500" />
-                Store Identity
-              </h2>
-              <p className="text-xs text-slate-500 mb-5">Business name and payment gateway credentials.</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Section 1: Store & Gateway */}
+            <div className="border border-neutral-200 rounded-lg p-6 bg-white space-y-4">
+              <div>
+                <h2 className="text-sm font-semibold text-neutral-900 tracking-tight">1. Store Identity & Gateway Key</h2>
+                <p className="text-xs text-neutral-500 mt-0.5">Primary business name and Razorpay API credentials.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div>
                   <label className={labelCls}>Store / Business Name</label>
                   <input
@@ -187,16 +208,19 @@ export default function SettingsPage() {
                     placeholder="rzp_test_..."
                     className={monoInputCls}
                   />
-                  <p className={hintCls}>Leave blank to use the platform sandbox key.</p>
+                  <p className={hintCls}>Leave blank to use platform sandbox credentials.</p>
                 </div>
               </div>
             </div>
 
-            {/* Section: Spend Caps */}
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
-              <h2 className="text-sm font-extrabold text-slate-900 mb-1">Policy Engine Spend Caps</h2>
-              <p className="text-xs text-slate-500 mb-5">Absolute limits enforced before any agent order is accepted.</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Section 2: Transaction Caps */}
+            <div className="border border-neutral-200 rounded-lg p-6 bg-white space-y-4">
+              <div>
+                <h2 className="text-sm font-semibold text-neutral-900 tracking-tight">2. Policy Engine Spend Caps</h2>
+                <p className="text-xs text-neutral-500 mt-0.5">Hard spend thresholds enforced automatically before any AI order is settled.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div>
                   <label className={labelCls}>Max Amount Per Order (₹)</label>
                   <input
@@ -207,7 +231,7 @@ export default function SettingsPage() {
                     placeholder="e.g. 10000.00"
                     className={monoInputCls}
                   />
-                  <p className={hintCls}>Orders above this amount are denied — enforced per transaction.</p>
+                  <p className={hintCls}>Orders above this value are rejected by the Bounded Policy Gate.</p>
                 </div>
                 <div>
                   <label className={labelCls}>Daily Total Spend Cap (₹)</label>
@@ -219,48 +243,52 @@ export default function SettingsPage() {
                     placeholder="e.g. 50000.00"
                     className={monoInputCls}
                   />
-                  <p className={hintCls}>Maximum cumulative volume permitted per 24-hour rolling window.</p>
+                  <p className={hintCls}>Maximum cumulative order volume permitted per 24-hour rolling window.</p>
                 </div>
               </div>
             </div>
 
-            {/* Section: Category Rules */}
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
-              <h2 className="text-sm font-extrabold text-slate-900 mb-1">Category Governance Rules</h2>
-              <p className="text-xs text-slate-500 mb-5">Comma-separated category names. Groq LLM evaluates orders against these rules.</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Section 3: Category Governance */}
+            <div className="border border-neutral-200 rounded-lg p-6 bg-white space-y-4">
+              <div>
+                <h2 className="text-sm font-semibold text-neutral-900 tracking-tight">3. Category Governance Rules</h2>
+                <p className="text-xs text-neutral-500 mt-0.5">Comma-separated category rules evaluated against order SKUs by the decision engine.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div>
                   <label className={labelCls}>Allowed Categories</label>
                   <input
                     type="text"
                     value={allowedCatStr}
                     onChange={(e) => setAllowedCatStr(e.target.value)}
-                    placeholder="Electronics, Gadgets, Accessories"
+                    placeholder="Electronics, Wearables, Audio"
                     className={inputCls}
                   />
-                  <p className={hintCls}>Only these categories can be purchased. Leave blank to allow all.</p>
+                  <p className={hintCls}>Leave blank to allow all merchant categories.</p>
                   {allowedCatStr && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {allowedCatStr.split(',').map(c => c.trim()).filter(Boolean).map(c => (
-                        <span key={c} className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full text-[10px] font-semibold font-mono">{c}</span>
+                        <span key={c} className="px-2 py-0.5 bg-neutral-100 text-neutral-800 border border-neutral-200 rounded text-[10px] font-mono font-medium">{c}</span>
                       ))}
                     </div>
                   )}
                 </div>
+
                 <div>
                   <label className={labelCls}>Blocked Categories</label>
                   <input
                     type="text"
                     value={blockedCatStr}
                     onChange={(e) => setBlockedCatStr(e.target.value)}
-                    placeholder="Luxury, Firearms, Gambling"
+                    placeholder="Luxury, Firearms, Adult"
                     className={inputCls}
                   />
-                  <p className={hintCls}>Orders in these categories are always denied.</p>
+                  <p className={hintCls}>Orders matching these categories are unconditionally denied.</p>
                   {blockedCatStr && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {blockedCatStr.split(',').map(c => c.trim()).filter(Boolean).map(c => (
-                        <span key={c} className="px-2 py-0.5 bg-red-50 text-red-800 border border-red-200 rounded-full text-[10px] font-semibold font-mono">{c}</span>
+                        <span key={c} className="px-2 py-0.5 bg-neutral-100 text-red-700 border border-neutral-200 rounded text-[10px] font-mono font-medium">{c}</span>
                       ))}
                     </div>
                   )}
@@ -268,11 +296,14 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Section: Velocity */}
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
-              <h2 className="text-sm font-extrabold text-slate-900 mb-1">Redis Velocity Limiter</h2>
-              <p className="text-xs text-slate-500 mb-5">Rate-limiting per agent key. Excessive rapid requests return HTTP 429.</p>
-              <div className="max-w-xs">
+            {/* Section 4: Velocity Limiter */}
+            <div className="border border-neutral-200 rounded-lg p-6 bg-white space-y-4">
+              <div>
+                <h2 className="text-sm font-semibold text-neutral-900 tracking-tight">4. Redis Velocity Limiter</h2>
+                <p className="text-xs text-neutral-500 mt-0.5">Rate limiting threshold per agent API key to prevent transaction flooding.</p>
+              </div>
+
+              <div className="max-w-xs pt-2">
                 <label className={labelCls}>Max Requests Per Minute</label>
                 <input
                   type="number"
@@ -280,23 +311,23 @@ export default function SettingsPage() {
                   max="1000"
                   value={velocityLimit}
                   onChange={(e) => setVelocityLimit(e.target.value ? Number(e.target.value) : '')}
-                  placeholder="e.g. 5"
+                  placeholder="e.g. 10"
                   className={monoInputCls}
                 />
-                <p className={hintCls}>Recommended: 5–20 for production, up to 100 for sandbox testing.</p>
+                <p className={hintCls}>Standard threshold: 5–20 req/min for production stores.</p>
               </div>
             </div>
 
-            {/* Section: Shipping & Delivery Lead Times */}
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
-              <h2 className="text-sm font-extrabold text-slate-900 mb-1 flex items-center gap-2">
-                <Truck className="w-4 h-4 text-indigo-500" />
-                Shipping & Delivery Logistics
-              </h2>
-              <p className="text-xs text-slate-500 mb-5">Parameters used to compute explainable, deterministic delivery dates for autonomous AI orders.</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Section 5: Shipping Logistics */}
+            <div className="border border-neutral-200 rounded-lg p-6 bg-white space-y-4">
+              <div>
+                <h2 className="text-sm font-semibold text-neutral-900 tracking-tight">5. Shipping & Delivery Logistics</h2>
+                <p className="text-xs text-neutral-500 mt-0.5">Parameters used to compute explainable, deterministic delivery dates for autonomous AI orders.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div>
-                  <label className={labelCls}>Order Processing Days</label>
+                  <label className={labelCls}>Warehouse Processing Lead Time (Days)</label>
                   <input
                     type="number"
                     min="0"
@@ -306,10 +337,10 @@ export default function SettingsPage() {
                     placeholder="e.g. 1"
                     className={monoInputCls}
                   />
-                  <p className={hintCls}>Warehouse packaging and fulfillment preparation lead time.</p>
+                  <p className={hintCls}>Order packaging and fulfillment preparation lead time.</p>
                 </div>
                 <div>
-                  <label className={labelCls}>Standard Shipping Transit Days</label>
+                  <label className={labelCls}>Standard Shipping Transit (Days)</label>
                   <input
                     type="number"
                     min="1"
@@ -319,36 +350,40 @@ export default function SettingsPage() {
                     placeholder="e.g. 4"
                     className={monoInputCls}
                   />
-                  <p className={hintCls}>Standard domestic courier transit time to destination.</p>
+                  <p className={hintCls}>Standard domestic courier transit duration.</p>
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-slate-100">
-                <label className={labelCls}>Category Transit Overrides (Format: Category: Days)</label>
+              <div className="pt-3 border-t border-neutral-100">
+                <label className={labelCls}>Per-Category Transit Overrides (Format: Category: Days)</label>
                 <input
                   type="text"
                   value={categoryOverridesStr}
                   onChange={(e) => setCategoryOverridesStr(e.target.value)}
-                  placeholder="e.g. Electronics: 2, Heavy Appliances: 7, Groceries: 1"
+                  placeholder="e.g. Electronics: 2, Heavy Appliances: 7"
                   className={inputCls}
                 />
                 <p className={hintCls}>Custom transit duration overrides for specific product categories.</p>
               </div>
             </div>
 
-            {/* Save */}
-            <div className="flex justify-end">
-              <Button type="submit" variant="indigo" size="sm" loading={saving}>
-                Save Policy Settings
-              </Button>
+            {/* Submit Action */}
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-xs text-neutral-400 font-mono">
+                Changes take effect immediately across all AI shopping agents.
+              </span>
+              <button
+                type="submit"
+                disabled={saving}
+                className="h-10 px-5 bg-neutral-900 hover:bg-black text-white font-medium text-xs rounded-md shadow-xs transition-all active:scale-[0.99] disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin text-neutral-300" /> : <Check className="w-4 h-4" />}
+                <span>Save Governance Policy</span>
+              </button>
             </div>
           </form>
         )}
       </main>
-
-      <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-400 mt-12">
-        Agentpay · Policy & Governance · Razorpay AI Protocol
-      </footer>
     </div>
   );
 }
