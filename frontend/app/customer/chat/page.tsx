@@ -12,12 +12,11 @@ import {
   CreditCard,
   Headphones,
   Watch,
-  Send,
+  ArrowUp,
   MoreHorizontal,
   LogOut,
   X,
   ChevronDown,
-  Cpu,
   ShoppingBag,
   ArrowRight,
   MapPin,
@@ -781,13 +780,19 @@ export default function ConsumerChatPage() {
               ))}
 
               {loading && (
-                <div className="flex items-center space-x-3">
+                <div className="flex items-start space-x-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
                   <div className="w-7 h-7 min-w-[28px] max-w-[28px] aspect-square rounded-md bg-neutral-950 text-white flex items-center justify-center shrink-0 shadow-2xs">
                     <ShoppingBag className="w-3.5 h-3.5 text-neutral-200" />
                   </div>
-                  <div className="bg-neutral-100 text-neutral-600 rounded-lg px-3.5 py-2 text-xs font-medium border border-neutral-200 flex items-center space-x-2">
-                    <Loader2 className="w-3.5 h-3.5 text-neutral-700 animate-spin" />
-                    <span>Searching catalog & evaluating policy gates...</span>
+                  <div className="bg-neutral-50 border border-neutral-200/80 rounded-xl px-4 py-2.5 text-xs text-neutral-600 flex items-center space-x-3 shadow-2xs">
+                    <div className="flex items-center space-x-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-neutral-900 animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-neutral-900 animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-neutral-900 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                    <span className="text-[11.5px] font-medium text-neutral-600">
+                      Searching catalog across merchants & evaluating policy gates...
+                    </span>
                   </div>
                 </div>
               )}
@@ -796,7 +801,7 @@ export default function ConsumerChatPage() {
           )}
         </div>
 
-        {/* 3. FLOATING BOTTOM INPUT DOCK */}
+        {/* 3. FLOATING BOTTOM INPUT DOCK (ChatGPT / Claude Standard) */}
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10">
           <div className="max-w-2xl mx-auto">
             <form
@@ -804,12 +809,12 @@ export default function ConsumerChatPage() {
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="bg-white rounded-xl border border-neutral-200 shadow-md p-1.5 flex items-center space-x-2 focus-within:border-neutral-900 focus-within:ring-1 focus-within:ring-neutral-900 transition-all"
+              className="bg-white rounded-2xl border border-neutral-200/90 shadow-sm hover:border-neutral-300 focus-within:border-neutral-900 focus-within:ring-1 focus-within:ring-neutral-900 transition-all p-1.5 px-2 flex items-center space-x-2"
             >
               <button
                 type="button"
                 onClick={() => handleSendMessage('find cheap headphones')}
-                className="p-1.5 text-neutral-400 hover:text-neutral-700 rounded-md hover:bg-neutral-100 transition-colors ml-1 cursor-pointer"
+                className="w-7 h-7 flex items-center justify-center text-neutral-400 hover:text-neutral-900 rounded-full hover:bg-neutral-100 transition-colors cursor-pointer shrink-0"
                 title="Search Products"
               >
                 <Plus className="w-4 h-4" />
@@ -820,29 +825,24 @@ export default function ConsumerChatPage() {
                 value={inputPrompt}
                 onChange={(e) => setInputPrompt(e.target.value)}
                 placeholder="Ask anything or search across merchants..."
-                className="flex-1 bg-transparent text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none px-2 font-sans"
+                className="flex-1 bg-transparent text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none px-1.5 font-sans"
                 disabled={loading}
               />
 
-              <div className="flex items-center space-x-1.5 pr-1">
-                <div
-                  className="hidden sm:flex items-center space-x-1 px-2 py-0.5 bg-neutral-100 text-neutral-600 rounded text-[10.5px] font-mono"
-                  title="LLM Reasoning Engine Enabled"
-                >
-                  <Cpu className="w-3 h-3 text-neutral-700" />
-                  <span>Think</span>
-                </div>
-
+              <div className="flex items-center pr-0.5 shrink-0">
                 <button
                   type="submit"
                   disabled={!inputPrompt.trim() || loading}
-                  className={`w-7 h-7 rounded-md transition-all flex items-center justify-center cursor-pointer ${
-                    inputPrompt.trim() && !loading
-                      ? 'bg-neutral-900 hover:bg-black text-white'
-                      : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
+                  className={`w-7 h-7 rounded-full transition-all flex items-center justify-center cursor-pointer ${
+                    loading
+                      ? 'bg-neutral-900 text-white animate-pulse'
+                      : inputPrompt.trim()
+                        ? 'bg-neutral-900 hover:bg-black text-white active:scale-95 shadow-xs'
+                        : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
                   }`}
+                  title={loading ? 'Processing...' : 'Send Message'}
                 >
-                  <Send className="w-3.5 h-3.5" />
+                  <ArrowUp className="w-3.5 h-3.5 stroke-[2.5]" />
                 </button>
               </div>
             </form>
