@@ -12,7 +12,7 @@ import {
 import { useAuthGuard } from '@/lib/useAuthGuard';
 
 import Navigation from '@/components/Navigation';
-import { RefreshCw, Lock, Store, Code, X, Loader2 } from 'lucide-react';
+import { RefreshCw, Lock, Store, Code, X, Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 function AuditViewerContent() {
   const searchParams = useSearchParams();
@@ -23,6 +23,10 @@ function AuditViewerContent() {
   const [actorTypeFilter, setActorTypeFilter] = useState<string>('');
   const [actionFilter, setActionFilter] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<string>('desc');
+
+  // Pagination State
+  const [page, setPage] = useState<number>(1);
+  const [limit, setLimit] = useState<number>(10);
 
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [total, setTotal] = useState<number>(0);
@@ -49,12 +53,14 @@ function AuditViewerContent() {
     setLoading(true);
     setError(null);
     try {
+      const skip = (page - 1) * limit;
       const res = await fetchAuditEvents({
         merchant_id: selectedMerchantId || (currentMerchant ? currentMerchant.id : undefined),
         actor_type: actorTypeFilter || undefined,
         action: actionFilter || undefined,
         sort_order: sortOrder,
-        limit: 100,
+        skip,
+        limit,
       });
       setEvents(res.items);
       setTotal(res.total);
@@ -69,7 +75,32 @@ function AuditViewerContent() {
     if (selectedMerchantId || currentMerchant) {
       loadEvents();
     }
-  }, [selectedMerchantId, currentMerchant, actorTypeFilter, actionFilter, sortOrder]);
+  }, [selectedMerchantId, currentMerchant, actorTypeFilter, actionFilter, sortOrder, page, limit]);
+
+  // Reset to page 1 whenever filters change
+  const handleActorChange = (val: string) => {
+    setActorTypeFilter(val);
+    setPage(1);
+  };
+
+  const handleActionChange = (val: string) => {
+    setActionFilter(val);
+    setPage(1);
+  };
+
+  const handleSortChange = (val: string) => {
+    setSortOrder(val);
+    setPage(1);
+  };
+
+  const handleLimitChange = (val: number) => {
+    setLimit(val);
+    setPage(1);
+  };
+
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const startRecord = total === 0 ? 0 : (page - 1) * limit + 1;
+  const endRecord = Math.min(page * limit, total);
 
   return (
     <div className="min-h-screen bg-white text-neutral-900 font-sans antialiased selection:bg-neutral-200 pb-16">
@@ -130,7 +161,7 @@ function AuditViewerContent() {
         <div className="mb-5 flex flex-wrap items-center gap-3">
           <select
             value={actorTypeFilter}
-            onChange={(e) => setActorTypeFilter(e.target.value)}
+            onChange={(e) => handleActorChange(e.target.value)}
             className="h-8 px-2.5 bg-white border border-neutral-200 rounded text-xs font-medium text-neutral-800 focus:outline-none"
           >
             <option value="">All Actors</option>
@@ -142,13 +173,17 @@ function AuditViewerContent() {
 
           <select
             value={actionFilter}
-            onChange={(e) => setActionFilter(e.target.value)}
+            onChange={(e) => handleActionChange(e.target.value)}
             className="h-8 px-2.5 bg-white border border-neutral-200 rounded text-xs font-medium text-neutral-800 focus:outline-none"
           >
             <option value="">All Actions</option>
-            <option value="policy_evaluated">policy_evaluated</option>
             <option value="payment_settled">payment_settled</option>
-            <option value="payment_order_created">payment_order_created</option>
+            <option value="payment_executing">payment_executing</option>
+            <option value="payment_approved">payment_approved</option>
+            <option value="payment_proposed">payment_proposed</option>
+            <option value="policy_evaluated">policy_evaluated</option>
+            <option value="customer_authorization_evaluated">customer_authorization_evaluated</option>
+            <option value="spend_authorization_created">spend_authorization_created</option>
             <option value="catalog_item_created">catalog_item_created</option>
             <option value="catalog_item_updated">catalog_item_updated</option>
             <option value="agent_key_created">agent_key_created</option>
@@ -156,7 +191,7 @@ function AuditViewerContent() {
 
           <select
             value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
+            onChange={(e) => handleSortChange(e.target.value)}
             className="h-8 px-2.5 bg-white border border-neutral-200 rounded text-xs font-medium text-neutral-800 focus:outline-none"
           >
             <option value="desc">Newest First (DESC)</option>
@@ -164,9 +199,9 @@ function AuditViewerContent() {
           </select>
         </div>
 
-        {/* Audit Events Table */}
+        {/* Audit Events Table Container */}
         <div className="border border-neutral-200 rounded-lg overflow-hidden bg-white">
-          <div className="px-5 py-3 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between">
+          <div className="px-6 py-3.5 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-600">
               Audit Stream ({total} events logged)
             </h2>
@@ -251,6 +286,73 @@ function AuditViewerContent() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Enterprise Pagination Bar */}
+          {!loading && total > 0 && (
+            <div className="px-6 py-3.5 border-t border-neutral-200 bg-neutral-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+              <div className="text-neutral-600 font-medium">
+                Showing <span className="font-semibold text-neutral-900 font-mono">{startRecord}</span>–<span className="font-semibold text-neutral-900 font-mono">{endRecord}</span> of <span className="font-semibold text-neutral-900 font-mono">{total}</span> events
+              </div>
+
+              <div className="flex items-center gap-4">
+                {/* Per Page Selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-neutral-500 text-[11px]">Rows per page:</span>
+                  <select
+                    value={limit}
+                    onChange={(e) => handleLimitChange(Number(e.target.value))}
+                    className="h-7 px-2 bg-white border border-neutral-200 rounded text-xs font-mono font-medium text-neutral-800 focus:outline-none cursor-pointer"
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </div>
+
+                {/* Page Controls */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setPage(1)}
+                    disabled={page === 1}
+                    title="First Page"
+                    className="h-7 w-7 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
+                  >
+                    <ChevronsLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    title="Previous Page"
+                    className="h-7 w-7 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+
+                  <span className="px-2 text-xs font-mono text-neutral-700">
+                    Page {page} of {totalPages}
+                  </span>
+
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    title="Next Page"
+                    className="h-7 w-7 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setPage(totalPages)}
+                    disabled={page === totalPages}
+                    title="Last Page"
+                    className="h-7 w-7 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
+                  >
+                    <ChevronsRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
