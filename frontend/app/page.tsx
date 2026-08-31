@@ -5,7 +5,7 @@ import { ModernLandingHero } from '@/components/ui/modern-landing-hero';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#0a0e1a] font-sans text-[#f8fafc]">
+    <div className="min-h-screen bg-white font-sans text-neutral-900 selection:bg-neutral-200">
       <ModernLandingHero />
     </div>
   );
