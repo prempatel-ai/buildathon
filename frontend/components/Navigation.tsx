@@ -198,23 +198,31 @@ export default function Navigation() {
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-1.5 w-52 bg-white border border-neutral-200 rounded-lg shadow-xl py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
-                    <div className="px-3 py-2 border-b border-neutral-100">
+                  <div className="absolute right-0 mt-1.5 w-56 bg-white border border-neutral-200 rounded-lg shadow-xl p-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
+                    <div className="px-3 py-2 border-b border-neutral-100 mb-1">
                       <p className="font-semibold text-neutral-900 truncate text-xs">{merchant?.name || 'Merchant Admin'}</p>
                       <p className="text-[10px] text-neutral-400 font-mono mt-0.5">Authenticated Merchant</p>
                     </div>
                     <Link
                       href="/settings"
                       onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center space-x-2 px-3 py-2 text-neutral-700 hover:bg-neutral-50 font-medium transition-colors"
+                      className="flex items-center space-x-2 px-2.5 py-1.5 rounded-md text-neutral-700 hover:bg-neutral-100 font-medium transition-colors"
                     >
                       <Shield className="w-3.5 h-3.5 text-neutral-400" />
                       <span>Policy & Governance</span>
                     </Link>
+                    <Link
+                      href="/agents-list"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center space-x-2 px-2.5 py-1.5 rounded-md text-neutral-700 hover:bg-neutral-100 font-medium transition-colors"
+                    >
+                      <Key className="w-3.5 h-3.5 text-neutral-400" />
+                      <span>AI Agent Keys</span>
+                    </Link>
                     <div className="border-t border-neutral-100 my-1" />
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left flex items-center space-x-2 px-3 py-2 text-red-600 hover:bg-red-50 font-medium transition-colors cursor-pointer"
+                      className="w-full text-left flex items-center space-x-2 px-2.5 py-1.5 rounded-md text-red-600 hover:bg-red-50 font-medium transition-colors cursor-pointer"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>Sign Out</span>
