@@ -23,13 +23,8 @@ import {
   Home,
   Briefcase,
   Phone,
-  User,
   Loader2,
-  X,
-  ArrowRight,
-  ShieldCheck,
-  Truck,
-  Compass
+  X
 } from 'lucide-react';
 
 export default function ConsumerAddressesPage() {
@@ -170,60 +165,60 @@ export default function ConsumerAddressesPage() {
 
   const getLabelIcon = (label: string) => {
     const l = label.toLowerCase();
-    if (l === 'work' || l === 'office') return <Briefcase className="w-3.5 h-3.5 text-slate-500" />;
-    if (l === 'warehouse' || l === 'building') return <Building2 className="w-3.5 h-3.5 text-slate-500" />;
-    return <Home className="w-3.5 h-3.5 text-slate-500" />;
+    if (l === 'work' || l === 'office') return <Briefcase className="w-3.5 h-3.5 text-neutral-500" />;
+    if (l === 'warehouse' || l === 'building') return <Building2 className="w-3.5 h-3.5 text-neutral-500" />;
+    return <Home className="w-3.5 h-3.5 text-neutral-500" />;
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafa] text-slate-900 flex flex-col font-sans selection:bg-slate-200">
+    <div className="min-h-screen bg-white text-neutral-900 flex flex-col font-sans antialiased selection:bg-neutral-200 pb-16">
       <Navigation />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-200/80">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-neutral-200">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Consumer Account</span>
-              <span className="text-slate-300">•</span>
-              <span className="text-xs text-slate-500 font-medium">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Consumer Account</span>
+              <span className="text-neutral-300">•</span>
+              <span className="text-xs text-neutral-500 font-medium">
                 {addresses.length} {addresses.length === 1 ? 'Saved Destination' : 'Saved Destinations'}
               </span>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Delivery Addresses</h1>
-            <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-              Configure and manage shipping destinations. The default address is automatically selected by AI agents for autonomous order execution.
+            <h1 className="text-xl font-bold text-neutral-900 tracking-tight">Delivery Addresses</h1>
+            <p className="text-xs text-neutral-500 mt-0.5 max-w-2xl">
+              Manage shipping destinations. The active default address is automatically routed by autonomous AI shopping agents.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
             <button
               onClick={() => router.push('/customer/chat')}
-              className="px-4 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors shadow-2xs"
+              className="h-8 px-3 rounded-md border border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-medium text-neutral-700 transition-colors cursor-pointer"
             >
-              Back to Shopping Chat
+              Shopping Chat
             </button>
             <button
               onClick={handleOpenAddModal}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-xs transition-all active:scale-[0.98]"
+              className="h-8 px-3.5 rounded-md bg-neutral-900 hover:bg-black text-white text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
-              <Plus className="w-4 h-4" />
-              Add Address
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Address</span>
             </button>
           </div>
         </div>
 
         {/* Banner Alert Messages */}
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200/80 text-red-700 text-xs flex items-center justify-between shadow-2xs">
+          <div className="mb-6 p-3.5 rounded-md bg-red-50 border border-red-200 text-red-700 text-xs flex items-center justify-between">
             <span>{error}</span>
-            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 font-bold ml-2">×</button>
+            <button onClick={() => setError(null)} className="text-neutral-400 hover:text-neutral-700 font-bold ml-2 cursor-pointer">×</button>
           </div>
         )}
         {successMsg && (
-          <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs flex items-center gap-2 shadow-2xs">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-600"></div>
+          <div className="mb-6 p-3.5 rounded-md bg-neutral-50 border border-neutral-300 text-neutral-900 text-xs flex items-center gap-2">
+            <Check className="w-4 h-4 text-neutral-900" />
             <span>{successMsg}</span>
           </div>
         )}
@@ -231,57 +226,55 @@ export default function ConsumerAddressesPage() {
         {/* Addresses Grid */}
         <div>
           {loading ? (
-            <div className="py-24 flex flex-col items-center justify-center text-slate-400 gap-3">
-              <Loader2 className="w-7 h-7 animate-spin text-slate-600" />
-              <p className="text-xs font-medium">Loading saved addresses...</p>
+            <div className="py-24 flex flex-col items-center justify-center text-neutral-400 gap-2">
+              <Loader2 className="w-6 h-6 animate-spin text-neutral-600" />
+              <p className="text-xs">Loading saved destinations...</p>
             </div>
           ) : addresses.length === 0 ? (
-            <div className="bg-white border border-slate-200/90 rounded-2xl p-12 text-center shadow-xs max-w-md mx-auto my-8">
-              <div className="w-12 h-12 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <MapPin className="w-6 h-6" />
+            <div className="bg-white border border-neutral-200 rounded-lg p-12 text-center max-w-md mx-auto my-8">
+              <div className="w-10 h-10 bg-neutral-100 text-neutral-600 rounded-lg flex items-center justify-center mx-auto mb-3 font-mono text-xs font-bold">
+                LOC
               </div>
-              <h3 className="text-sm font-bold text-slate-900 mb-1">No Delivery Addresses Added</h3>
-              <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-                Add at least one delivery destination so your AI shopping agent can automatically confirm and route purchases.
+              <h3 className="text-xs font-semibold text-neutral-900 mb-1">No Delivery Addresses Added</h3>
+              <p className="text-xs text-neutral-500 mb-4 leading-relaxed">
+                Add a delivery destination so your AI shopping agent can automatically confirm and route purchases.
               </p>
               <button
                 onClick={handleOpenAddModal}
-                className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors inline-flex items-center gap-2"
+                className="h-8 px-3.5 bg-neutral-900 hover:bg-black text-white font-medium text-xs rounded transition-colors inline-flex items-center gap-1.5 cursor-pointer"
               >
-                <Plus className="w-4 h-4" />
-                Add Your First Address
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Your First Address</span>
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {addresses.map((addr) => (
                 <div
                   key={addr.id}
-                  className={`bg-white rounded-2xl border transition-all duration-200 flex flex-col justify-between p-6 ${
+                  className={`bg-white rounded-lg border flex flex-col justify-between p-5 transition-colors ${
                     addr.is_default
-                      ? 'border-slate-400 shadow-sm ring-1 ring-slate-200'
-                      : 'border-slate-200/90 hover:border-slate-300 shadow-2xs hover:shadow-xs'
+                      ? 'border-neutral-900 ring-1 ring-neutral-900 shadow-xs'
+                      : 'border-neutral-200 hover:border-neutral-300'
                   }`}
                 >
                   <div>
                     {/* Top Row: Label Pill & Default Tag */}
-                    <div className="flex items-center justify-between gap-2 pb-4 mb-4 border-b border-slate-100">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1.5 bg-slate-100 rounded-lg">
-                          {getLabelIcon(addr.label)}
-                        </div>
-                        <span className="text-xs font-bold text-slate-900 tracking-wide uppercase">{addr.label}</span>
+                    <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-neutral-100">
+                      <div className="flex items-center gap-1.5">
+                        {getLabelIcon(addr.label)}
+                        <span className="text-[11px] font-semibold text-neutral-900 uppercase font-mono">{addr.label}</span>
                       </div>
 
                       {addr.is_default ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                          Default
+                        <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold text-emerald-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          DEFAULT
                         </span>
                       ) : (
                         <button
                           onClick={() => handleSetDefault(addr.id)}
-                          className="text-xs font-medium text-slate-500 hover:text-slate-900 transition-colors"
+                          className="text-[11px] font-medium text-neutral-500 hover:text-neutral-900 transition-colors cursor-pointer"
                         >
                           Make default
                         </button>
@@ -289,70 +282,54 @@ export default function ConsumerAddressesPage() {
                     </div>
 
                     {/* Recipient Details */}
-                    <div className="space-y-1.5">
-                      <h2 className="text-base font-bold text-slate-900 tracking-tight">
+                    <div className="space-y-0.5">
+                      <h2 className="text-sm font-semibold text-neutral-900">
                         {addr.recipient_name}
                       </h2>
-                      <div className="text-xs text-slate-500 flex items-center gap-1.5 font-mono">
-                        <Phone className="w-3.5 h-3.5 text-slate-400" />
+                      <div className="text-xs text-neutral-500 flex items-center gap-1 font-mono">
+                        <Phone className="w-3 h-3 text-neutral-400" />
                         <span>{addr.phone}</span>
                       </div>
                     </div>
 
                     {/* Street & Postal Information */}
-                    <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-600 leading-relaxed space-y-0.5">
-                      <p className="text-slate-800 font-medium">{addr.line1}</p>
-                      {addr.line2 && <p className="text-slate-600">{addr.line2}</p>}
-                      <p className="text-slate-900 font-semibold pt-1">
-                        {addr.city}, {addr.state} <span className="font-mono text-slate-600 font-normal">{addr.postal_code}</span>
+                    <div className="mt-3 pt-2.5 border-t border-neutral-100 text-xs text-neutral-600 leading-relaxed space-y-0.5">
+                      <p className="text-neutral-800 font-medium">{addr.line1}</p>
+                      {addr.line2 && <p className="text-neutral-600">{addr.line2}</p>}
+                      <p className="text-neutral-900 font-semibold pt-0.5">
+                        {addr.city}, {addr.state} <span className="font-mono text-neutral-600 font-normal">{addr.postal_code}</span>
                       </p>
-                      <p className="text-[11px] text-slate-400 uppercase tracking-wider">{addr.country === 'IN' ? 'India' : addr.country}</p>
+                      <p className="text-[10.5px] text-neutral-400 uppercase tracking-wider">{addr.country === 'IN' ? 'India' : addr.country}</p>
                     </div>
                   </div>
 
                   {/* Actions Footer */}
-                  <div className="pt-4 mt-5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                    <span className="text-[11px] text-slate-400">
+                  <div className="pt-3 mt-4 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
+                    <span className="text-[10.5px] text-neutral-400">
                       {addr.is_default ? 'Active for autonomous orders' : 'Secondary destination'}
                     </span>
 
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleOpenEditModal(addr)}
-                        className="px-2.5 py-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors font-medium flex items-center gap-1"
+                        className="h-6 px-2 text-neutral-700 hover:bg-neutral-100 rounded transition-colors font-medium text-[11px] flex items-center gap-1 cursor-pointer"
                         title="Edit address"
                       >
-                        <Edit2 className="w-3.5 h-3.5" />
+                        <Edit2 className="w-3 h-3" />
                         <span>Edit</span>
                       </button>
                       <button
                         onClick={() => handleDelete(addr.id)}
-                        className="px-2.5 py-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium flex items-center gap-1"
+                        className="h-6 px-2 text-neutral-400 hover:text-red-700 hover:bg-red-50 rounded transition-colors font-medium text-[11px] flex items-center gap-1 cursor-pointer"
                         title="Delete address"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3 h-3" />
                         <span>Delete</span>
                       </button>
                     </div>
                   </div>
                 </div>
               ))}
-
-              {/* Add New Address Dashed Card Slot */}
-              <button
-                onClick={handleOpenAddModal}
-                className="border-2 border-dashed border-slate-200 hover:border-slate-400 rounded-2xl p-8 flex flex-col items-center justify-center text-center transition-all group bg-white/50 hover:bg-white min-h-[220px]"
-              >
-                <div className="w-10 h-10 rounded-xl bg-slate-100 group-hover:bg-slate-900 text-slate-600 group-hover:text-white flex items-center justify-center mb-3 transition-colors">
-                  <Plus className="w-5 h-5" />
-                </div>
-                <span className="text-sm font-semibold text-slate-900 group-hover:text-slate-900 transition-colors">
-                  Add New Address
-                </span>
-                <span className="text-xs text-slate-400 mt-1">
-                  Add a work, home, or secondary delivery location
-                </span>
-              </button>
             </div>
           )}
         </div>
@@ -360,151 +337,147 @@ export default function ConsumerAddressesPage() {
 
       {/* Add / Edit Address Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-2xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-100">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                  {editingId ? 'Edit Delivery Address' : 'Add Delivery Address'}
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">Enter verified delivery location details</p>
-              </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-              >
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-2xs">
+          <div className="bg-white rounded-lg border border-neutral-200 max-w-lg w-full p-6 shadow-xl animate-in fade-in zoom-in-95 duration-100">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-100">
+              <h3 className="text-sm font-semibold text-neutral-900">
+                {editingId ? 'Edit Delivery Address' : 'Add New Delivery Address'}
+              </h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-neutral-400 hover:text-neutral-700 cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="space-y-3.5">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Address Label</label>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">Address Label *</label>
                   <select
                     value={formData.label}
                     onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                    className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
+                    className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-sans"
                   >
                     <option value="Home">Home</option>
-                    <option value="Work">Work</option>
-                    <option value="Office">Office</option>
-                    <option value="Primary">Primary</option>
+                    <option value="Work">Work / Office</option>
+                    <option value="Warehouse">Warehouse</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
+
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Phone Number *</label>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">Recipient Name *</label>
                   <input
-                    type="tel"
+                    type="text"
                     required
-                    placeholder="+91 9876543210"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden font-mono transition"
+                    value={formData.recipient_name}
+                    onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })}
+                    placeholder="Rahul Sharma"
+                    className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-sans"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Recipient Full Name *</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">Contact Phone Number *</label>
                 <input
-                  type="text"
+                  type="tel"
                   required
-                  placeholder="e.g. Prem Patel"
-                  value={formData.recipient_name}
-                  onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })}
-                  className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="+91 9876543210"
+                  className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs font-mono text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Flat / Building / House No. *</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">Address Line 1 (Flat, Building, Street) *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Flat 402, Block B, Tech Residency"
                   value={formData.line1}
                   onChange={(e) => setFormData({ ...formData, line1: e.target.value })}
-                  className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
+                  placeholder="Flat 402, Sunshine Heights, MG Road"
+                  className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-sans"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Street / Area / Landmark (Optional)</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">Address Line 2 (Landmark, Area - Optional)</label>
                 <input
                   type="text"
-                  placeholder="e.g. Near Metro Station, Indiranagar"
-                  value={formData.line2}
+                  value={formData.line2 || ''}
                   onChange={(e) => setFormData({ ...formData, line2: e.target.value })}
-                  className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
+                  placeholder="Near Metro Station"
+                  className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-sans"
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">City *</label>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">City *</label>
                   <input
                     type="text"
                     required
-                    placeholder="Bengaluru"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
+                    placeholder="Bengaluru"
+                    className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-sans"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">State *</label>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">State *</label>
                   <input
                     type="text"
                     required
-                    placeholder="Karnataka"
                     value={formData.state}
                     onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                    className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
+                    placeholder="Karnataka"
+                    className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-sans"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">PIN Code *</label>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">PIN Code *</label>
                   <input
                     type="text"
                     required
-                    placeholder="560001"
+                    maxLength={6}
                     value={formData.postal_code}
                     onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                    className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden font-mono transition"
+                    placeholder="560001"
+                    className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs font-mono text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="modal_is_default"
-                  checked={formData.is_default}
-                  onChange={(e) => setFormData({ ...formData, is_default: e.target.checked })}
-                  className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-                />
-                <label htmlFor="modal_is_default" className="text-xs text-slate-700 font-medium">
-                  Set as default delivery address for agent purchases
+              <div className="pt-1">
+                <label className="flex items-center gap-2 text-xs text-neutral-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_default}
+                    onChange={(e) => setFormData({ ...formData, is_default: e.target.checked })}
+                    className="w-3.5 h-3.5 rounded accent-neutral-900"
+                  />
+                  <span>Set as primary default destination for autonomous orders</span>
                 </label>
               </div>
 
-              <div className="pt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 mt-5">
+              <div className="pt-2 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                  className="h-8 px-3 rounded-md border border-neutral-200 text-xs font-medium text-neutral-700 hover:bg-neutral-50 transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-xs transition-colors disabled:opacity-50 flex items-center gap-2"
+                  className="h-8 px-4 rounded-md bg-neutral-900 hover:bg-black text-white text-xs font-medium transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                 >
                   {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  {editingId ? 'Save Changes' : 'Save Address'}
+                  <span>{editingId ? 'Save Changes' : 'Save Address'}</span>
                 </button>
               </div>
             </form>

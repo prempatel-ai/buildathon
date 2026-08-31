@@ -6,18 +6,12 @@ import { API_BASE_URL, getCustomerToken } from '@/lib/api';
 import Navigation from '@/components/Navigation';
 import {
   CreditCard,
-  Lock,
-  ArrowRight,
-  ShieldCheck,
   MapPin,
   MessageSquare,
-  CheckCircle2,
-  AlertCircle,
   Loader2,
   RefreshCw,
-  Clock,
-  ExternalLink,
-  ChevronRight
+  Check,
+  X
 } from 'lucide-react';
 
 interface SpendAuth {
@@ -139,150 +133,150 @@ export default function CustomerDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafa] text-slate-900 flex flex-col font-sans selection:bg-slate-200">
+    <div className="min-h-screen bg-white text-neutral-900 flex flex-col font-sans antialiased selection:bg-neutral-200 pb-16">
       <Navigation />
 
       {/* Main Container */}
-      <main className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex-1">
+      <main className="max-w-6xl mx-auto w-full px-6 py-8 flex-1">
         {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-200/80">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-neutral-200">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Consumer Account</span>
-              <span className="text-slate-300">•</span>
-              <span className="text-xs text-slate-500 font-medium">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Consumer Account</span>
+              <span className="text-neutral-300">•</span>
+              <span className="text-xs text-neutral-500 font-mono font-medium">
                 {customer?.email || 'customer@example.com'}
               </span>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Spend Vault & Payment Methods</h1>
-            <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-              Manage tokenized payment instruments and set per-transaction spend caps enforced on autonomous AI shopping agents.
+            <h1 className="text-xl font-bold text-neutral-900 tracking-tight">Spend Vault & Payment Methods</h1>
+            <p className="text-xs text-neutral-500 mt-0.5 max-w-2xl">
+              Manage tokenized payment instruments and establish per-transaction spend caps enforced on autonomous AI shopping agents.
             </p>
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
             <button
               onClick={() => router.push('/customer/addresses')}
-              className="px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors shadow-2xs flex items-center gap-1.5"
+              className="h-8 px-3 rounded-md border border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-medium text-neutral-700 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
-              <MapPin className="w-3.5 h-3.5 text-slate-500" />
-              Delivery Addresses
+              <MapPin className="w-3.5 h-3.5 text-neutral-500" />
+              <span>Delivery Addresses</span>
             </button>
             <button
               onClick={() => router.push('/customer/chat')}
-              className="px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-xs transition-all flex items-center gap-1.5"
+              className="h-8 px-3.5 rounded-md bg-neutral-900 hover:bg-black text-white text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <MessageSquare className="w-3.5 h-3.5" />
-              Shopping Chat
+              <span>Shopping Chat</span>
             </button>
           </div>
         </div>
 
         {/* Banner Alert Messages */}
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200/80 text-red-700 text-xs flex items-center justify-between shadow-2xs">
+          <div className="mb-6 p-3.5 rounded-md bg-red-50 border border-red-200 text-red-700 text-xs flex items-center justify-between">
             <span>{error}</span>
-            <button onClick={() => setError('')} className="text-red-500 hover:text-red-700 font-bold ml-2">×</button>
+            <button onClick={() => setError('')} className="text-neutral-400 hover:text-neutral-700 font-bold ml-2 cursor-pointer">×</button>
           </div>
         )}
 
         {message && (
-          <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs flex items-center gap-2 shadow-2xs">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-600"></div>
+          <div className="mb-6 p-3.5 rounded-md bg-neutral-50 border border-neutral-300 text-neutral-900 text-xs flex items-center gap-2">
+            <Check className="w-4 h-4 text-neutral-900" />
             <span>{message}</span>
           </div>
         )}
 
         {loading ? (
-          <div className="py-24 flex flex-col items-center justify-center text-slate-400 gap-3">
-            <Loader2 className="w-7 h-7 animate-spin text-slate-600" />
-            <p className="text-xs font-medium">Loading spend vault...</p>
+          <div className="py-24 flex flex-col items-center justify-center text-neutral-400 gap-2">
+            <Loader2 className="w-6 h-6 animate-spin text-neutral-600" />
+            <p className="text-xs">Loading spend vault profile...</p>
           </div>
         ) : (
           <div className="space-y-6">
             {/* Top Row: Tokenized Card & Spend Metrics */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Tokenized Card Preview */}
-              <div className="bg-slate-900 p-6 rounded-2xl text-white shadow-sm flex flex-col justify-between h-52 border border-slate-800 relative overflow-hidden">
+              <div className="bg-neutral-950 p-6 rounded-lg text-white shadow-xs flex flex-col justify-between h-48 border border-neutral-800 relative overflow-hidden">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                    <span className="text-[11px] font-mono font-semibold text-slate-300 uppercase tracking-wider">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span className="text-[10.5px] font-mono font-medium text-neutral-400 uppercase tracking-wider">
                       Tokenized Vault
                     </span>
                   </div>
-                  <span className="text-xs font-mono font-bold tracking-widest text-slate-200 uppercase">
+                  <span className="text-xs font-mono font-bold tracking-widest text-neutral-300 uppercase">
                     {authorization?.card_brand || 'VISA'}
                   </span>
                 </div>
 
                 <div>
-                  <div className="text-xl font-mono tracking-widest text-white mb-1.5">
+                  <div className="text-lg font-mono tracking-widest text-neutral-100 mb-1">
                     •••• •••• •••• {authorization?.card_last4 || '4242'}
                   </div>
-                  <div className="text-[11px] text-slate-400 font-mono truncate">
+                  <div className="text-[10.5px] text-neutral-400 font-mono truncate">
                     ID: {authorization?.razorpay_customer_id || 'cust_token_active'}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-slate-800 text-xs">
+                <div className="flex items-center justify-between pt-3 border-t border-neutral-800/80 text-xs">
                   <div>
-                    <div className="text-[10px] text-slate-400 uppercase tracking-wider">Cardholder</div>
-                    <div className="font-semibold text-slate-100 text-xs">{authorization?.cardholder_name || customer?.name || 'Prem Patel'}</div>
+                    <div className="text-[9.5px] text-neutral-400 uppercase font-mono tracking-wider">Cardholder</div>
+                    <div className="font-medium text-neutral-200 text-xs">{authorization?.cardholder_name || customer?.name || 'Rahul Sharma'}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] text-slate-400 uppercase tracking-wider">Status</div>
-                    <span className="text-[10px] font-semibold text-emerald-400">
-                      {authorization?.status === 'active' ? 'Active Token' : 'Inactive'}
+                    <div className="text-[9.5px] text-neutral-400 uppercase font-mono tracking-wider">Status</div>
+                    <span className="text-[10px] font-mono font-semibold text-emerald-400">
+                      {authorization?.status === 'active' ? 'ACTIVE' : 'INACTIVE'}
                     </span>
                   </div>
                 </div>
               </div>
 
               {/* Authorized Spend Limit Metric */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between h-52">
+              <div className="bg-white p-6 rounded-lg border border-neutral-200 flex flex-col justify-between h-48">
                 <div>
-                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Authorized Limit</span>
-                  <div className="text-3xl font-bold text-slate-900 mt-2 tracking-tight">
+                  <span className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">Authorized Limit</span>
+                  <div className="text-2xl font-bold font-mono text-neutral-900 mt-1 tracking-tight">
                     ₹{authorization ? Number(authorization.spend_limit).toLocaleString('en-IN') : '0'}
                   </div>
-                  <p className="text-xs text-slate-500 mt-2">Maximum cap permitted per autonomous transaction.</p>
+                  <p className="text-xs text-neutral-500 mt-1">Maximum cap permitted per autonomous transaction.</p>
                 </div>
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <div className="pt-3 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
                   <span>Enforcement:</span>
-                  <span className="font-medium text-slate-800">Per Transaction</span>
+                  <span className="font-medium text-neutral-900">Per Transaction</span>
                 </div>
               </div>
 
               {/* Remaining Balance Metric */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between h-52">
+              <div className="bg-white p-6 rounded-lg border border-neutral-200 flex flex-col justify-between h-48">
                 <div>
-                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Available Balance</span>
-                  <div className="text-3xl font-bold text-emerald-600 mt-2 tracking-tight">
+                  <span className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">Available Balance</span>
+                  <div className="text-2xl font-bold font-mono text-neutral-900 mt-1 tracking-tight">
                     ₹{authorization ? Number(authorization.remaining_limit).toLocaleString('en-IN') : '0'}
                   </div>
-                  <p className="text-xs text-slate-500 mt-2">Available quota for instant AI agent settlements.</p>
+                  <p className="text-xs text-neutral-500 mt-1">Available quota for instant AI agent settlements.</p>
                 </div>
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <div className="pt-3 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
                   <span>UPI VPA:</span>
-                  <span className="font-mono font-medium text-slate-800">{authorization?.vpa || 'Default'}</span>
+                  <span className="font-mono font-medium text-neutral-900">{authorization?.vpa || 'Default'}</span>
                 </div>
               </div>
             </div>
 
             {/* Set / Update Authorization & Card Details Form */}
-            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-2xs">
-              <div className="pb-4 mb-6 border-b border-slate-100">
-                <h2 className="text-base font-bold text-slate-900 tracking-tight">Configure Payment Token & Spend Limit</h2>
-                <p className="text-xs text-slate-500 mt-1">
-                  Update your saved payment instrument and establish the transaction cap enforced by the Bounded Policy Engine.
+            <div className="bg-white p-6 rounded-lg border border-neutral-200">
+              <div className="pb-3 mb-5 border-b border-neutral-100">
+                <h2 className="text-sm font-semibold text-neutral-900 tracking-tight">Configure Payment Token & Spend Limit</h2>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  Update saved payment instruments and establish the transaction cap enforced by the Bounded Policy Engine.
                 </p>
               </div>
 
               <form onSubmit={handleCreateAuthorization} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
                       Cardholder Full Name *
                     </label>
                     <input
@@ -290,19 +284,19 @@ export default function CustomerDashboardPage() {
                       required
                       value={cardholderName}
                       onChange={(e) => setCardholderName(e.target.value)}
-                      placeholder="Prem Patel"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
+                      placeholder="Rahul Sharma"
+                      className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-sans"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
                       Payment Method Network
                     </label>
                     <select
                       value={cardBrand}
                       onChange={(e) => setCardBrand(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
+                      className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-sans"
                     >
                       <option value="Visa">Visa Debit / Credit Card</option>
                       <option value="Mastercard">Mastercard</option>
@@ -314,7 +308,7 @@ export default function CustomerDashboardPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
                       Last 4 Digits of Card *
                     </label>
                     <input
@@ -324,25 +318,25 @@ export default function CustomerDashboardPage() {
                       value={cardLast4}
                       onChange={(e) => setCardLast4(e.target.value)}
                       placeholder="4242"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono text-slate-900 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
+                      className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs font-mono text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
                       UPI VPA (Optional)
                     </label>
                     <input
                       type="text"
                       value={vpa}
                       onChange={(e) => setVpa(e.target.value)}
-                      placeholder="prem@upi"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono text-slate-900 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
+                      placeholder="rahul@upi"
+                      className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs font-mono text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
                       Per-Transaction Spend Cap (₹) *
                     </label>
                     <input
@@ -353,72 +347,70 @@ export default function CustomerDashboardPage() {
                       value={spendLimit}
                       onChange={(e) => setSpendLimit(e.target.value)}
                       placeholder="5000"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden font-mono transition"
+                      className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs font-bold text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 font-mono transition-all"
                     />
                   </div>
                 </div>
 
-                <div className="pt-3 flex justify-end">
+                <div className="pt-2 flex justify-end">
                   <button
                     type="submit"
                     disabled={savingLimit}
-                    className="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-semibold text-xs hover:bg-slate-800 transition-all shadow-xs disabled:opacity-50 flex items-center gap-2"
+                    className="h-9 px-4 rounded-md bg-neutral-900 hover:bg-black text-white font-medium text-xs transition-colors shadow-xs disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
                   >
                     {savingLimit && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                    Save & Tokenize Spend Cap
+                    <span>Save & Tokenize Spend Cap</span>
                   </button>
                 </div>
               </form>
             </div>
 
             {/* Audit Trail & Settlement Activity Log */}
-            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-2xs">
-              <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+            <div className="bg-white rounded-lg border border-neutral-200 overflow-hidden">
+              <div className="px-6 py-3.5 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-bold text-slate-900 tracking-tight">Autonomous Agent Activity Ledger</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Live chronological audit trail of spend authorization checks and payment settlements.
-                  </p>
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-600">Autonomous Agent Activity Ledger</h2>
                 </div>
                 <button
                   onClick={fetchDashboard}
-                  className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-900 transition-colors"
+                  className="p-1 text-neutral-400 hover:text-neutral-700 transition-colors cursor-pointer"
                   title="Refresh activity"
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <RefreshCw className="w-3.5 h-3.5" />
                 </button>
               </div>
 
               {recentTransactions.length === 0 ? (
-                <div className="text-xs text-slate-400 py-12 text-center font-medium">
+                <div className="text-xs text-neutral-400 py-12 text-center font-mono">
                   No autonomous agent transaction events recorded yet.
                 </div>
               ) : (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-neutral-100">
                   {recentTransactions.map((tx) => (
-                    <div key={tx.id} className="py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-                      <div className="space-y-1 flex-1">
+                    <div key={tx.id} className="px-6 py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs hover:bg-neutral-50/50 transition-colors">
+                      <div className="space-y-0.5 flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900 font-mono">{tx.action}</span>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                          <span className="font-bold text-neutral-900 font-mono text-[11px]">{tx.action}</span>
+                          <span className={`px-1.5 py-0.2 rounded text-[10px] font-mono font-semibold ${
                             tx.decision === 'ALLOW' || tx.decision === 'ACTIVE' || tx.decision === 'REGISTERED' || tx.decision === 'SETTLED'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
-                              : 'bg-red-50 text-red-700 border border-red-200/80'
+                              ? 'text-emerald-700'
+                              : 'text-red-700'
                           }`}>
                             {tx.decision}
                           </span>
                         </div>
-                        <p className="text-slate-600 text-xs leading-relaxed">{tx.reasoning}</p>
+                        <p className="text-neutral-600 text-xs leading-relaxed">{tx.reasoning}</p>
                       </div>
 
-                      <div className="text-left sm:text-right text-[11px] font-mono text-slate-400 shrink-0">
+                      <div className="text-left sm:text-right text-[11px] font-mono text-neutral-400 shrink-0">
                         {tx.created_at ? new Date(tx.created_at).toLocaleString('en-IN', {
                           day: '2-digit',
                           month: 'short',
                           year: 'numeric',
                           hour: '2-digit',
                           minute: '2-digit',
-                          hour12: true
+                          second: '2-digit',
+                          hour12: false
                         }) : ''}
                       </div>
                     </div>
