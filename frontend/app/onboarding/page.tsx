@@ -6,22 +6,14 @@ import Navigation from '@/components/Navigation';
 import { AgentpayLogo } from '@/components/Logo';
 import { createMerchant, createCatalogItem, seedDemoMerchant, Merchant } from '@/lib/api';
 import {
-  Building2,
-  Sparkles,
   ArrowRight,
   Check,
   Package,
   ShieldCheck,
   Plus,
   Loader2,
-  CheckCircle2,
-  Zap,
-  ShoppingBag,
-  Sliders,
-  ChevronRight,
   Store,
-  CreditCard,
-  Layers
+  CreditCard
 } from 'lucide-react';
 
 export default function OnboardingPage() {
@@ -149,8 +141,7 @@ export default function OnboardingPage() {
           >
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="px-2 py-0.5 bg-neutral-900 text-white rounded text-[10px] font-mono font-medium flex items-center gap-1">
-                  <Zap className="w-2.5 h-2.5 text-amber-300" />
+                <span className="px-2 py-0.5 bg-neutral-900 text-white rounded text-[10px] font-mono font-medium">
                   Recommended
                 </span>
                 <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
@@ -159,9 +150,9 @@ export default function OnboardingPage() {
                   {setupMode === 'demo' && <Check className="w-2.5 h-2.5" />}
                 </div>
               </div>
-              <h3 className="text-xs font-bold text-neutral-900">boAt Lifestyle (Demo)</h3>
+              <h3 className="text-xs font-bold text-neutral-900">Pre-Configured Demo Store</h3>
               <p className="text-[11px] text-neutral-500 mt-1 leading-normal">
-                Instant setup with 8 pre-seeded audio & smartwatch products, verified policies, and schema.
+                Instant setup with pre-seeded electronics catalog, verified policy gates, and agent schema.
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-neutral-100 text-[10.5px] font-mono text-neutral-400">
@@ -206,14 +197,14 @@ export default function OnboardingPage() {
             <div className="space-y-1">
               <h3 className="text-xs font-bold text-neutral-900">Launch Pre-Configured Demo Store</h3>
               <p className="text-xs text-neutral-500">
-                You will enter the merchant dashboard with boAt Lifestyle Electronics, complete with product catalog, test keys, and agent schema.
+                You will enter the merchant dashboard with a pre-configured store, complete with product catalog, test keys, and agent schema.
               </p>
             </div>
 
             <div className="p-3 bg-neutral-50 border border-neutral-200/80 rounded-lg text-xs space-y-2">
               <div className="flex items-center justify-between text-neutral-700">
                 <span>Pre-Seeded Catalog:</span>
-                <strong className="font-mono text-neutral-900">8 Products (Airdopes, Smartwatches, Speakers)</strong>
+                <strong className="font-mono text-neutral-900">8 Products (Consumer Electronics & Audio)</strong>
               </div>
               <div className="flex items-center justify-between text-neutral-700">
                 <span>Autonomous Policy:</span>
@@ -230,12 +221,8 @@ export default function OnboardingPage() {
               disabled={loading}
               className="w-full h-10 bg-neutral-900 hover:bg-black text-white rounded-lg text-xs font-medium transition-all shadow-xs flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
             >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Sparkles className="w-4 h-4 text-neutral-200" />
-              )}
-              <span>{loading ? 'Initializing Demo Store...' : 'Launch boAt Demo Store & Open Dashboard'}</span>
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              <span>{loading ? 'Initializing Demo Store...' : 'Launch Demo Store & Open Dashboard'}</span>
               {!loading && <ArrowRight className="w-3.5 h-3.5" />}
             </button>
           </div>
