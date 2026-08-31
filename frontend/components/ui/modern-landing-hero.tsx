@@ -76,7 +76,7 @@ export function ModernLandingHero() {
             {/* Main Headline */}
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-neutral-900 leading-[1.15]">
               Autonomous payment infrastructure for{' '}
-              <span className="underline decoration-neutral-300 decoration-wavy underline-offset-8">
+              <span className="text-neutral-900 underline decoration-neutral-300 decoration-2 underline-offset-8">
                 AI shopping agents
               </span>
             </h1>

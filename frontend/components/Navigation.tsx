@@ -49,7 +49,10 @@ export default function Navigation() {
     const custMail = localStorage.getItem('customer_email');
     const merchToken = localStorage.getItem('agentpay_auth_token') || localStorage.getItem('access_token');
 
-    if (pathname.startsWith('/customer')) {
+    if (pathname === '/' || pathname === '/login' || pathname.startsWith('/admin')) {
+      setIsMerchantContext(false);
+      setIsCustomerContext(false);
+    } else if (pathname.startsWith('/customer')) {
       setIsCustomerContext(true);
       setIsMerchantContext(false);
     } else if (
@@ -76,8 +79,8 @@ export default function Navigation() {
           .catch(() => {});
       }
     } else {
-      setIsCustomerContext(Boolean(custToken && !merchToken));
-      setIsMerchantContext(Boolean(merchToken));
+      setIsCustomerContext(false);
+      setIsMerchantContext(false);
     }
 
     if (custToken) {
@@ -88,6 +91,20 @@ export default function Navigation() {
       setCustomerEmail(null);
     }
   }, [pathname]);
+
+  // Click outside to close menus
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.dropdown-container')) {
+        setUserMenuOpen(false);
+        setCustomerMenuOpen(false);
+        setStoreMenuOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   // Global ⌘K / Ctrl+K keyboard shortcut listener
   useEffect(() => {
@@ -206,7 +223,7 @@ export default function Navigation() {
             )}
 
             {isMerchantContext && pathname !== '/onboarding' ? (
-              <div className="relative shrink-0">
+              <div className="relative shrink-0 dropdown-container">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="w-7 h-7 min-w-[28px] aspect-square rounded-full bg-neutral-950 text-white font-mono font-bold text-[11px] flex items-center justify-center hover:bg-black transition-colors cursor-pointer shadow-2xs"
@@ -257,7 +274,7 @@ export default function Navigation() {
                     Shopping Chat
                   </Link>
                 )}
-                <div className="relative shrink-0">
+                <div className="relative shrink-0 dropdown-container">
                   <button
                     onClick={() => setCustomerMenuOpen(!customerMenuOpen)}
                     className="flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-neutral-100 hover:bg-neutral-200/80 border border-neutral-200 text-xs font-medium text-neutral-800 transition-colors cursor-pointer"
