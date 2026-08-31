@@ -1,15 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getWebhooks, registerWebhook, testWebhook, getAuthToken } from '@/lib/api';
+import { getWebhooks, registerWebhook, testWebhook } from '@/lib/api';
 import { useAuthGuard } from '@/lib/useAuthGuard';
 
 import Navigation from '@/components/Navigation';
-import PageHeader from '@/components/PageHeader';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Webhook, Eye, EyeOff, Zap, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, Zap, RefreshCw, Check, Loader2 } from 'lucide-react';
 
 export default function WebhooksPage() {
   const router = useRouter();
@@ -22,7 +19,7 @@ export default function WebhooksPage() {
   // Form State
   const [url, setUrl] = useState('');
   const [secret, setSecret] = useState('');
-  const [showSecret, setShowSecret] = useState(false);  // P5: mask secret by default
+  const [showSecret, setShowSecret] = useState(false);
 
   useAuthGuard(loadWebhooks);
 
@@ -50,11 +47,12 @@ export default function WebhooksPage() {
 
     try {
       const ep = await registerWebhook(url, secret || undefined);
-      setMsg({ type: 'success', text: 'Webhook endpoint saved successfully. HMAC signing is active.' });
+      setMsg({ type: 'success', text: 'Webhook endpoint saved successfully. HMAC-SHA256 signing is active.' });
       setSecret(ep.secret);
       loadWebhooks();
+      setTimeout(() => setMsg(null), 3000);
     } catch (err: any) {
-      setMsg({ type: 'error', text: err.message || 'Failed to save webhook' });
+      setMsg({ type: 'error', text: err.message || 'Failed to save webhook endpoint' });
     } finally {
       setSaving(false);
     }
@@ -66,8 +64,9 @@ export default function WebhooksPage() {
 
     try {
       const res = await testWebhook();
-      setMsg({ type: 'success', text: `Test webhook fired! Status: ${res.status} (HTTP ${res.response_status})` });
+      setMsg({ type: 'success', text: `Test webhook dispatched! Status: ${res.status} (HTTP ${res.response_status})` });
       loadWebhooks();
+      setTimeout(() => setMsg(null), 4000);
     } catch (err: any) {
       setMsg({ type: 'error', text: err.message || 'Test webhook delivery failed' });
     } finally {
@@ -75,85 +74,103 @@ export default function WebhooksPage() {
     }
   }
 
-  const inputCls = "w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-slate-400 transition font-mono";
-  const labelCls = "block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5";
-  const hintCls = "text-[10px] text-slate-400 mt-1";
+  const inputCls = "w-full h-9 px-3 bg-neutral-50/50 border border-neutral-200 rounded-md text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:bg-white focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-mono";
+  const labelCls = "block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5";
+  const hintCls = "text-[11px] text-neutral-500 mt-1";
 
   return (
-    <div className="min-h-screen bg-[#fafafa] text-slate-900 font-sans selection:bg-indigo-100 pb-16">
+    <div className="min-h-screen bg-white text-neutral-900 font-sans antialiased selection:bg-neutral-200 pb-16">
       <Navigation />
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        <PageHeader
-          category="Integrations"
-          title="Webhook Endpoints"
-          subtitle="Receive real-time HMAC-signed HTTP POST notifications for every payment and approval event."
-          actions={
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={loadWebhooks} loading={loading}>
-                <RefreshCw className="w-3.5 h-3.5 text-indigo-600 mr-1.5" />
-                Reload
-              </Button>
-              {data?.endpoint && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleTestWebhook}
-                  loading={testing}
-                >
-                  <Zap className="w-3.5 h-3.5 mr-1.5 text-amber-500" />
-                  Fire Test Event
-                </Button>
-              )}
+      <main className="max-w-5xl mx-auto px-6 py-8">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-neutral-200">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Integrations</span>
+              <span className="text-neutral-300">•</span>
+              <span className="text-xs text-neutral-500 font-medium">HMAC-SHA256 Signed Webhooks</span>
             </div>
-          }
-        />
+            <h1 className="text-xl font-bold text-neutral-900 tracking-tight">Webhook Endpoints</h1>
+            <p className="text-xs text-neutral-500 mt-0.5 max-w-xl">
+              Receive real-time signed HTTP POST notifications whenever an autonomous buyer agent executes or settles an order.
+            </p>
+          </div>
 
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={loadWebhooks}
+              disabled={loading}
+              className="h-8 px-3 rounded-md border border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-medium text-neutral-700 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span>Reload</span>
+            </button>
+            {data?.endpoint && (
+              <button
+                onClick={handleTestWebhook}
+                disabled={testing}
+                className="h-8 px-3 rounded-md bg-neutral-100 hover:bg-neutral-200 text-xs font-medium text-neutral-800 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 border border-neutral-200"
+              >
+                {testing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5 text-neutral-800" />}
+                <span>Fire Test Event</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Message Banner */}
         {msg && (
           <div
-            className={`mb-6 p-3.5 rounded-2xl text-xs font-medium ${
+            className={`mb-6 p-3.5 rounded-md text-xs font-medium flex items-center justify-between ${
               msg.type === 'success'
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                : 'bg-red-50 text-red-800 border border-red-200'
+                ? 'bg-neutral-50 border border-neutral-300 text-neutral-900'
+                : 'bg-red-50 border border-red-200 text-red-800'
             }`}
           >
-            {msg.text}
+            <div className="flex items-center gap-2">
+              {msg.type === 'success' && <Check className="w-4 h-4 text-neutral-900" />}
+              <span>{msg.text}</span>
+            </div>
+            <button onClick={() => setMsg(null)} className="text-neutral-400 hover:text-neutral-700 ml-2 text-sm font-bold">×</button>
           </div>
         )}
 
-        {/* Current Endpoint Status Banner */}
+        {/* Active Endpoint Status Banner */}
         {data?.endpoint && !loading && (
-          <div className="mb-6 p-4 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between">
+          <div className="mb-6 p-4 rounded-lg bg-neutral-50 border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div>
-              <p className="text-xs font-bold text-indigo-900 uppercase tracking-wider mb-0.5">Active Endpoint</p>
-              <p className="font-mono text-xs text-indigo-700 break-all">{data.endpoint.url}</p>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Live Endpoint</span>
+                <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold text-emerald-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  HMAC ACTIVE
+                </span>
+              </div>
+              <p className="font-mono text-xs text-neutral-900 break-all font-medium">{data.endpoint.url}</p>
             </div>
-            <span className="shrink-0 px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-mono font-bold uppercase">
-              HMAC Active
-            </span>
           </div>
         )}
 
         {loading ? (
-          <div className="space-y-6">
-            <Skeleton className="h-56 w-full rounded-3xl" />
-            <Skeleton className="h-64 w-full rounded-3xl" />
+          <div className="py-24 flex flex-col items-center justify-center text-neutral-400 gap-2">
+            <Loader2 className="w-6 h-6 animate-spin text-neutral-600" />
+            <p className="text-xs">Loading webhook configurations...</p>
           </div>
         ) : (
-          <>
-            {/* Config Card */}
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm mb-6">
-              <div className="flex items-center gap-2 mb-1">
-                <Webhook className="w-4 h-4 text-indigo-500 shrink-0" />
-                <h2 className="text-sm font-extrabold text-slate-900">Endpoint Configuration</h2>
+          <div className="space-y-6">
+            {/* Endpoint Configuration Panel */}
+            <div className="border border-neutral-200 rounded-lg p-6 bg-white space-y-4">
+              <div>
+                <h2 className="text-sm font-semibold text-neutral-900 tracking-tight">Endpoint Configuration</h2>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  Signed payloads are dispatched with the header <code className="font-mono bg-neutral-100 px-1.5 py-0.5 rounded text-[11px] text-neutral-800">X-Agentpay-Signature: t=timestamp,v1=hmac</code>.
+                </p>
               </div>
-              <p className="text-xs text-slate-500 mb-5">
-                Agentpay will POST signed events to this URL with header <code className="font-mono bg-slate-100 px-1 rounded">X-Agentpay-Signature: t=timestamp,v1=hmac</code>.
-              </p>
 
-              <form onSubmit={handleSaveWebhook} className="space-y-4">
+              <form onSubmit={handleSaveWebhook} className="space-y-4 pt-2">
                 <div>
-                  <label className={labelCls}>Webhook Receiving URL</label>
+                  <label className={labelCls}>Webhook Receiving URL *</label>
                   <input
                     type="url"
                     value={url}
@@ -162,7 +179,7 @@ export default function WebhooksPage() {
                     className={inputCls}
                     required
                   />
-                  <p className={hintCls}>Must be publicly reachable over HTTPS. Use ngrok for local testing.</p>
+                  <p className={hintCls}>Publicly accessible HTTPS endpoint. Use ngrok or localtunnel for local sandbox testing.</p>
                 </div>
 
                 <div>
@@ -177,74 +194,91 @@ export default function WebhooksPage() {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowSecret(v => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      onClick={() => setShowSecret((v) => !v)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 transition cursor-pointer"
                       title={showSecret ? 'Hide secret' : 'Reveal secret'}
                     >
                       {showSecret ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                   <p className={hintCls}>
-                    Verify signatures with: <code className="font-mono bg-slate-100 px-1 rounded">HMAC-SHA256(secret, t+"."+payload)</code>. Leave blank to auto-generate.
+                    Verify incoming event signatures: <code className="font-mono bg-neutral-100 px-1 rounded text-[10px]">HMAC-SHA256(secret, t + &quot;.&quot; + payload)</code>. Leave blank to auto-generate.
                   </p>
                 </div>
 
                 <div className="pt-2 flex justify-end">
-                  <Button type="submit" variant="indigo" size="sm" loading={saving}>
-                    Save Webhook Configuration
-                  </Button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="h-9 px-4 bg-neutral-900 hover:bg-black text-white text-xs font-medium rounded-md shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                    <span>Save Webhook Configuration</span>
+                  </button>
                 </div>
               </form>
             </div>
 
             {/* Delivery Logs Table */}
-            <div className="bg-white border border-slate-200/90 rounded-3xl shadow-sm overflow-hidden">
-              <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <h2 className="text-sm font-bold text-slate-900">Webhook Delivery Attempt History</h2>
-                <span className="text-[11px] font-mono text-slate-400">HMAC Signed · 3-attempt Retry Backoff</span>
+            <div className="border border-neutral-200 rounded-lg overflow-hidden bg-white">
+              <div className="px-6 py-3.5 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-600">
+                  Webhook Delivery Attempt History
+                </h2>
+                <span className="text-[11px] font-mono text-neutral-400">3-attempt Exponential Backoff</span>
               </div>
 
               {!data?.logs || data.logs.length === 0 ? (
-                <div className="p-16 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-4">
-                    <Webhook className="w-6 h-6 text-slate-300" />
+                <div className="p-14 text-center">
+                  <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-3 text-neutral-600 font-mono text-xs font-bold">
+                    HOOK
                   </div>
-                  <p className="text-sm font-bold text-slate-500">No delivery attempts yet</p>
-                  <p className="text-xs text-slate-400 mt-1">Configure an endpoint and fire a test event to see logs here.</p>
+                  <p className="text-xs font-semibold text-neutral-800">No delivery attempts recorded</p>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">Configure your URL and click &quot;Fire Test Event&quot; to test HMAC delivery.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50/80 border-b border-slate-100 text-slate-400 uppercase font-mono tracking-wider text-[10px]">
-                      <tr>
-                        <th className="px-6 py-3.5">Event Type</th>
-                        <th className="px-6 py-3.5">Status</th>
-                        <th className="px-6 py-3.5">HTTP Response</th>
-                        <th className="px-6 py-3.5">Attempts</th>
-                        <th className="px-6 py-3.5">Delivered At</th>
+                  <table className="w-full min-w-[700px] text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-neutral-50 border-b border-neutral-200 text-neutral-500 font-semibold uppercase tracking-wider text-[11px]">
+                        <th className="py-3 px-6 whitespace-nowrap">Event Type</th>
+                        <th className="py-3 px-4 whitespace-nowrap">Status</th>
+                        <th className="py-3 px-4 whitespace-nowrap">HTTP Response</th>
+                        <th className="py-3 px-4 whitespace-nowrap">Attempts</th>
+                        <th className="py-3 pr-6 pl-4 text-right whitespace-nowrap">Delivered At</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-neutral-100">
                       {data.logs.map((log) => (
-                        <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="px-6 py-4 font-mono font-semibold text-slate-900">{log.event_type}</td>
-                          <td className="px-6 py-4">
+                        <tr key={log.id} className="hover:bg-neutral-50/70 transition-colors">
+                          <td className="py-3.5 px-6 font-mono font-medium text-neutral-900 text-[11px] whitespace-nowrap">
+                            {log.event_type}
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap">
                             <span
-                              className={`px-2.5 py-0.5 rounded-full font-mono text-[10px] font-semibold ${
+                              className={`inline-flex items-center gap-1 font-mono text-[11px] font-semibold ${
                                 log.status === 'delivered'
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : 'bg-red-100 text-red-800'
+                                  ? 'text-emerald-700'
+                                  : 'text-red-700'
                               }`}
                             >
-                              {log.status}
+                              <span className={`w-1.5 h-1.5 rounded-full ${log.status === 'delivered' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                              {log.status.toUpperCase()}
                             </span>
                           </td>
-                          <td className="px-6 py-4 font-mono text-slate-600 text-[11px]">
-                            {log.response_status ? `HTTP ${log.response_status}` : 'Connection Timeout'}
+                          <td className="py-3.5 px-4 font-mono text-neutral-600 text-[11px] whitespace-nowrap">
+                            {log.response_status ? `HTTP ${log.response_status}` : 'Timeout / Gated'}
                           </td>
-                          <td className="px-6 py-4 font-mono text-slate-500">{log.attempts}</td>
-                          <td className="px-6 py-4 text-slate-400 font-mono text-[11px]">
-                            {log.created_at ? new Date(log.created_at).toLocaleString() : '—'}
+                          <td className="py-3.5 px-4 font-mono text-neutral-500 text-[11px]">{log.attempts}</td>
+                          <td className="py-3.5 pr-6 pl-4 text-right text-neutral-500 font-mono text-[11px] whitespace-nowrap">
+                            {log.created_at ? new Date(log.created_at).toLocaleString('en-IN', {
+                              month: 'short',
+                              day: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit',
+                              hour12: false
+                            }) : '—'}
                           </td>
                         </tr>
                       ))}
@@ -253,13 +287,9 @@ export default function WebhooksPage() {
                 </div>
               )}
             </div>
-          </>
+          </div>
         )}
       </main>
-
-      <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-400 mt-12">
-        Agentpay · Webhook Infrastructure · HMAC SHA-256 Signed · Razorpay AI Protocol
-      </footer>
     </div>
   );
 }
