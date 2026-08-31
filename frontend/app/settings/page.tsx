@@ -173,9 +173,23 @@ export default function SettingsPage() {
         )}
 
         {loading ? (
-          <div className="py-24 flex flex-col items-center justify-center text-neutral-400 gap-2">
-            <Loader2 className="w-6 h-6 animate-spin text-neutral-600" />
-            <p className="text-xs">Loading store governance profile...</p>
+          <div className="space-y-6 animate-pulse">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="border border-neutral-200 rounded-lg p-6 bg-white space-y-4">
+                <div className="h-4 w-48 bg-neutral-200 rounded"></div>
+                <div className="h-3 w-64 bg-neutral-100 rounded"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-2">
+                    <div className="h-3 w-28 bg-neutral-200/70 rounded"></div>
+                    <div className="h-9 w-full bg-neutral-100 rounded"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-3 w-32 bg-neutral-200/70 rounded"></div>
+                    <div className="h-9 w-full bg-neutral-100 rounded"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <form onSubmit={handleSaveSettings} className="space-y-6">

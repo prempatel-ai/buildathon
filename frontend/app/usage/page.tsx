@@ -165,9 +165,26 @@ export default function UsagePage() {
           </div>
         )}
 
-        <div className="space-y-6">
-          {/* Unified 4-Metric Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 border border-neutral-200 rounded-lg bg-white overflow-hidden">
+        {loading ? (
+          <div className="space-y-6 animate-pulse">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 border border-neutral-200 rounded-lg bg-white overflow-hidden">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-4 space-y-2">
+                  <div className="h-3 w-28 bg-neutral-200/70 rounded"></div>
+                  <div className="h-7 w-32 bg-neutral-300/80 rounded"></div>
+                  <div className="h-3 w-24 bg-neutral-200/60 rounded"></div>
+                </div>
+              ))}
+            </div>
+            <div className="border border-neutral-200 rounded-lg p-6 bg-white space-y-4">
+              <div className="h-4 w-40 bg-neutral-200 rounded"></div>
+              <div className="h-48 w-full bg-neutral-100/70 rounded"></div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Unified 4-Metric Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 border border-neutral-200 rounded-lg bg-white overflow-hidden">
             <div className="p-4">
               <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Gross Settled Volume</span>
               <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
@@ -479,6 +496,7 @@ export default function UsagePage() {
             )}
           </div>
         </div>
+      )}
       </main>
     </div>
   );

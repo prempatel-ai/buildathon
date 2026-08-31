@@ -217,9 +217,17 @@ function AuditViewerContent() {
           )}
 
           {loading ? (
-            <div className="py-20 flex flex-col items-center justify-center text-neutral-400 gap-2">
-              <Loader2 className="w-5 h-5 animate-spin text-neutral-600" />
-              <p className="text-xs">Loading immutable audit trail...</p>
+            <div className="divide-y divide-neutral-100 animate-pulse">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="py-3.5 px-6 flex items-center justify-between gap-4">
+                  <div className="h-4 w-36 bg-neutral-200/70 rounded"></div>
+                  <div className="h-4 w-20 bg-neutral-100 rounded"></div>
+                  <div className="h-4 w-40 bg-neutral-200/60 rounded"></div>
+                  <div className="h-4 w-16 bg-neutral-100 rounded"></div>
+                  <div className="h-4 w-64 bg-neutral-200/50 rounded flex-1"></div>
+                  <div className="h-6 w-16 bg-neutral-100 rounded"></div>
+                </div>
+              ))}
             </div>
           ) : events.length === 0 ? (
             <div className="p-12 text-center text-xs text-neutral-400 font-mono">
