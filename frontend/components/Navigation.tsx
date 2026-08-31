@@ -3,19 +3,23 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  IconStoreCatalog,
-  IconGovernance,
-  IconAnalytics,
-  IconAgentKey,
-  IconAudit,
-  IconWebhook,
-  IconDashboard,
-  IconSignOut
-} from '@/components/ui/custom-icons';
 import CommandSearchModal from '@/components/CommandSearchModal';
 import { removeAuthToken, getMerchantMe, Merchant } from '@/lib/api';
-import { ChevronDown, Search, ExternalLink, ShieldCheck, Shield, User, LogOut, Check, ShoppingBag, MapPin } from 'lucide-react';
+import {
+  ChevronDown,
+  Search,
+  LayoutDashboard,
+  Shield,
+  Key,
+  BarChart3,
+  FileText,
+  Webhook as WebhookIcon,
+  LogOut,
+  Check,
+  User,
+  MapPin,
+  ShoppingBag
+} from 'lucide-react';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -97,72 +101,64 @@ export default function Navigation() {
   };
 
   const merchantTabs = [
-    { label: 'Overview', href: '/dashboard', icon: IconDashboard },
-    { label: 'Policy & Governance', href: '/settings', icon: IconGovernance },
-    { label: 'AI Agent Keys', href: '/agents-list', icon: IconAgentKey },
-    { label: 'Analytics', href: '/usage', icon: IconAnalytics },
-    { label: 'Audit Trail', href: '/audit', icon: IconAudit },
-    { label: 'Webhooks', href: '/webhooks', icon: IconWebhook },
+    { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+    { label: 'Policy & Governance', href: '/settings', icon: Shield },
+    { label: 'AI Agent Keys', href: '/agents-list', icon: Key },
+    { label: 'Analytics', href: '/usage', icon: BarChart3 },
+    { label: 'Audit Trail', href: '/audit', icon: FileText },
+    { label: 'Webhooks', href: '/webhooks', icon: WebhookIcon },
   ];
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white border-b border-slate-200/90 shadow-2xs">
+      <header className="sticky top-0 z-40 bg-white border-b border-neutral-200">
         {/* Tier 1: Main Global Header */}
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          {/* Brand & Organization Selector */}
+        <div className="max-w-7xl mx-auto px-6 h-13 flex items-center justify-between">
+          {/* Brand & Store Selector */}
           <div className="flex items-center space-x-3">
-            <Link href="/" className="flex items-center space-x-2.5 group">
-              <div className="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center font-black text-white text-xs group-hover:bg-indigo-600 transition-colors shadow-2xs font-mono">
+            <Link href="/" className="flex items-center space-x-2 group">
+              <div className="w-6 h-6 rounded bg-neutral-950 flex items-center justify-center font-bold text-white text-[11px] font-mono shadow-xs">
                 AP
               </div>
-              <span className="font-black text-slate-900 tracking-tight text-sm">Agentpay</span>
+              <span className="font-bold text-neutral-900 tracking-tight text-sm">Agentpay</span>
             </Link>
 
-            <span className="text-slate-300 font-mono text-xs">/</span>
+            <span className="text-neutral-300 font-mono text-xs">/</span>
 
             {isMerchantContext && pathname !== '/onboarding' ? (
               <div className="relative">
                 <button
                   onClick={() => setStoreMenuOpen(!storeMenuOpen)}
-                  className="flex items-center space-x-2 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200/80 text-xs font-semibold text-slate-800 transition-colors select-none"
+                  className="flex items-center space-x-2 px-2.5 py-1 rounded-md bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-xs font-medium text-neutral-800 transition-colors select-none cursor-pointer"
                 >
-                  <div className="w-4 h-4 rounded bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-bold font-mono">
-                    {merchant?.name ? merchant.name[0].toUpperCase() : 'M'}
-                  </div>
-                  <span className="truncate max-w-[130px] font-semibold">{merchant?.name || 'Merchant Store'}</span>
-                  <span className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase tracking-wider ${
-                    merchant?.environment === 'live'
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : 'bg-amber-100 text-amber-800'
-                  }`}>
-                    {merchant?.environment === 'live' ? 'LIVE API' : 'SANDBOX API'}
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span className="truncate max-w-[150px] font-semibold text-neutral-900">{merchant?.name || 'Merchant Store'}</span>
+                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase tracking-wider bg-neutral-200/70 text-neutral-700">
+                    {merchant?.environment === 'live' ? 'LIVE' : 'SANDBOX'}
                   </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  <ChevronDown className="w-3 h-3 text-neutral-400" />
                 </button>
 
                 {storeMenuOpen && (
-                  <div className="absolute left-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-xl py-1 z-50 text-xs">
-                    <div className="px-3 py-2 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
-                      Switch Merchant Store
+                  <div className="absolute left-0 mt-1.5 w-60 bg-white border border-neutral-200 rounded-lg shadow-xl py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
+                    <div className="px-3 py-1.5 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider border-b border-neutral-100">
+                      Active Merchant Context
                     </div>
                     <button
                       onClick={() => setStoreMenuOpen(false)}
-                      className="w-full px-3 py-2 text-left flex items-center justify-between bg-indigo-50/60 text-indigo-900 font-bold"
+                      className="w-full px-3 py-2 text-left flex items-center justify-between bg-neutral-50 text-neutral-900 font-medium cursor-pointer"
                     >
                       <div className="flex items-center space-x-2">
-                        <div className="w-4.5 h-4.5 rounded bg-indigo-600 text-white flex items-center justify-center text-[10px] font-mono">
-                          {merchant?.name ? merchant.name[0].toUpperCase() : 'M'}
-                        </div>
-                        <span className="truncate font-bold">{merchant?.name || 'Current Store'}</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span className="truncate font-semibold">{merchant?.name || 'Current Store'}</span>
                       </div>
-                      <Check className="w-3.5 h-3.5 text-indigo-600" />
+                      <Check className="w-3.5 h-3.5 text-neutral-900" />
                     </button>
-                    <div className="border-t border-slate-100 mt-1 pt-1">
+                    <div className="border-t border-neutral-100 mt-1 pt-1">
                       <Link
                         href="/onboarding"
                         onClick={() => setStoreMenuOpen(false)}
-                        className="block px-3 py-2 text-slate-700 hover:bg-slate-50 font-semibold text-xs"
+                        className="block px-3 py-1.5 text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 text-xs transition-colors"
                       >
                         + Register New Store
                       </Link>
@@ -171,23 +167,23 @@ export default function Navigation() {
                 )}
               </div>
             ) : (
-              <span className="text-xs font-mono font-bold text-slate-600 uppercase tracking-wider">
-                {pathname === '/onboarding' ? 'Merchant Account Setup' : (isCustomerContext ? 'Consumer Portal' : 'Razorpay AI Protocol')}
+              <span className="text-xs font-mono text-neutral-500">
+                {pathname === '/onboarding' ? 'Account Setup' : (isCustomerContext ? 'Consumer Portal' : 'Razorpay AI Protocol')}
               </span>
             )}
           </div>
 
           {/* Global Action Utilities */}
-          <div className="flex items-center space-x-3">
-            {/* Interactive Search Bar Button */}
+          <div className="flex items-center space-x-2.5">
+            {/* Command Search Button */}
             {pathname !== '/onboarding' && (
               <button
                 onClick={() => setSearchOpen(true)}
-                className="flex items-center space-x-2 px-3 py-1.5 bg-slate-100/90 hover:bg-slate-200/80 active:scale-95 border border-slate-200/80 rounded-xl text-slate-600 text-xs font-medium select-none transition-all shadow-2xs"
+                className="flex items-center space-x-2 px-2.5 py-1 bg-neutral-50 hover:bg-neutral-100 active:scale-98 border border-neutral-200 rounded-md text-neutral-500 text-xs font-medium select-none transition-all cursor-pointer"
               >
-                <Search className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                <span className="font-semibold text-slate-700 hidden sm:inline">Search app...</span>
-                <kbd className="px-1.5 py-0.5 bg-white border border-slate-200/90 rounded text-[10px] text-slate-500 font-mono shadow-2xs font-bold">
+                <Search className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                <span className="text-neutral-600 hidden sm:inline">Search...</span>
+                <kbd className="px-1.5 py-0.5 bg-white border border-neutral-200 rounded text-[10px] text-neutral-400 font-mono">
                   ⌘K
                 </kbd>
               </button>
@@ -197,29 +193,29 @@ export default function Navigation() {
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="w-8 h-8 rounded-full bg-slate-900 text-white font-mono font-bold text-xs flex items-center justify-center border-2 border-white shadow-2xs hover:bg-indigo-600 transition-colors"
+                  className="w-7 h-7 rounded-full bg-neutral-900 text-white font-mono font-bold text-xs flex items-center justify-center hover:bg-black transition-colors cursor-pointer"
                 >
-                  {merchant?.name ? merchant.name[0].toUpperCase() : 'A'}
+                  {merchant?.name ? merchant.name[0].toUpperCase() : 'M'}
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-xl py-1 z-50 text-xs">
-                    <div className="px-3 py-2.5 border-b border-slate-100">
-                      <p className="font-extrabold text-slate-900 truncate text-xs">{merchant?.name || 'Merchant Admin'}</p>
-                      <p className="text-[10px] text-slate-400 font-mono mt-0.5">HMAC Authorized Token</p>
+                  <div className="absolute right-0 mt-1.5 w-52 bg-white border border-neutral-200 rounded-lg shadow-xl py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
+                    <div className="px-3 py-2 border-b border-neutral-100">
+                      <p className="font-semibold text-neutral-900 truncate text-xs">{merchant?.name || 'Merchant Admin'}</p>
+                      <p className="text-[10px] text-neutral-400 font-mono mt-0.5">Authenticated Merchant</p>
                     </div>
                     <Link
                       href="/settings"
                       onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center space-x-2 px-3 py-2 text-slate-700 hover:bg-slate-50 font-semibold"
+                      className="flex items-center space-x-2 px-3 py-2 text-neutral-700 hover:bg-neutral-50 font-medium transition-colors"
                     >
-                      <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Store Governance</span>
+                      <Shield className="w-3.5 h-3.5 text-neutral-400" />
+                      <span>Policy & Governance</span>
                     </Link>
-                    <div className="border-t border-slate-100 my-1" />
+                    <div className="border-t border-neutral-100 my-1" />
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left flex items-center space-x-2 px-3 py-2 text-red-600 hover:bg-red-50 font-bold"
+                      className="w-full text-left flex items-center space-x-2 px-3 py-2 text-red-600 hover:bg-red-50 font-medium transition-colors cursor-pointer"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>Sign Out</span>
@@ -228,61 +224,61 @@ export default function Navigation() {
                 )}
               </div>
             ) : customerName ? (
-              <div className="flex items-center space-x-2.5">
+              <div className="flex items-center space-x-2">
                 {pathname !== '/customer/chat' && (
                   <Link
                     href="/customer/chat"
-                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-2xs"
+                    className="px-3 py-1 rounded-md text-xs font-medium bg-neutral-900 text-white hover:bg-black transition-colors shadow-xs"
                   >
-                    Consumer Chat AI
+                    Shopping Chat
                   </Link>
                 )}
                 <div className="relative">
                   <button
                     onClick={() => setCustomerMenuOpen(!customerMenuOpen)}
-                    className="flex items-center space-x-2 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 text-xs font-semibold text-slate-800 transition-colors"
+                    className="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-xs font-medium text-neutral-800 transition-colors cursor-pointer"
                   >
-                    <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">
+                    <div className="w-5 h-5 rounded-full bg-neutral-900 text-white flex items-center justify-center text-[10px] font-bold">
                       {customerName[0].toUpperCase()}
                     </div>
-                    <span className="truncate max-w-[100px] font-bold text-slate-900">{customerName}</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="truncate max-w-[90px] font-semibold text-neutral-900">{customerName}</span>
+                    <ChevronDown className="w-3 h-3 text-neutral-400" />
                   </button>
 
                   {customerMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-xl py-1 z-50 text-xs">
-                      <div className="px-3 py-2.5 border-b border-slate-100">
-                        <p className="font-extrabold text-slate-900 truncate text-xs">{customerName}</p>
-                        {customerEmail && <p className="text-[10px] text-slate-400 truncate mt-0.5">{customerEmail}</p>}
+                    <div className="absolute right-0 mt-1.5 w-56 bg-white border border-neutral-200 rounded-lg shadow-xl py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
+                      <div className="px-3 py-2 border-b border-neutral-100">
+                        <p className="font-semibold text-neutral-900 truncate text-xs">{customerName}</p>
+                        {customerEmail && <p className="text-[10px] text-neutral-400 truncate mt-0.5">{customerEmail}</p>}
                       </div>
                       <Link
                         href="/customer/dashboard"
                         onClick={() => setCustomerMenuOpen(false)}
-                        className="flex items-center space-x-2 px-3 py-2 text-slate-700 hover:bg-slate-50 font-semibold"
+                        className="flex items-center space-x-2 px-3 py-2 text-neutral-700 hover:bg-neutral-50 font-medium transition-colors"
                       >
-                        <User className="w-3.5 h-3.5 text-slate-400" />
+                        <User className="w-3.5 h-3.5 text-neutral-400" />
                         <span>Spend Vault & Card</span>
                       </Link>
                       <Link
                         href="/customer/addresses"
                         onClick={() => setCustomerMenuOpen(false)}
-                        className="flex items-center space-x-2 px-3 py-2 text-slate-700 hover:bg-slate-50 font-semibold"
+                        className="flex items-center space-x-2 px-3 py-2 text-neutral-700 hover:bg-neutral-50 font-medium transition-colors"
                       >
-                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        <MapPin className="w-3.5 h-3.5 text-neutral-400" />
                         <span>Delivery Addresses</span>
                       </Link>
                       <Link
                         href="/customer/chat"
                         onClick={() => setCustomerMenuOpen(false)}
-                        className="flex items-center space-x-2 px-3 py-2 text-slate-700 hover:bg-slate-50 font-semibold"
+                        className="flex items-center space-x-2 px-3 py-2 text-neutral-700 hover:bg-neutral-50 font-medium transition-colors"
                       >
-                        <ShoppingBag className="w-3.5 h-3.5 text-slate-400" />
+                        <ShoppingBag className="w-3.5 h-3.5 text-neutral-400" />
                         <span>Shopping Chat</span>
                       </Link>
-                      <div className="border-t border-slate-100 my-1" />
+                      <div className="border-t border-neutral-100 my-1" />
                       <button
                         onClick={handleCustomerLogout}
-                        className="w-full text-left flex items-center space-x-2 px-3 py-2 text-red-600 hover:bg-red-50 font-bold"
+                        className="w-full text-left flex items-center space-x-2 px-3 py-2 text-red-600 hover:bg-red-50 font-medium transition-colors cursor-pointer"
                       >
                         <LogOut className="w-3.5 h-3.5" />
                         <span>Sign Out</span>
@@ -295,13 +291,13 @@ export default function Navigation() {
               <nav className="flex items-center space-x-2">
                 <Link
                   href="/customer/chat"
-                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-2xs"
+                  className="px-3 py-1 rounded-md text-xs font-medium bg-neutral-900 text-white hover:bg-black transition-colors"
                 >
-                  Consumer Chat AI
+                  Shopping Chat
                 </Link>
                 <Link
                   href="/customer/login"
-                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 border border-slate-200 transition-colors"
+                  className="px-3 py-1 rounded-md text-xs font-medium text-neutral-700 hover:bg-neutral-100 border border-neutral-200 transition-colors"
                 >
                   Sign In
                 </Link>
@@ -310,10 +306,10 @@ export default function Navigation() {
           </div>
         </div>
 
-        {/* Tier 2: Horizontal Sub-Navigation Strip (Hidden on Onboarding) */}
+        {/* Tier 2: Horizontal Sub-Navigation Strip */}
         {isMerchantContext && pathname !== '/onboarding' && (
-          <div className="border-t border-slate-100 bg-white">
-            <div className="max-w-7xl mx-auto px-6 flex items-center space-x-7 overflow-x-auto no-scrollbar">
+          <div className="border-t border-neutral-100 bg-white">
+            <div className="max-w-7xl mx-auto px-6 flex items-center space-x-6 overflow-x-auto no-scrollbar">
               {merchantTabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = pathname === tab.href;
@@ -321,13 +317,13 @@ export default function Navigation() {
                   <Link
                     key={tab.href}
                     href={tab.href}
-                    className={`py-2.5 text-xs flex items-center space-x-2 border-b-2 transition-all shrink-0 select-none tracking-tight ${
+                    className={`py-2 text-xs flex items-center space-x-1.5 border-b-2 transition-all shrink-0 select-none ${
                       isActive
-                        ? 'border-indigo-600 text-indigo-600 font-extrabold'
-                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300 font-semibold'
+                        ? 'border-neutral-900 text-neutral-900 font-semibold'
+                        : 'border-transparent text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 font-medium'
                     }`}
                   >
-                    <Icon size={14} className={isActive ? 'text-indigo-600' : 'text-slate-400'} />
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-neutral-900' : 'text-neutral-400'}`} />
                     <span>{tab.label}</span>
                   </Link>
                 );
