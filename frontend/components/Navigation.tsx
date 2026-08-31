@@ -27,7 +27,15 @@ export default function Navigation() {
   const router = useRouter();
   const [isCustomerContext, setIsCustomerContext] = useState(false);
   const [isMerchantContext, setIsMerchantContext] = useState(false);
-  const [merchant, setMerchant] = useState<Merchant | null>(null);
+  const [merchant, setMerchant] = useState<Merchant | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('agentpay_merchant_cache');
+        if (cached) return JSON.parse(cached);
+      } catch (e) {}
+    }
+    return null;
+  });
   const [customerName, setCustomerName] = useState<string | null>(null);
   const [customerEmail, setCustomerEmail] = useState<string | null>(null);
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
@@ -56,7 +64,16 @@ export default function Navigation() {
       setIsMerchantContext(true);
       setIsCustomerContext(false);
       if (merchToken) {
-        getMerchantMe().then(setMerchant).catch(() => {});
+        getMerchantMe()
+          .then((data) => {
+            if (data) {
+              setMerchant(data);
+              try {
+                localStorage.setItem('agentpay_merchant_cache', JSON.stringify(data));
+              } catch (e) {}
+            }
+          })
+          .catch(() => {});
       }
     } else {
       setIsCustomerContext(Boolean(custToken && !merchToken));

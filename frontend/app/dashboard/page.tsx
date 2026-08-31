@@ -21,12 +21,47 @@ import { Plus, Edit2, Trash2, Code, Package, Upload, X, Loader2, Check, External
 
 function DashboardContent() {
   const router = useRouter();
-  const [merchant, setMerchant] = useState<Merchant | null>(null);
-  const [items, setItems] = useState<CatalogItem[]>([]);
-  const [agentSchema, setAgentSchema] = useState<Record<string, any> | null>(null);
+  const [merchant, setMerchant] = useState<Merchant | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('agentpay_merchant_cache');
+        if (cached) return JSON.parse(cached);
+      } catch (e) {}
+    }
+    return null;
+  });
+
+  const [items, setItems] = useState<CatalogItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('agentpay_catalog_cache');
+        if (cached) return JSON.parse(cached);
+      } catch (e) {}
+    }
+    return [];
+  });
+
+  const [agentSchema, setAgentSchema] = useState<Record<string, any> | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('agentpay_schema_cache');
+        if (cached) return JSON.parse(cached);
+      } catch (e) {}
+    }
+    return null;
+  });
+
   const [activeTab, setActiveTab] = useState<'catalog' | 'schema'>('catalog');
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('agentpay_catalog_cache');
+        if (cached && JSON.parse(cached).length > 0) return false;
+      } catch (e) {}
+    }
+    return true;
+  });
   const [error, setError] = useState<string | null>(null);
 
   // Pagination for catalog
@@ -103,7 +138,6 @@ function DashboardContent() {
   useAuthGuard(loadDashboardData);
 
   async function loadDashboardData() {
-    setLoading(true);
     setError(null);
     try {
       const meData = await getMerchantMe();
@@ -112,6 +146,9 @@ function DashboardContent() {
         return;
       }
       setMerchant(meData);
+      try {
+        localStorage.setItem('agentpay_merchant_cache', JSON.stringify(meData));
+      } catch (e) {}
 
       const [catData, schemaData] = await Promise.all([
         fetchCatalogItems(meData.id).catch(() => []),
@@ -119,6 +156,10 @@ function DashboardContent() {
       ]);
       setItems(catData);
       setAgentSchema(schemaData);
+      try {
+        localStorage.setItem('agentpay_catalog_cache', JSON.stringify(catData));
+        if (schemaData) localStorage.setItem('agentpay_schema_cache', JSON.stringify(schemaData));
+      } catch (e) {}
     } catch (err: any) {
       router.push('/onboarding');
       return;
