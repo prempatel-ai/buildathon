@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/custom-icons';
 import CommandSearchModal from '@/components/CommandSearchModal';
 import { removeAuthToken, getMerchantMe, Merchant } from '@/lib/api';
-import { ChevronDown, Search, ExternalLink, ShieldCheck, User, LogOut, Check, Sparkles } from 'lucide-react';
+import { ChevronDown, Search, ExternalLink, ShieldCheck, User, LogOut, Check, Sparkles, MapPin } from 'lucide-react';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -261,7 +261,15 @@ export default function Navigation() {
                         className="flex items-center space-x-2 px-3 py-2 text-slate-700 hover:bg-slate-50 font-semibold"
                       >
                         <User className="w-3.5 h-3.5 text-slate-400" />
-                        <span>My Card & Limits</span>
+                        <span>Spend Vault & Card</span>
+                      </Link>
+                      <Link
+                        href="/customer/addresses"
+                        onClick={() => setCustomerMenuOpen(false)}
+                        className="flex items-center space-x-2 px-3 py-2 text-slate-700 hover:bg-slate-50 font-semibold"
+                      >
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Delivery Addresses</span>
                       </Link>
                       <Link
                         href="/customer/chat"

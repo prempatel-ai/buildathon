@@ -2,9 +2,23 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { API_BASE_URL } from '@/lib/api';
+import { API_BASE_URL, getCustomerToken } from '@/lib/api';
 import Navigation from '@/components/Navigation';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import {
+  CreditCard,
+  Lock,
+  ArrowRight,
+  ShieldCheck,
+  MapPin,
+  MessageSquare,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  RefreshCw,
+  Clock,
+  ExternalLink,
+  ChevronRight
+} from 'lucide-react';
 
 interface SpendAuth {
   id: string;
@@ -39,13 +53,15 @@ export default function CustomerDashboardPage() {
   const [error, setError] = useState('');
 
   const fetchDashboard = async () => {
-    const token = localStorage.getItem('customer_token');
+    const token = getCustomerToken();
     if (!token) {
       router.push('/customer/login');
       return;
     }
 
     try {
+      setLoading(true);
+      setError('');
       const res = await fetch(`${API_BASE_URL}/customer/authorizations/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -72,7 +88,7 @@ export default function CustomerDashboardPage() {
         if (data.active_authorization.vpa) setVpa(data.active_authorization.vpa);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to load dashboard');
+      setError(err.message || 'Failed to load spend vault data');
     } finally {
       setLoading(false);
     }
@@ -88,7 +104,7 @@ export default function CustomerDashboardPage() {
     setMessage('');
     setError('');
 
-    const token = localStorage.getItem('customer_token');
+    const token = getCustomerToken();
     try {
       const res = await fetch(`${API_BASE_URL}/customer/authorizations`, {
         method: 'POST',
@@ -111,266 +127,307 @@ export default function CustomerDashboardPage() {
         throw new Error(data.detail || 'Failed to set authorization limit');
       }
 
-      setMessage(`Spend authorization of ₹${data.spend_limit} and Payment Method tokenized cleanly!`);
+      setMessage(`Spend authorization of ₹${Number(data.spend_limit).toLocaleString('en-IN')} updated and card tokenized.`);
       setAuthorization(data);
-      fetchDashboard();
+      await fetchDashboard();
+      setTimeout(() => setMessage(''), 4000);
     } catch (err: any) {
-      setError(err.message || 'Error updating limit');
+      setError(err.message || 'Error updating spend authorization');
     } finally {
       setSavingLimit(false);
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('customer_token');
-    localStorage.removeItem('customer_id');
-    router.push('/customer/login');
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-        <Navigation />
-        <div className="flex-1 flex items-center justify-center text-sm font-medium text-slate-500">
-          Loading Consumer Portal...
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#fafafa] text-slate-900 flex flex-col font-sans selection:bg-slate-200">
       <Navigation />
-      <main className="max-w-5xl mx-auto w-full px-6 py-8 flex-1">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-200">
+
+      {/* Main Container */}
+      <main className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex-1">
+        {/* Header Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-200/80">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Consumer Identity & Payment Authorization Portal</h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Signed in as <span className="font-semibold text-slate-900">{customer?.name}</span> ({customer?.email})
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Consumer Account</span>
+              <span className="text-slate-300">•</span>
+              <span className="text-xs text-slate-500 font-medium">
+                {customer?.email || 'customer@example.com'}
+              </span>
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Spend Vault & Payment Methods</h1>
+            <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+              Manage tokenized payment instruments and set per-transaction spend caps enforced on autonomous AI shopping agents.
             </p>
           </div>
-          <div className="flex items-center space-x-3">
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              onClick={() => router.push('/customer/addresses')}
+              className="px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors shadow-2xs flex items-center gap-1.5"
+            >
+              <MapPin className="w-3.5 h-3.5 text-slate-500" />
+              Delivery Addresses
+            </button>
             <button
               onClick={() => router.push('/customer/chat')}
-              className="inline-flex items-center space-x-2 px-4 py-2.5 text-xs font-semibold text-white bg-slate-900 hover:bg-indigo-600 rounded-xl transition-all shadow-xs border border-slate-800 active:scale-95 group"
+              className="px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-xs transition-all flex items-center gap-1.5"
             >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400 group-hover:rotate-12 transition-transform" />
-              <span>Launch AI Shopping Chat</span>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+              <MessageSquare className="w-3.5 h-3.5" />
+              Shopping Chat
             </button>
           </div>
         </div>
 
+        {/* Banner Alert Messages */}
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-mono">
-            {error}
+          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200/80 text-red-700 text-xs flex items-center justify-between shadow-2xs">
+            <span>{error}</span>
+            <button onClick={() => setError('')} className="text-red-500 hover:text-red-700 font-bold ml-2">×</button>
           </div>
         )}
 
         {message && (
-          <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono">
-            {message}
+          <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs flex items-center gap-2 shadow-2xs">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-600"></div>
+            <span>{message}</span>
           </div>
         )}
 
-        {/* Saved Tokenized Payment Card & Metrics Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Card Preview Widget */}
-          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 rounded-2xl text-white shadow-lg flex flex-col justify-between h-48 border border-slate-700">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono font-semibold text-emerald-400 tracking-wider uppercase">
-                Razorpay Tokenized Vault
-              </span>
-              <span className="text-xs font-extrabold font-mono tracking-widest text-slate-300 uppercase">
-                {authorization?.card_brand || 'VISA'}
-              </span>
-            </div>
-
-            <div>
-              <div className="text-lg font-mono tracking-widest text-slate-200 mb-1">
-                •••• •••• •••• {authorization?.card_last4 || '4242'}
-              </div>
-              <div className="text-xs text-slate-400 font-mono truncate">
-                Customer ID: {authorization?.razorpay_customer_id || 'cust_pending'}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-slate-700 text-xs">
-              <div>
-                <div className="text-[10px] text-slate-400 uppercase">Cardholder</div>
-                <div className="font-semibold text-slate-100">{authorization?.cardholder_name || customer?.name}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] text-slate-400 uppercase">Status</div>
-                <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  {authorization?.status === 'active' ? 'ACTIVE TOKEN' : 'INACTIVE'}
-                </span>
-              </div>
-            </div>
+        {loading ? (
+          <div className="py-24 flex flex-col items-center justify-center text-slate-400 gap-3">
+            <Loader2 className="w-7 h-7 animate-spin text-slate-600" />
+            <p className="text-xs font-medium">Loading spend vault...</p>
           </div>
-
-          {/* Spend Limit Metric */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-48">
-            <div>
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Authorized Spend Limit</span>
-              <div className="text-3xl font-extrabold text-slate-900 mt-2">
-                ₹{authorization ? Number(authorization.spend_limit).toLocaleString('en-IN') : '0'}
-              </div>
-              <div className="text-xs text-slate-500 mt-2">Per-Transaction Spend Cap</div>
-            </div>
-            <div className="pt-3 border-t border-slate-100 text-xs text-slate-500 font-mono">
-              Token ID: {authorization?.razorpay_token_id || 'None'}
-            </div>
-          </div>
-
-          {/* Remaining Balance Metric */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-48">
-            <div>
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Remaining Balance</span>
-              <div className="text-3xl font-extrabold text-emerald-600 mt-2">
-                ₹{authorization ? Number(authorization.remaining_limit).toLocaleString('en-IN') : '0'}
-              </div>
-              <div className="text-xs text-slate-500 mt-2">Available for Autonomous AI Purchases</div>
-            </div>
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span className="text-slate-400 font-mono">UPI VPA:</span>
-              <span className="font-mono text-slate-700 font-semibold">{authorization?.vpa || 'Not configured'}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Set / Update Authorization & Card Details Form */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-8">
-          <h2 className="text-base font-bold text-slate-900 mb-1">Configure Saved Payment Method & Spend Limit</h2>
-          <p className="text-xs text-slate-500 mb-6">
-            Add or update your payment card/UPI details and establish the maximum spend authorization limit for your AI Shopping Assistant.
-          </p>
-
-          <form onSubmit={handleCreateAuthorization} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Cardholder Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={cardholderName}
-                  onChange={(e) => setCardholderName(e.target.value)}
-                  placeholder="Prem Patel"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Payment Method Type
-                </label>
-                <select
-                  value={cardBrand}
-                  onChange={(e) => setCardBrand(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
-                >
-                  <option value="Visa">Visa Credit/Debit Card</option>
-                  <option value="Mastercard">Mastercard</option>
-                  <option value="RuPay">RuPay Card</option>
-                  <option value="UPI AutoPay">UPI AutoPay / e-Mandate</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Last 4 Digits of Card
-                </label>
-                <input
-                  type="text"
-                  maxLength={4}
-                  required
-                  value={cardLast4}
-                  onChange={(e) => setCardLast4(e.target.value)}
-                  placeholder="4242"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  UPI VPA (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={vpa}
-                  onChange={(e) => setVpa(e.target.value)}
-                  placeholder="prem@upi"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Max Spend Limit (INR)
-                </label>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  step="any"
-                  value={spendLimit}
-                  onChange={(e) => setSpendLimit(e.target.value)}
-                  placeholder="5000"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
-                />
-              </div>
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <button
-                type="submit"
-                disabled={savingLimit}
-                className="py-2.5 px-6 rounded-xl bg-slate-900 text-white font-semibold text-sm hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50"
-              >
-                {savingLimit ? 'Saving & Tokenizing...' : 'Save Payment Method & Authorize Limit'}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Audit & Settlement Log Table */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <h2 className="text-base font-bold text-slate-900 mb-1">AI Agent Purchases & Multi-Actor Audit Trail</h2>
-          <p className="text-xs text-slate-500 mb-4">
-            Live chronological ledger of all customer authorization evaluations, merchant policy evaluations, and Razorpay payment captures.
-          </p>
-
-          {recentTransactions.length === 0 ? (
-            <div className="text-xs text-slate-500 py-6 text-center">No AI agent transaction events recorded yet.</div>
-          ) : (
-            <div className="space-y-3">
-              {recentTransactions.map((tx) => (
-                <div key={tx.id} className="p-4 bg-slate-50 rounded-xl border border-slate-100 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-mono font-bold text-slate-900">{tx.action}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        tx.decision === 'ALLOW' || tx.decision === 'ACTIVE' || tx.decision === 'REGISTERED' || tx.decision === 'SETTLED' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {tx.decision}
-                      </span>
-                    </div>
-                    <p className="text-slate-600 leading-relaxed">{tx.reasoning}</p>
+        ) : (
+          <div className="space-y-6">
+            {/* Top Row: Tokenized Card & Spend Metrics */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Tokenized Card Preview */}
+              <div className="bg-slate-900 p-6 rounded-2xl text-white shadow-sm flex flex-col justify-between h-52 border border-slate-800 relative overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                    <span className="text-[11px] font-mono font-semibold text-slate-300 uppercase tracking-wider">
+                      Tokenized Vault
+                    </span>
                   </div>
+                  <span className="text-xs font-mono font-bold tracking-widest text-slate-200 uppercase">
+                    {authorization?.card_brand || 'VISA'}
+                  </span>
+                </div>
 
-                  <div className="text-left sm:text-right text-[10px] font-mono text-slate-400 shrink-0">
-                    <div>{tx.created_at ? new Date(tx.created_at).toLocaleString() : ''}</div>
+                <div>
+                  <div className="text-xl font-mono tracking-widest text-white mb-1.5">
+                    •••• •••• •••• {authorization?.card_last4 || '4242'}
+                  </div>
+                  <div className="text-[11px] text-slate-400 font-mono truncate">
+                    ID: {authorization?.razorpay_customer_id || 'cust_token_active'}
                   </div>
                 </div>
-              ))}
+
+                <div className="flex items-center justify-between pt-3 border-t border-slate-800 text-xs">
+                  <div>
+                    <div className="text-[10px] text-slate-400 uppercase tracking-wider">Cardholder</div>
+                    <div className="font-semibold text-slate-100 text-xs">{authorization?.cardholder_name || customer?.name || 'Prem Patel'}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] text-slate-400 uppercase tracking-wider">Status</div>
+                    <span className="text-[10px] font-semibold text-emerald-400">
+                      {authorization?.status === 'active' ? 'Active Token' : 'Inactive'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Authorized Spend Limit Metric */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between h-52">
+                <div>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Authorized Limit</span>
+                  <div className="text-3xl font-bold text-slate-900 mt-2 tracking-tight">
+                    ₹{authorization ? Number(authorization.spend_limit).toLocaleString('en-IN') : '0'}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">Maximum cap permitted per autonomous transaction.</p>
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <span>Enforcement:</span>
+                  <span className="font-medium text-slate-800">Per Transaction</span>
+                </div>
+              </div>
+
+              {/* Remaining Balance Metric */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between h-52">
+                <div>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Available Balance</span>
+                  <div className="text-3xl font-bold text-emerald-600 mt-2 tracking-tight">
+                    ₹{authorization ? Number(authorization.remaining_limit).toLocaleString('en-IN') : '0'}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">Available quota for instant AI agent settlements.</p>
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <span>UPI VPA:</span>
+                  <span className="font-mono font-medium text-slate-800">{authorization?.vpa || 'Default'}</span>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Set / Update Authorization & Card Details Form */}
+            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-2xs">
+              <div className="pb-4 mb-6 border-b border-slate-100">
+                <h2 className="text-base font-bold text-slate-900 tracking-tight">Configure Payment Token & Spend Limit</h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Update your saved payment instrument and establish the transaction cap enforced by the Bounded Policy Engine.
+                </p>
+              </div>
+
+              <form onSubmit={handleCreateAuthorization} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Cardholder Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={cardholderName}
+                      onChange={(e) => setCardholderName(e.target.value)}
+                      placeholder="Prem Patel"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Payment Method Network
+                    </label>
+                    <select
+                      value={cardBrand}
+                      onChange={(e) => setCardBrand(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
+                    >
+                      <option value="Visa">Visa Debit / Credit Card</option>
+                      <option value="Mastercard">Mastercard</option>
+                      <option value="RuPay">RuPay Card</option>
+                      <option value="UPI AutoPay">UPI AutoPay / e-Mandate</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Last 4 Digits of Card *
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={4}
+                      required
+                      value={cardLast4}
+                      onChange={(e) => setCardLast4(e.target.value)}
+                      placeholder="4242"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono text-slate-900 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      UPI VPA (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={vpa}
+                      onChange={(e) => setVpa(e.target.value)}
+                      placeholder="prem@upi"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono text-slate-900 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Per-Transaction Spend Cap (₹) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      step="any"
+                      value={spendLimit}
+                      onChange={(e) => setSpendLimit(e.target.value)}
+                      placeholder="5000"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-slate-50 focus:bg-white focus:border-slate-400 focus:outline-hidden font-mono transition"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-3 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={savingLimit}
+                    className="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-semibold text-xs hover:bg-slate-800 transition-all shadow-xs disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {savingLimit && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    Save & Tokenize Spend Cap
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Audit Trail & Settlement Activity Log */}
+            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-2xs">
+              <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 tracking-tight">Autonomous Agent Activity Ledger</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Live chronological audit trail of spend authorization checks and payment settlements.
+                  </p>
+                </div>
+                <button
+                  onClick={fetchDashboard}
+                  className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-900 transition-colors"
+                  title="Refresh activity"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+
+              {recentTransactions.length === 0 ? (
+                <div className="text-xs text-slate-400 py-12 text-center font-medium">
+                  No autonomous agent transaction events recorded yet.
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {recentTransactions.map((tx) => (
+                    <div key={tx.id} className="py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900 font-mono">{tx.action}</span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                            tx.decision === 'ALLOW' || tx.decision === 'ACTIVE' || tx.decision === 'REGISTERED' || tx.decision === 'SETTLED'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
+                              : 'bg-red-50 text-red-700 border border-red-200/80'
+                          }`}>
+                            {tx.decision}
+                          </span>
+                        </div>
+                        <p className="text-slate-600 text-xs leading-relaxed">{tx.reasoning}</p>
+                      </div>
+
+                      <div className="text-left sm:text-right text-[11px] font-mono text-slate-400 shrink-0">
+                        {tx.created_at ? new Date(tx.created_at).toLocaleString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : ''}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
