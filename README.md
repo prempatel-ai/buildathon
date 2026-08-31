@@ -24,6 +24,7 @@
 ## 📑 Table of Contents
 
 - [Executive Summary & The Paradigm Shift](#-executive-summary--the-paradigm-shift)
+- [Platform Interface Showcase](#-platform-interface-showcase)
 - [The Problem We Solve](#-the-problem-we-solve)
 - [Core Architectural Pillars](#-core-architectural-pillars)
 - [System Architecture & Flow](#-system-architecture--flow)
@@ -43,6 +44,33 @@
 - [Environment Variables](#-environment-variables)
 - [Demo Credentials](#-demo-credentials)
 - [License & Acknowledgments](#-license--acknowledgments)
+
+---
+
+## 📸 Platform Interface Showcase
+
+### 1. Consumer Autonomous Commerce & Spend Vault
+| Autonomous AI Shopping Assistant & Settlement | Consumer Spend Vault & Tokenized Card Caps |
+|:---:|:---:|
+| <img src="img/consumer-chat.png" alt="Consumer Shopping Chat" width="500" /> | <img src="img/consumer-vault.png" alt="Consumer Spend Vault" width="500" /> |
+| *Real-time natural language discovery with programmatic Razorpay settlement receipt.* | *Tokenized instrument vault with configurable per-transaction spending limit.* |
+
+### 2. Merchant Operations & Analytics Suite
+| Live Catalog & AI Discovery Inventory | Executive Performance Analytics & Volume Timeline |
+|:---:|:---:|
+| <img src="img/merchant-dashboard.png" alt="Merchant Dashboard" width="500" /> | <img src="img/merchant-analytics.png" alt="Merchant Analytics" width="500" /> |
+| *Manage SKUs, stock levels, and verify machine-readable JSON-LD schema feeds.* | *Real-time telemetry on gross settled protocol volume and gating decisions.* |
+
+| Immutable Cryptographic Audit Trail |
+|:---:|
+| <img src="img/merchant-audit.png" alt="Merchant Audit Trail" width="1000" /> |
+| *Chronological append-only ledger with automated PII masking and decision reasoning.* |
+
+### 3. Platform Admin & Governance Console
+| Platform Overview & Protocol Metrics | Multi-Merchant Moderation & KYC Directory |
+|:---:|:---:|
+| <img src="img/admin-overview.png" alt="Admin Overview" width="500" /> | <img src="img/admin-merchants.png" alt="Admin Merchants Directory" width="500" /> |
+| *Global settled volume ledger and dual-gate bounded execution status.* | *Multi-tenant store verification, SKU monitoring, and instant moderation.* |
 
 ---
 
