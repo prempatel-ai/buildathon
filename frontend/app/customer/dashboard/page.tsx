@@ -43,6 +43,7 @@ export default function CustomerDashboardPage() {
   const [cardholderName, setCardholderName] = useState('');
   const [vpa, setVpa] = useState('');
   const [savingLimit, setSavingLimit] = useState(false);
+  const [resettingBalance, setResettingBalance] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -92,6 +93,32 @@ export default function CustomerDashboardPage() {
     fetchDashboard();
   }, []);
 
+  const handleResetBalance = async () => {
+    const token = getCustomerToken();
+    if (!token) return;
+    setResettingBalance(true);
+    setMessage('');
+    setError('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/customer/authorizations/reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Failed to recharge balance');
+      setMessage(`Available quota successfully recharged to full authorized limit of ₹${Number(data.spend_limit).toLocaleString('en-IN')}.`);
+      setAuthorization(data);
+      setTimeout(() => setMessage(''), 4000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to recharge balance');
+    } finally {
+      setResettingBalance(false);
+    }
+  };
+
   const handleCreateAuthorization = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingLimit(true);
@@ -113,6 +140,7 @@ export default function CustomerDashboardPage() {
           card_last4: cardLast4,
           cardholder_name: cardholderName,
           vpa: vpa || undefined,
+          reset_balance: false,
         }),
       });
 
@@ -121,7 +149,7 @@ export default function CustomerDashboardPage() {
         throw new Error(data.detail || 'Failed to set authorization limit');
       }
 
-      setMessage(`Spend authorization of ₹${Number(data.spend_limit).toLocaleString('en-IN')} updated and card tokenized.`);
+      setMessage(`Spend cap of ₹${Number(data.spend_limit).toLocaleString('en-IN')} updated. Available balance preserved at ₹${Number(data.remaining_limit).toLocaleString('en-IN')}.`);
       setAuthorization(data);
       await fetchDashboard();
       setTimeout(() => setMessage(''), 4000);
@@ -251,15 +279,30 @@ export default function CustomerDashboardPage() {
               {/* Remaining Balance Metric */}
               <div className="bg-white p-6 rounded-lg border border-neutral-200 flex flex-col justify-between h-48">
                 <div>
-                  <span className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">Available Balance</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">Available Balance</span>
+                    {authorization && Number(authorization.remaining_limit) < Number(authorization.spend_limit) && (
+                      <button
+                        onClick={handleResetBalance}
+                        disabled={resettingBalance}
+                        className="text-[10.5px] font-medium text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded px-2 py-0.5 flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Recharge balance to full authorized cap"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${resettingBalance ? 'animate-spin' : ''}`} />
+                        <span>Recharge Full Cap</span>
+                      </button>
+                    )}
+                  </div>
                   <div className="text-2xl font-bold font-mono text-neutral-900 mt-1 tracking-tight">
-                    ₹{authorization ? Number(authorization.remaining_limit).toLocaleString('en-IN') : '0'}
+                    ₹{authorization ? Number(authorization.remaining_limit).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}
                   </div>
                   <p className="text-xs text-neutral-500 mt-1">Available quota for instant AI agent settlements.</p>
                 </div>
                 <div className="pt-3 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
-                  <span>UPI VPA:</span>
-                  <span className="font-mono font-medium text-neutral-900">{authorization?.vpa || 'Default'}</span>
+                  <span>Quota Utilized:</span>
+                  <span className="font-mono font-medium text-neutral-900">
+                    ₹{authorization ? Math.max(0, Number(authorization.spend_limit) - Number(authorization.remaining_limit)).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}
+                  </span>
                 </div>
               </div>
             </div>

@@ -11,6 +11,7 @@ class SpendAuthorizationCreate(BaseModel):
     card_last4: Optional[str] = Field("4242", description="Last 4 digits of tokenized card")
     cardholder_name: Optional[str] = Field(None, description="Cardholder name")
     vpa: Optional[str] = Field(None, description="UPI Virtual Payment Address / VPA")
+    reset_balance: Optional[bool] = Field(False, description="If true, resets available quota to full spend_limit; otherwise preserves spent amount")
 
 class SpendAuthorizationRead(BaseModel):
     id: UUID

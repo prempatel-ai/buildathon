@@ -116,13 +116,27 @@ def create_spend_authorization(
 
     rzp_token_id = f"token_rzp_{uuid.uuid4().hex[:12]}"
 
-    # Deactivate existing active authorizations for clean replacement
+    # Query latest active authorization to calculate already-spent amount
     existing_active = db.query(SpendAuthorization).filter(
         SpendAuthorization.customer_id == customer.id,
         SpendAuthorization.status == "active"
+    ).order_by(SpendAuthorization.created_at.desc()).first()
+
+    if existing_active and not req.reset_balance:
+        old_limit = existing_active.spend_limit or Decimal("0.00")
+        old_remaining = existing_active.remaining_limit if existing_active.remaining_limit is not None else old_limit
+        spent_amount = max(Decimal("0.00"), old_limit - old_remaining)
+        calculated_remaining = max(Decimal("0.00"), req.spend_limit - spent_amount)
+    else:
+        calculated_remaining = req.spend_limit
+
+    # Deactivate existing active authorizations for clean replacement
+    all_active = db.query(SpendAuthorization).filter(
+        SpendAuthorization.customer_id == customer.id,
+        SpendAuthorization.status == "active"
     ).all()
-    for auth in existing_active:
-        auth.status = "superseded"
+    for a in all_active:
+        a.status = "superseded"
 
     auth = SpendAuthorization(
         customer_id=customer.id,
@@ -133,7 +147,7 @@ def create_spend_authorization(
         cardholder_name=req.cardholder_name or customer.name,
         vpa=req.vpa,
         spend_limit=req.spend_limit,
-        remaining_limit=req.spend_limit,
+        remaining_limit=calculated_remaining,
         period=req.period,
         status="active"
     )
@@ -149,12 +163,53 @@ def create_spend_authorization(
         action="spend_authorization_created",
         input={
             "spend_limit": str(req.spend_limit),
+            "remaining_limit": str(calculated_remaining),
             "period": req.period,
             "razorpay_customer_id": rzp_customer_id,
             "razorpay_token_id": rzp_token_id
         },
         decision="ACTIVE",
-        reasoning=f"Customer created active spend authorization limit of ₹{req.spend_limit}.",
+        reasoning=f"Customer updated spend authorization to ₹{req.spend_limit} (Available Balance: ₹{calculated_remaining}).",
+        merchant_id=None
+    )
+
+    return auth
+
+@router.post("/authorizations/reset", response_model=SpendAuthorizationRead)
+def reset_spend_authorization_balance(
+    customer: Customer = Depends(get_current_customer),
+    db: Session = Depends(get_db)
+):
+    """
+    Restores current active spend authorization's remaining balance back to its full authorized limit.
+    """
+    auth = db.query(SpendAuthorization).filter(
+        SpendAuthorization.customer_id == customer.id,
+        SpendAuthorization.status == "active"
+    ).order_by(SpendAuthorization.created_at.desc()).first()
+
+    if not auth:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No active spend authorization found to reset."
+        )
+
+    auth.remaining_limit = auth.spend_limit
+    db.commit()
+    db.refresh(auth)
+
+    AuditService.log_event(
+        db=db,
+        actor_type="customer",
+        actor_id=str(customer.id),
+        action="spend_authorization_reset",
+        input={
+            "authorization_id": str(auth.id),
+            "spend_limit": str(auth.spend_limit),
+            "remaining_limit": str(auth.remaining_limit)
+        },
+        decision="RESET",
+        reasoning=f"Customer reset active spend quota to full authorized limit of ₹{auth.spend_limit}.",
         merchant_id=None
     )
 
