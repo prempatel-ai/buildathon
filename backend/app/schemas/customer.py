@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 class CustomerRegister(BaseModel):
     name: str = Field(..., min_length=2, max_length=255, description="Customer full name")
@@ -18,8 +18,7 @@ class CustomerRead(BaseModel):
     email: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class CustomerAuthToken(BaseModel):
     access_token: str

@@ -1,7 +1,7 @@
 from uuid import UUID
 from datetime import datetime
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class AuditEventCreate(BaseModel):
     merchant_id: Optional[UUID] = None
@@ -23,11 +23,12 @@ class AuditEventRead(BaseModel):
     reasoning: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AuditPaginatedResponse(BaseModel):
     total: int
     items: List[AuditEventRead]
     skip: int
     limit: int
+
+    model_config = ConfigDict(from_attributes=True)

@@ -1,19 +1,19 @@
 import uuid
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class AddressBase(BaseModel):
-    label: str = Field("Home", example="Home")
-    recipient_name: str = Field(..., example="Prem Patel")
-    phone: str = Field(..., example="+919876543210")
-    line1: str = Field(..., example="Flat 402, Skyline Residency")
-    line2: Optional[str] = Field(None, example="MG Road, Indiranagar")
-    city: str = Field(..., example="Bengaluru")
-    state: str = Field(..., example="Karnataka")
-    postal_code: str = Field(..., example="560038")
-    country: str = Field("IN", example="IN")
-    is_default: bool = Field(False)
+    label: str = Field(default="Home", description="Address label (Home, Work, etc.)")
+    recipient_name: str = Field(..., description="Recipient full name")
+    phone: str = Field(..., description="Contact phone number")
+    line1: str = Field(..., description="Street address line 1")
+    line2: Optional[str] = Field(None, description="Street address line 2")
+    city: str = Field(..., description="City")
+    state: str = Field(..., description="State")
+    postal_code: str = Field(..., description="PIN / Postal Code")
+    country: str = Field(default="IN", description="Country code")
+    is_default: bool = Field(default=False, description="Whether this address is the default")
 
 class AddressCreate(AddressBase):
     pass
@@ -36,5 +36,4 @@ class AddressResponse(AddressBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

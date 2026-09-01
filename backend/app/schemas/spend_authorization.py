@@ -1,17 +1,17 @@
 from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
-from typing import Optional, Literal
-from pydantic import BaseModel, Field
+from typing import Optional, Literal, Dict, Any, List
+from pydantic import BaseModel, Field, ConfigDict
 
 class SpendAuthorizationCreate(BaseModel):
     spend_limit: Decimal = Field(..., gt=0, description="Spend authorization maximum limit in INR")
-    period: Literal["per_transaction", "monthly"] = Field("per_transaction", description="Authorization reset period")
-    card_brand: Optional[str] = Field("Visa", description="Card brand or payment type")
-    card_last4: Optional[str] = Field("4242", description="Last 4 digits of tokenized card")
-    cardholder_name: Optional[str] = Field(None, description="Cardholder name")
-    vpa: Optional[str] = Field(None, description="UPI Virtual Payment Address / VPA")
-    reset_balance: Optional[bool] = Field(False, description="If true, resets available quota to full spend_limit; otherwise preserves spent amount")
+    period: Literal["per_transaction", "monthly"] = Field(default="per_transaction", description="Authorization reset period")
+    card_brand: Optional[str] = Field(default="Visa", description="Card brand or payment type")
+    card_last4: Optional[str] = Field(default="4242", description="Last 4 digits of tokenized card")
+    cardholder_name: Optional[str] = Field(default=None, description="Cardholder name")
+    vpa: Optional[str] = Field(default=None, description="UPI Virtual Payment Address / VPA")
+    reset_balance: Optional[bool] = Field(default=False, description="If true, resets available quota to full spend_limit; otherwise preserves spent amount")
 
 class SpendAuthorizationRead(BaseModel):
     id: UUID
@@ -28,12 +28,13 @@ class SpendAuthorizationRead(BaseModel):
     status: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class CustomerDashboardResponse(BaseModel):
-    customer: dict
-    active_authorization: Optional[SpendAuthorizationRead]
-    recent_transactions: list
-    recent_purchases: Optional[list] = []
-    recent_searches: Optional[list] = []
+    customer: Dict[str, Any]
+    active_authorization: Optional[SpendAuthorizationRead] = None
+    recent_transactions: List[Dict[str, Any]] = Field(default_factory=list)
+    recent_purchases: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    recent_searches: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
