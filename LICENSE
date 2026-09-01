@@ -1,23 +1,19 @@
-# Proprietary & Exclusive Ownership License
+# Proprietary Public Evaluation & Buildathon Submission License
 
 Copyright (c) 2026 Prem Patel. All Rights Reserved.
 
-## Exclusive Rights & Ownership Notice
+## Exclusive Ownership & Public Inspection Terms
 
-All rights, title, and interest in and to this software project ("Agentpay"), including but not limited to the codebase, system architecture, multi-agent orchestrator design, database schemas, user interfaces, branding, API specifications, and underlying conceptual frameworks, are the sole and exclusive property of **Prem Patel** (the "Owner").
+This software repository ("Agentpay") is made publicly viewable on GitHub for demonstration, testing, and judging purposes in connection with the **Razorpay AI Buildathon 2026**.
 
-### Terms of Use & Strict Restrictions:
+All rights, title, and interest in and to this project, including but not limited to the codebase, system architecture, multi-agent orchestrator design, database schemas, user interfaces, branding, API specifications, and underlying conceptual frameworks, remain the sole and exclusive property of **Prem Patel** (the "Owner").
 
-1. **No Rights or License Granted**: No license, rights, or permission (express, implied, or statutory) is granted to any person, company, or entity to copy, modify, merge, publish, distribute, sublicense, host, deploy, sell, or commercialize this software, codebase, architecture, or idea, in whole or in part, without explicit prior written authorization signed by the Owner.
+### Permitted Uses:
+1. **Public & Hackathon Evaluation**: Judges, hackathon reviewers, and visitors are permitted to view, inspect, test, and evaluate the source code and platform solely for competition evaluation and non-commercial demonstration.
 
-2. **Prohibition of Copying, Cloning & Reverse Engineering**: You are strictly prohibited from:
-   - Copying, reproducing, cloning, forking, or mirroring any part of this codebase, repository, or system architecture.
-   - Decompiling, disassembling, reverse engineering, or attempting to derive the underlying source code or system mechanics.
-   - Creating derivative works based on the concepts, dual-gated payment validation mechanisms, or multi-agent execution protocol of this project.
-
-3. **Usage Restrictions**: Neither commercial nor non-commercial use, public hosting, re-distribution, or third-party integration of this codebase or its underlying ideas is permitted without express prior written permission from the Owner.
-
-4. **Trademark & Intellectual Property Rights**: The "Agentpay" name, branding, visual assets, and underlying intellectual property remain the exclusive property of the Owner.
+### Strictly Prohibited Uses:
+1. **No Reproduction or Commercial Exploitation**: You may not copy, clone, reproduce, redistribute, host, deploy, sublicense, or sell this software, codebase, or any derived works, in whole or in part, for commercial or third-party use.
+2. **No Unauthorized Re-use**: You may not copy or incorporate the multi-agent payment execution architecture, spend vault design, or backend logic into third-party commercial projects without explicit prior written consent from Prem Patel.
 
 ---
 

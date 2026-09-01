@@ -1,8 +1,8 @@
 {
   "name": "agentpay-frontend",
   "version": "0.1.0",
-  "private": true,
-  "license": "UNLICENSED",
+  "private": false,
+  "license": "SEE LICENSE IN LICENSE",
   "author": "Prem Patel",
   "scripts": {
     "dev": "next dev",
