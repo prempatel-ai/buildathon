@@ -737,11 +737,14 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 try:
                     from app.models.recommendation import Recommendation
                     rec_uuid = uuid.UUID(str(src_rec_id))
-                    cust_uuid = uuid.UUID(str(state.get("customer_id"))) if state.get("customer_id") else None
-                    valid_rec = db.query(Recommendation).filter(
-                        Recommendation.id == rec_uuid,
-                        Recommendation.customer_id == cust_uuid if cust_uuid else True
-                    ).first()
+                    q = db.query(Recommendation).filter(Recommendation.id == rec_uuid)
+                    if state.get("customer_id"):
+                        try:
+                            cust_uuid = uuid.UUID(str(state.get("customer_id")))
+                            q = q.filter(Recommendation.customer_id == cust_uuid)
+                        except Exception:
+                            pass
+                    valid_rec = q.first()
                     if valid_rec:
                         tx.source_recommendation_id = valid_rec.id
                 except Exception as rec_err:

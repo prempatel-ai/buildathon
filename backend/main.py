@@ -13,6 +13,19 @@ try:
         conn.execute(text("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();"))
         conn.execute(text("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS address_id UUID REFERENCES addresses(id) ON DELETE SET NULL;"))
         conn.execute(text("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS estimated_delivery_date TIMESTAMP WITH TIME ZONE;"))
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS recommendations (
+                id UUID PRIMARY KEY,
+                customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
+                source_transaction_id UUID REFERENCES transactions(id) ON DELETE CASCADE,
+                recommended_item_id UUID REFERENCES catalog_items(id) ON DELETE CASCADE,
+                recommended_merchant_id UUID REFERENCES merchants(id) ON DELETE CASCADE,
+                reason TEXT NOT NULL,
+                status VARCHAR(20) NOT NULL DEFAULT 'shown',
+                shown_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+        """))
+        conn.execute(text("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS source_recommendation_id UUID REFERENCES recommendations(id) ON DELETE SET NULL;"))
         conn.commit()
 except Exception as e:
     print(f"Database initialization info: {e}")

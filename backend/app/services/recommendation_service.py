@@ -1,4 +1,4 @@
-﻿import uuid
+import uuid
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
@@ -133,41 +133,45 @@ class RecommendationService:
         selected_candidates = candidates[:max(2, min(4, limit))]
 
         created_recs: List[Recommendation] = []
-        for c in selected_candidates:
-            it = c["item"]
-            rec = Recommendation(
-                customer_id=customer_id,
-                source_transaction_id=transaction_id,
-                recommended_item_id=it.id,
-                recommended_merchant_id=it.merchant_id,
-                reason=c["reason"],
-                status="shown"
+        try:
+            for c in selected_candidates:
+                it = c["item"]
+                rec = Recommendation(
+                    customer_id=customer_id,
+                    source_transaction_id=transaction_id,
+                    recommended_item_id=it.id,
+                    recommended_merchant_id=it.merchant_id,
+                    reason=c["reason"],
+                    status="shown"
+                )
+                db.add(rec)
+                created_recs.append(rec)
+
+            db.commit()
+            for rec in created_recs:
+                db.refresh(rec)
+
+            # Log audit event for recommendation generation
+            AuditService.log_event(
+                db=db,
+                actor_type="system",
+                actor_id="recommendation_engine",
+                action="recommendation_generated",
+                input={
+                    "source_transaction_id": str(transaction_id),
+                    "customer_id": str(customer_id),
+                    "purchased_item": purchased_item_name,
+                    "purchased_category": purchased_category,
+                    "count": len(created_recs),
+                    "recommendation_ids": [str(r.id) for r in created_recs]
+                },
+                decision="GENERATED",
+                reasoning=f"Generated {len(created_recs)} explainable post-purchase recommendations for transaction {transaction_id}.",
+                merchant_id=purchased_merchant_id
             )
-            db.add(rec)
-            created_recs.append(rec)
-
-        db.commit()
-        for rec in created_recs:
-            db.refresh(rec)
-
-        # Log audit event for recommendation generation
-        AuditService.log_event(
-            db=db,
-            actor_type="system",
-            actor_id="recommendation_engine",
-            action="recommendation_generated",
-            input={
-                "source_transaction_id": str(transaction_id),
-                "customer_id": str(customer_id),
-                "purchased_item": purchased_item_name,
-                "purchased_category": purchased_category,
-                "count": len(created_recs),
-                "recommendation_ids": [str(r.id) for r in created_recs]
-            },
-            decision="GENERATED",
-            reasoning=f"Generated {len(created_recs)} explainable post-purchase recommendations for transaction {transaction_id}.",
-            merchant_id=purchased_merchant_id
-        )
+        except Exception as e:
+            db.rollback()
+            print(f"[REC_GENERATION_EXCEPTION]: {e}")
 
         return created_recs
 
