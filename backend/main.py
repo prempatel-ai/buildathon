@@ -26,6 +26,8 @@ try:
             );
         """))
         conn.execute(text("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS source_recommendation_id UUID REFERENCES recommendations(id) ON DELETE SET NULL;"))
+        conn.execute(text("ALTER TABLE catalog_items ADD COLUMN IF NOT EXISTS description TEXT;"))
+        conn.execute(text("ALTER TABLE catalog_items ADD COLUMN IF NOT EXISTS specifications JSONB DEFAULT '{}'::jsonb;"))
         conn.commit()
 except Exception as e:
     print(f"Database initialization info: {e}")

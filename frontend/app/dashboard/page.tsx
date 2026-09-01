@@ -102,6 +102,8 @@ function DashboardContent() {
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
   const [category, setCategory] = useState('Electronics');
+  const [description, setDescription] = useState('');
+  const [specificationsJson, setSpecificationsJson] = useState('{\n  "brand": "boAt",\n  "battery_life": "20 Hours",\n  "warranty": "1 Year",\n  "connectivity": "Bluetooth 5.2"\n}');
   const [formError, setFormError] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
 
@@ -308,6 +310,8 @@ function DashboardContent() {
     setPrice('');
     setStock('');
     setCategory('Electronics');
+    setDescription('');
+    setSpecificationsJson('{\n  "brand": "boAt",\n  "battery_life": "20 Hours",\n  "warranty": "1 Year",\n  "connectivity": "Bluetooth 5.2"\n}');
     setFormError(null);
     setShowModal(true);
   };
@@ -318,6 +322,12 @@ function DashboardContent() {
     setPrice(item.price.toString());
     setStock(item.stock.toString());
     setCategory(item.category || 'Electronics');
+    setDescription(item.description || '');
+    setSpecificationsJson(
+      item.specifications && Object.keys(item.specifications).length > 0
+        ? JSON.stringify(item.specifications, null, 2)
+        : '{\n  "brand": "BrandName",\n  "warranty": "1 Year"\n}'
+    );
     setFormError(null);
     setShowModal(true);
   };
@@ -342,6 +352,16 @@ function DashboardContent() {
       return;
     }
 
+    let parsedSpecs: Record<string, any> = {};
+    if (specificationsJson.trim()) {
+      try {
+        parsedSpecs = JSON.parse(specificationsJson);
+      } catch (e) {
+        setFormError('Specifications must be valid JSON format (e.g. {"brand": "Sony", "battery_life": "40 Hours"})');
+        return;
+      }
+    }
+
     setFormLoading(true);
     setFormError(null);
     try {
@@ -351,6 +371,8 @@ function DashboardContent() {
           price: numPrice,
           stock: numStock,
           category: category.trim(),
+          description: description.trim() || undefined,
+          specifications: parsedSpecs,
         });
       } else {
         await createCatalogItem({
@@ -359,6 +381,8 @@ function DashboardContent() {
           price: numPrice,
           stock: numStock,
           category: category.trim(),
+          description: description.trim() || undefined,
+          specifications: parsedSpecs,
         });
       }
       setShowModal(false);
@@ -571,8 +595,22 @@ function DashboardContent() {
                     <tbody className="divide-y divide-neutral-100">
                       {paginatedItems.map((item) => (
                         <tr key={item.id} className="hover:bg-neutral-50/70 transition-colors">
-                          <td className="py-3.5 px-6 font-semibold text-neutral-900 whitespace-nowrap">
-                            {item.name}
+                          <td className="py-3.5 px-6 font-medium text-neutral-900">
+                            <div className="font-semibold text-neutral-900">{item.name}</div>
+                            {item.description && (
+                              <p className="text-[10.5px] text-neutral-500 line-clamp-1 max-w-xs mt-0.5">
+                                {item.description}
+                              </p>
+                            )}
+                            {item.specifications && Object.keys(item.specifications).length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {Object.entries(item.specifications).slice(0, 3).map(([k, v]) => (
+                                  <span key={k} className="px-1.5 py-0.2 bg-neutral-100 text-neutral-600 rounded text-[9.5px] font-mono border border-neutral-200">
+                                    {k.replace('_', ' ')}: {String(v)}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </td>
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <span className="px-2 py-0.5 bg-neutral-100 text-neutral-800 border border-neutral-200 rounded text-[10px] font-medium">
@@ -962,6 +1000,38 @@ function DashboardContent() {
                   placeholder="Electronics"
                   className="w-full h-9 px-3 bg-neutral-50/50 border border-neutral-200 rounded-md text-xs text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-sans"
                 />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">
+                  Product Overview & Description
+                </label>
+                <textarea
+                  rows={2}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Detailed product overview, benefits, and key selling points (e.g. Amazon / Flipkart format)..."
+                  className="w-full p-2.5 bg-neutral-50/50 border border-neutral-200 rounded-md text-xs text-neutral-900 focus:outline-none focus:bg-white focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-sans"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600">
+                    Product Specifications & Key Attributes
+                  </label>
+                  <span className="text-[10px] text-neutral-400 font-mono">JSON format</span>
+                </div>
+                <textarea
+                  rows={3}
+                  value={specificationsJson}
+                  onChange={(e) => setSpecificationsJson(e.target.value)}
+                  placeholder='{"brand": "boAt", "battery_life": "20 Hours", "warranty": "1 Year"}'
+                  className="w-full p-2.5 bg-neutral-50/50 border border-neutral-200 rounded-md text-xs text-neutral-900 font-mono focus:outline-none focus:bg-white focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all"
+                />
+                <span className="text-[10px] text-neutral-400 mt-0.5 block">
+                  Used by AI agents for precision product comparison and upsell evaluation.
+                </span>
               </div>
 
               <div className="pt-2 flex justify-end space-x-2">

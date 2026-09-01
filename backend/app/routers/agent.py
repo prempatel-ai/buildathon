@@ -25,6 +25,9 @@ class PendingApprovalActionRequest(BaseModel):
     action: str = Field(..., description="'approve' or 'reject'")
     merchant_id: UUID = Field(..., description="Merchant ID confirming action")
 
+from app.schemas.upsell import UpsellCrossSellSuggestion
+from app.services.upsell_service import UpsellService
+
 class AgentChatResponse(BaseModel):
     merchant_id: str
     agent_id: str
@@ -40,6 +43,7 @@ class AgentChatResponse(BaseModel):
     razorpay_order_id: Optional[str] = None
     pending_approval_id: Optional[str] = None
     catalog_results: Optional[List[Dict[str, Any]]] = None
+    suggestions: Optional[List[UpsellCrossSellSuggestion]] = None
     status: str
     response_message: str
 
@@ -213,6 +217,20 @@ def agent_chat_endpoint(req: AgentChatRequest, db: Session = Depends(get_db)):
             )
         except Exception:
             pass
+    # Generate Upsell / Cross-Sell Suggestions if order was proposed or item specified
+    agent_suggestions = None
+    tool_args = result.get("tool_args", {})
+    if tool_args and "item_name" in tool_args:
+        agent_suggestions = UpsellService.generate_suggestions(
+            db=db,
+            item_name=tool_args["item_name"],
+            category=tool_args.get("category", "General"),
+            price=float(tool_args.get("amount", 0)),
+            merchant_id=str(req.merchant_id),
+            customer_id=req.customer_id,
+            max_suggestions=3
+        )
+
     return AgentChatResponse(
         merchant_id=str(req.merchant_id),
         agent_id=req.agent_id or "buyer_agent_01",
@@ -228,6 +246,7 @@ def agent_chat_endpoint(req: AgentChatRequest, db: Session = Depends(get_db)):
         razorpay_order_id=result.get("razorpay_order_id"),
         pending_approval_id=result.get("pending_approval_id"),
         catalog_results=result.get("catalog_results"),
+        suggestions=agent_suggestions,
         status=result.get("status", "UNKNOWN"),
         response_message=result.get("response_message", "Completed agent request.")
     )

@@ -13,6 +13,8 @@ from app.models.catalog import CatalogItem
 from app.agents.graph import run_agent_workflow, run_direct_purchase_workflow
 
 from app.schemas.recommendation import RecommendationItemResponse
+from app.schemas.upsell import UpsellCrossSellSuggestion
+from app.services.upsell_service import UpsellService
 
 router = APIRouter(prefix="/customer", tags=["Customer Chat AI"])
 
@@ -40,6 +42,7 @@ class CustomerChatResponse(BaseModel):
     response_message: str
     search_results: Optional[List[ProductOptionCard]] = None
     recommendations: Optional[List[RecommendationItemResponse]] = None
+    suggestions: Optional[List[UpsellCrossSellSuggestion]] = None
     customer_auth_decision: Optional[str] = None
     policy_decision: Optional[str] = None
     transaction_id: Optional[str] = None
@@ -321,6 +324,21 @@ def customer_chat(
         for r in final_state.get("recommendations", [])
     ] if final_state.get("recommendations") else None
 
+    # Generate Upsell & Cross-Sell Suggestions with Product Comparisons for the top matching item
+    upsell_suggestions = None
+    if search_res:
+        top_opt = search_res[0]
+        upsell_suggestions = UpsellService.generate_suggestions(
+            db=db,
+            item_name=top_opt["item_name"],
+            category=top_opt.get("category", "General"),
+            price=float(top_opt["price"]),
+            merchant_id=top_opt.get("merchant_id"),
+            customer_id=str(customer.id),
+            original_item_id=top_opt.get("item_id"),
+            max_suggestions=3
+        )
+
     return CustomerChatResponse(
         thread_id=thread_id,
         prompt=req.prompt,
@@ -329,6 +347,7 @@ def customer_chat(
         response_message=final_state.get("response_message") or "Executed search.",
         search_results=card_results,
         recommendations=rec_results,
+        suggestions=upsell_suggestions,
         customer_auth_decision=final_state.get("customer_auth_decision"),
         policy_decision=final_state.get("policy_decision"),
         transaction_id=final_state.get("transaction_id"),

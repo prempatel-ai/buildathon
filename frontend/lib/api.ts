@@ -17,6 +17,37 @@ export interface CatalogItem {
   price: number;
   stock: number;
   category: string;
+  description?: string;
+  specifications?: Record<string, any>;
+}
+
+export interface ProductSpecDifference {
+  feature_name: string;
+  original_value: string;
+  suggested_value: string;
+  advantage?: string;
+}
+
+export interface ProductComparison {
+  price_delta: number;
+  price_delta_percentage: number;
+  spec_differences: ProductSpecDifference[];
+  summary_reason: string;
+}
+
+export interface UpsellCrossSellSuggestion {
+  item_id: string;
+  item_name: string;
+  merchant_id: string;
+  merchant_name: string;
+  price: number;
+  category: string;
+  stock: number;
+  description?: string;
+  specifications?: Record<string, any>;
+  suggestion_type: 'upsell' | 'cross_sell';
+  reason: string;
+  comparison: ProductComparison;
 }
 
 export interface AuditEvent {
@@ -52,6 +83,8 @@ export interface CreateCatalogItemPayload {
   price: number;
   stock: number;
   category: string;
+  description?: string;
+  specifications?: Record<string, any>;
 }
 
 export interface UpdateCatalogItemPayload {
@@ -59,6 +92,8 @@ export interface UpdateCatalogItemPayload {
   price?: number;
   stock?: number;
   category?: string;
+  description?: string;
+  specifications?: Record<string, any>;
 }
 
 export interface AuthResponse {

@@ -28,9 +28,10 @@ import {
   Building2,
   Home,
   Briefcase,
-  Phone
+  Phone,
+  Sparkles
 } from 'lucide-react';
-import { CustomerAddress, fetchCustomerAddresses, createCustomerAddress, CreateAddressPayload, getCustomerToken } from '@/lib/api';
+import { CustomerAddress, fetchCustomerAddresses, createCustomerAddress, CreateAddressPayload, getCustomerToken, UpsellCrossSellSuggestion } from '@/lib/api';
 
 interface ProductCard {
   option_index: number;
@@ -65,6 +66,7 @@ interface ChatMessage {
   text: string;
   cards?: ProductCard[];
   recommendations?: RecommendationCard[];
+  suggestions?: UpsellCrossSellSuggestion[];
   status?: string;
   customerAuthDecision?: string;
   policyDecision?: string;
@@ -365,6 +367,7 @@ export default function ConsumerChatPage() {
         text: data.response_message || 'Search completed.',
         cards: data.search_results || undefined,
         recommendations: data.recommendations || undefined,
+        suggestions: data.suggestions || undefined,
         status: data.status,
         customerAuthDecision: data.customer_auth_decision,
         policyDecision: data.policy_decision,
@@ -893,6 +896,116 @@ export default function ConsumerChatPage() {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    )}
+
+                    {/* Pre-Settlement Upsell & Cross-Sell Product Comparison Engine */}
+                    {msg.suggestions && msg.suggestions.length > 0 && (
+                      <div className="mt-3.5 pt-3 border-t border-neutral-200/80 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <div className="flex items-center justify-between mb-2.5 px-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                            <span className="text-[11px] font-bold text-neutral-900 uppercase tracking-wider font-mono">
+                              Compare Alternatives & Upgrades
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-neutral-400 font-mono uppercase">
+                            Feature-by-Feature Tradeoff
+                          </span>
+                        </div>
+
+                        <div className="space-y-3">
+                          {msg.suggestions.map((sugg) => (
+                            <div
+                              key={sugg.item_id}
+                              className="bg-white p-3.5 rounded-lg border border-neutral-200 hover:border-neutral-900 transition-all shadow-2xs"
+                            >
+                              {/* Header: Type Badge, Title, Price Delta */}
+                              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 pb-2.5 border-b border-neutral-100">
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span
+                                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${
+                                        sugg.suggestion_type === 'upsell'
+                                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                      }`}
+                                    >
+                                      {sugg.suggestion_type === 'upsell' ? '⚡ Premium Upgrade' : '🔗 Complementary Pairing'}
+                                    </span>
+                                    <span className="text-[10.5px] text-neutral-500 font-mono">
+                                      by {sugg.merchant_name}
+                                    </span>
+                                  </div>
+                                  <h4 className="text-xs font-bold text-neutral-900">
+                                    {sugg.item_name}
+                                  </h4>
+                                </div>
+
+                                <div className="text-left sm:text-right shrink-0">
+                                  <div className="text-xs font-bold font-mono text-neutral-900">
+                                    ₹{sugg.price.toLocaleString('en-IN')}
+                                  </div>
+                                  <span
+                                    className={`text-[10.5px] font-mono font-semibold block ${
+                                      sugg.comparison.price_delta >= 0 ? 'text-amber-700' : 'text-emerald-700'
+                                    }`}
+                                  >
+                                    {sugg.comparison.price_delta >= 0 ? `+₹${sugg.comparison.price_delta.toLocaleString('en-IN')}` : `-₹${Math.abs(sugg.comparison.price_delta).toLocaleString('en-IN')}`} ({sugg.comparison.price_delta_percentage >= 0 ? '+' : ''}{sugg.comparison.price_delta_percentage}%)
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Explainable Rationale */}
+                              <p className="text-[11px] text-neutral-600 mt-2 leading-relaxed">
+                                {sugg.reason}
+                              </p>
+
+                              {/* Spec Difference Matrix */}
+                              {sugg.comparison.spec_differences && sugg.comparison.spec_differences.length > 0 && (
+                                <div className="mt-2.5 bg-neutral-50 rounded-md p-2.5 border border-neutral-200/70 space-y-1.5">
+                                  <div className="text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-500 mb-1">
+                                    Spec & Feature Breakdown
+                                  </div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                                    {sugg.comparison.spec_differences.map((spec, idx) => (
+                                      <div key={idx} className="bg-white p-2 rounded border border-neutral-200/60 shadow-2xs">
+                                        <div className="text-[10px] text-neutral-400 font-mono font-medium">
+                                          {spec.feature_name}
+                                        </div>
+                                        <div className="text-neutral-900 font-semibold mt-0.5 flex items-center justify-between gap-1">
+                                          <span>{spec.suggested_value}</span>
+                                          {spec.advantage && (
+                                            <span className="text-[9.5px] text-emerald-700 font-mono bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200 shrink-0">
+                                              {spec.advantage}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="text-[10px] text-neutral-400 mt-0.5 line-through">
+                                          Base: {spec.original_value}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Action: Switch to Upgrade / Explore */}
+                              <div className="mt-3 pt-2.5 border-t border-neutral-100 flex items-center justify-between">
+                                <span className="text-[10.5px] text-neutral-400 font-mono">
+                                  Goes through Dual-Gate Verification
+                                </span>
+                                <button
+                                  onClick={() => handleSendMessage(`buy ${sugg.item_name}`)}
+                                  className="h-7 px-3 bg-neutral-900 hover:bg-black text-white rounded text-[11px] font-medium transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+                                >
+                                  <span>{sugg.suggestion_type === 'upsell' ? 'Switch to Upgrade' : 'Explore Pairing'}</span>
+                                  <ArrowRight className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
 

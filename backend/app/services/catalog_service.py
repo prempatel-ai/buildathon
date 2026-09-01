@@ -23,7 +23,9 @@ class CatalogService:
             name=item_in.name,
             price=item_in.price,
             stock=item_in.stock,
-            category=item_in.category
+            category=item_in.category,
+            description=item_in.description,
+            specifications=item_in.specifications or {}
         )
         db.add(item)
         db.commit()
@@ -199,7 +201,9 @@ class CatalogService:
                 name=item_in.name,
                 price=item_in.price,
                 stock=item_in.stock,
-                category=item_in.category
+                category=item_in.category,
+                description=item_in.description,
+                specifications=item_in.specifications or {}
             )
             db.add(item)
             created_items.append(item)
