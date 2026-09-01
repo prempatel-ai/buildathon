@@ -6,7 +6,7 @@
 ### Autonomous Payment & Settlement Infrastructure for AI Commerce Agents
 
 [![Razorpay Buildathon](https://img.shields.io/badge/Razorpay_AI_Buildathon_2026-Track_01:_AI_Growth_&_Agentic_Commerce-0284c7?style=flat-square&logo=razorpay)](https://buildathon-nu-eight.vercel.app)
-[![License: MIT](https://img.shields.io/badge/License-MIT-09090b.svg?style=flat-square)](LICENSE)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary_(All_Rights_Reserved)-dc2626.svg?style=flat-square)](LICENSE)
 [![Next.js 16](https://img.shields.io/badge/Next.js_16-Turbopack-09090b?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![LangGraph](https://img.shields.io/badge/LangGraph-Multi--Agent_StateGraph-1C3C3C?style=flat-square&logo=langchain)](https://langchain-ai.github.io/langgraph/)
@@ -422,9 +422,11 @@ npm run build
 
 ---
 
-## License & Acknowledgments
+## License & Ownership
 
-Distributed under the **MIT License**. See `LICENSE` for more information.
+**Copyright (c) 2026 Prem Patel. All Rights Reserved.**
+
+This project, source code, system architecture, multi-agent orchestrator design, database schemas, visual branding, and underlying concepts are **proprietary and confidential**. No person or entity may copy, modify, distribute, host, fork, reverse engineer, or commercialize any portion of this repository or project without explicit prior written consent from **Prem Patel**. See [LICENSE](LICENSE) for complete legal terms.
 
 Built for the **Razorpay AI Buildathon 2026** (Track 01: AI Growth & Agentic Commerce).
 
