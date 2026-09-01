@@ -476,7 +476,7 @@ function DashboardContent() {
       <Navigation />
 
       {/* Main Content */}
-      <main className="max-w-6xl w-full mx-auto px-6 py-8 flex-1">
+      <main className="max-w-6xl w-full mx-auto px-3 sm:px-6 py-6 sm:py-8 flex-1">
         {error && (
           <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 rounded text-xs font-medium">
             {error}
@@ -489,7 +489,7 @@ function DashboardContent() {
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Store Overview</span>
               <span className="text-neutral-300">•</span>
-              <span className="text-xs text-neutral-500 font-mono font-medium">{merchant?.id}</span>
+              <span className="text-xs text-neutral-500 font-mono font-medium truncate max-w-[200px] sm:max-w-none">{merchant?.id}</span>
             </div>
             <h1 className="text-xl font-bold text-neutral-900 tracking-tight">
               {merchant?.name || 'Merchant Dashboard'}
@@ -518,50 +518,50 @@ function DashboardContent() {
         </div>
 
         {/* Unified 4-Metric Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 border border-neutral-200 rounded-lg bg-white overflow-hidden mb-6">
-          <div className="p-4">
-            <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Total Products</span>
-            <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
+        <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 border border-neutral-200 rounded-lg bg-white overflow-hidden mb-6">
+          <div className="p-3 sm:p-4">
+            <span className="text-[10.5px] sm:text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Total Products</span>
+            <div className="text-xl sm:text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
               {items.length}
             </div>
-            <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
+            <span className="text-[10px] sm:text-[11px] text-neutral-600 mt-1 block font-mono">
               Discoverable by AI
             </span>
           </div>
 
-          <div className="p-4">
-            <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Max Order Cap</span>
-            <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
+          <div className="p-3 sm:p-4">
+            <span className="text-[10.5px] sm:text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Max Order Cap</span>
+            <div className="text-xl sm:text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
               {limitsConfig.max_transaction_amount != null ? `₹${Number(limitsConfig.max_transaction_amount).toLocaleString('en-IN')}` : 'Uncapped'}
             </div>
-            <span className="text-[11px] text-neutral-600 mt-1 block">
-              Policy Engine Gated
+            <span className="text-[10px] sm:text-[11px] text-neutral-600 mt-1 block">
+              Policy Gated
             </span>
           </div>
 
-          <div className="p-4">
-            <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Daily Spend Cap</span>
-            <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
+          <div className="p-3 sm:p-4">
+            <span className="text-[10.5px] sm:text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Daily Spend Cap</span>
+            <div className="text-xl sm:text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
               {limitsConfig.daily_spend_limit != null ? `₹${Number(limitsConfig.daily_spend_limit).toLocaleString('en-IN')}` : 'Uncapped'}
             </div>
-            <span className="text-[11px] text-neutral-600 mt-1 block">
-              24-Hour Rolling Window
+            <span className="text-[10px] sm:text-[11px] text-neutral-600 mt-1 block">
+              Rolling Window
             </span>
           </div>
 
-          <div className="p-4">
-            <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Gateway Protocol</span>
-            <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
-              {merchant?.razorpay_key_id ? 'Custom Key' : 'Sandbox'}
+          <div className="p-3 sm:p-4">
+            <span className="text-[10.5px] sm:text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Velocity Limit</span>
+            <div className="text-xl sm:text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
+              {limitsConfig.velocity_limit_per_minute != null ? `${limitsConfig.velocity_limit_per_minute}/min` : 'Unlimited'}
             </div>
-            <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
-              Razorpay Live API
+            <span className="text-[10px] sm:text-[11px] text-neutral-600 mt-1 block">
+              Burst Rate Limiting
             </span>
           </div>
         </div>
 
         {/* Navigation Underline Tabs for Catalog vs Schema vs Attribution */}
-        <div className="flex items-center gap-6 border-b border-neutral-200 mb-6">
+        <div className="flex items-center gap-4 sm:gap-6 border-b border-neutral-200 mb-6 overflow-x-auto scrollbar-none whitespace-nowrap -mx-1 px-1">
           <button
             onClick={() => setActiveTab('catalog')}
             className={`pb-2.5 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
