@@ -82,8 +82,8 @@ export default function OnboardingPage() {
           await createCatalogItem({
             merchant_id: merchant.id,
             name: initialProductName.trim(),
-            price: parseFloat(initialProductPrice) || 999,
-            stock: parseInt(initialProductStock, 10) || 50,
+            price: parseFloat(initialProductPrice) || 0,
+            stock: parseInt(initialProductStock, 10) || 0,
             category: primaryCategory,
           });
         } catch (itemErr) {
