@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.auth import get_current_merchant
+from app.core.security import get_current_merchant
 from app.models.merchant import Merchant
 from app.schemas.campaign_offer import MerchantCampaignPerformanceResponse
 from app.services.campaign_service import CampaignService

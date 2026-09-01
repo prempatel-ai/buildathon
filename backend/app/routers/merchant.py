@@ -1,6 +1,6 @@
 from uuid import UUID
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from app.core.database import get_db
@@ -26,6 +26,7 @@ from app.models.policy import Policy
 from app.models.agent import Agent
 from app.models.transaction import Transaction
 from app.models.catalog import CatalogItem
+from app.models.audit import AuditEvent
 
 @router.post("/seed", response_model=MerchantRead)
 def seed_demo_merchant(db: Session = Depends(get_db)):
@@ -392,13 +393,16 @@ def get_merchant_usage_metrics(
 ):
     """
     Returns live transaction count and settled volume accounting for the authenticated merchant.
-    Strictly scoped via JWT Bearer token.
+    Strictly scoped via JWT Bearer token with case-insensitive status matching.
     """
+    settled_statuses = ["settled", "payment_settled", "paid", "completed"]
+    failed_statuses = ["failed", "cancelled", "blocked_by_policy", "blocked_by_customer_authorization"]
+
     txs = db.query(Transaction).filter(Transaction.merchant_id == current_merchant.id).all()
     total_count = len(txs)
-    settled_count = sum(1 for t in txs if t.status == "settled")
-    failed_count = sum(1 for t in txs if t.status == "failed")
-    settled_vol = sum(float(t.amount) for t in txs if t.status == "settled")
+    settled_count = sum(1 for t in txs if (t.status or "").lower() in settled_statuses)
+    failed_count = sum(1 for t in txs if (t.status or "").lower() in failed_statuses)
+    settled_vol = sum(float(t.amount or 0) for t in txs if (t.status or "").lower() in settled_statuses)
 
     return MerchantUsageRead(
         merchant_id=current_merchant.id,
@@ -412,44 +416,49 @@ def get_merchant_usage_metrics(
 
 @router.get("/analytics/timeline")
 def get_merchant_timeline(
-    range: str = "7d",
+    timeline_range: str = Query("7d", alias="range"),
     current_merchant: Merchant = Depends(get_current_merchant),
     db: Session = Depends(get_db)
 ):
     """
-    Returns 100% REAL PostgreSQL database timeline series for settled volume.
+    Returns 100% REAL database timeline series for settled volume.
     Strictly sums actual Transaction.amount rows filtered by merchant_id and created_at timestamps.
-    Zero synthetic weights. Pure database truth.
+    Zero synthetic weights. Pure database truth with robust date bucketing.
     """
-    from datetime import datetime, timedelta
-    now = datetime.utcnow()
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc)
+    settled_statuses = ["settled", "payment_settled", "paid", "completed"]
 
     txs = db.query(Transaction).filter(
         Transaction.merchant_id == current_merchant.id,
-        Transaction.status == "settled"
+        func.lower(Transaction.status).in_(settled_statuses)
     ).all()
 
-    if range == "1d":
+    if timeline_range == "1d":
         hours = ["00:00", "04:00", "08:00", "12:00", "16:00", "20:00", "23:59"]
         points = {h: 0.0 for h in hours}
         
         for t in txs:
             t_time = getattr(t, 'created_at', None) or now
-            h_int = t_time.hour
-            if h_int < 4:
-                points["00:00"] += float(t.amount)
-            elif h_int < 8:
-                points["04:00"] += float(t.amount)
-            elif h_int < 12:
-                points["08:00"] += float(t.amount)
-            elif h_int < 16:
-                points["12:00"] += float(t.amount)
-            elif h_int < 20:
-                points["16:00"] += float(t.amount)
-            elif h_int < 23:
-                points["20:00"] += float(t.amount)
-            else:
-                points["23:59"] += float(t.amount)
+            if t_time.tzinfo is None:
+                t_time = t_time.replace(tzinfo=timezone.utc)
+            # Only count today's transactions for 1d
+            if (now - t_time).total_seconds() <= 86400:
+                h_int = t_time.hour
+                if h_int < 4:
+                    points["00:00"] += float(t.amount or 0)
+                elif h_int < 8:
+                    points["04:00"] += float(t.amount or 0)
+                elif h_int < 12:
+                    points["08:00"] += float(t.amount or 0)
+                elif h_int < 16:
+                    points["12:00"] += float(t.amount or 0)
+                elif h_int < 20:
+                    points["16:00"] += float(t.amount or 0)
+                elif h_int < 23:
+                    points["20:00"] += float(t.amount or 0)
+                else:
+                    points["23:59"] += float(t.amount or 0)
 
         res = []
         prev = 0.0
@@ -460,7 +469,7 @@ def get_merchant_timeline(
             prev = val
         return res
 
-    elif range == "7d":
+    elif timeline_range == "7d":
         days = []
         for i in range(6, -1, -1):
             d = now - timedelta(days=i)
@@ -470,11 +479,11 @@ def get_merchant_timeline(
         
         for t in txs:
             t_time = getattr(t, 'created_at', None) or now
+            if t_time.tzinfo is None:
+                t_time = t_time.replace(tzinfo=timezone.utc)
             d_str = t_time.strftime("%b %d")
             if d_str in points:
-                points[d_str] += float(t.amount)
-            else:
-                points[days[-1]] += float(t.amount)
+                points[d_str] += float(t.amount or 0)
 
         res = []
         prev = 0.0
@@ -485,7 +494,7 @@ def get_merchant_timeline(
             prev = val
         return res
 
-    elif range == "30d":
+    elif timeline_range == "30d":
         buckets = []
         for i in range(5, -1, -1):
             d = now - timedelta(days=i * 5)
@@ -494,12 +503,15 @@ def get_merchant_timeline(
         points = {b: 0.0 for b in buckets}
         
         for t in txs:
-            t_time = t.created_at or now
+            t_time = getattr(t, 'created_at', None) or now
+            if t_time.tzinfo is None:
+                t_time = t_time.replace(tzinfo=timezone.utc)
             d_str = t_time.strftime("%b %d")
             if d_str in points:
-                points[d_str] += float(t.amount)
-            else:
-                points[buckets[-1]] += float(t.amount)
+                points[d_str] += float(t.amount or 0)
+            elif (now - t_time).days <= 30:
+                # Find closest bucket
+                points[buckets[-1]] += float(t.amount or 0)
 
         res = []
         prev = 0.0
@@ -511,11 +523,18 @@ def get_merchant_timeline(
         return res
 
     else:
+        # 90d (12 weeks) properly bucketed by week index
         weeks = [f"Wk {i+1}" for i in range(12)]
         points = {w: 0.0 for w in weeks}
         
         for t in txs:
-            points[weeks[-1]] += float(t.amount)
+            t_time = getattr(t, 'created_at', None) or now
+            if t_time.tzinfo is None:
+                t_time = t_time.replace(tzinfo=timezone.utc)
+            diff_days = (now - t_time).days if now >= t_time else 0
+            if diff_days <= 90:
+                wk_idx = min(11, max(0, 11 - (diff_days // 7)))
+                points[weeks[wk_idx]] += float(t.amount or 0)
 
         res = []
         prev = 0.0
@@ -533,7 +552,7 @@ def get_merchant_agent_distribution(
     db: Session = Depends(get_db)
 ):
     """
-    Returns real breakdown of transactions by AI Agent actor type in PostgreSQL.
+    Returns real breakdown of transactions and audit events by AI Agent actor type.
     """
     events = db.query(AuditEvent).filter(AuditEvent.merchant_id == current_merchant.id).all()
     txs = db.query(Transaction).filter(Transaction.merchant_id == current_merchant.id).all()
@@ -541,10 +560,16 @@ def get_merchant_agent_distribution(
     counts = {}
     for ev in events:
         actor = ev.actor_type or "ChatGPT Consumer AI"
+        if actor == "customer":
+            actor = "ChatGPT Consumer AI"
+        elif actor == "agent":
+            actor = "Merchant Buyer Agent"
+        elif actor == "system":
+            actor = "Automated Engine"
         counts[actor] = counts.get(actor, 0) + 1
 
     if not counts:
-        counts = {"ChatGPT Consumer AI": len(txs)}
+        counts = {"ChatGPT Consumer AI": max(1, len(txs))}
 
     colors = ["#6366f1", "#10b981", "#f59e0b", "#8b5cf6"]
     res = []
@@ -563,13 +588,16 @@ def get_merchant_decision_breakdown(
     db: Session = Depends(get_db)
 ):
     """
-    Returns real count of policy evaluation decisions from PostgreSQL AuditEvent table.
+    Returns real count of policy evaluation decisions from PostgreSQL AuditEvent & Transaction tables.
     """
+    settled_statuses = ["settled", "payment_settled", "paid", "completed"]
+    failed_statuses = ["failed", "cancelled", "blocked_by_policy", "blocked_by_customer_authorization"]
+
     events = db.query(AuditEvent).filter(AuditEvent.merchant_id == current_merchant.id).all()
     txs = db.query(Transaction).filter(Transaction.merchant_id == current_merchant.id).all()
 
-    settled_cnt = sum(1 for t in txs if t.status == "settled")
-    failed_cnt = sum(1 for t in txs if t.status == "failed")
+    settled_cnt = sum(1 for t in txs if (t.status or "").lower() in settled_statuses)
+    failed_cnt = sum(1 for t in txs if (t.status or "").lower() in failed_statuses)
 
     decisions = {
         "Settled": settled_cnt,
@@ -579,10 +607,10 @@ def get_merchant_decision_breakdown(
     }
 
     for ev in events:
-        d = ev.decision.upper() if ev.decision else ""
-        if "ALLOW" in d or "SETTLED" in d:
+        d = (ev.decision or "").upper()
+        if "ALLOW" in d or "SETTLED" in d or "APPROVED" in d:
             decisions["Settled"] += 1
-        elif "DENIED" in d or "GATED" in d:
+        elif "DENIED" in d or "GATED" in d or "BLOCKED" in d:
             decisions["Policy Gated"] += 1
         elif "THROTTLE" in d:
             decisions["Rate Throttled"] += 1

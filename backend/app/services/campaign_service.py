@@ -119,7 +119,7 @@ class CampaignService:
             settled_tx = db.query(Transaction).filter(
                 Transaction.merchant_id == item.merchant_id,
                 Transaction.created_at >= event.created_at,
-                Transaction.status.notin_(["FAILED", "failed", "CANCELLED", "cancelled", "INITIATED"])
+                func.lower(Transaction.status).in_(["settled", "payment_settled", "paid", "completed"])
             ).first()
 
             if settled_tx:
@@ -344,7 +344,7 @@ class CampaignService:
         attributed_txs = db.query(Transaction).filter(
             Transaction.merchant_id == merchant_id,
             Transaction.source_campaign_offer_id.isnot(None),
-            Transaction.status.notin_(["FAILED", "CANCELLED", "INITIATED"])
+            func.lower(Transaction.status).in_(["settled", "payment_settled", "paid", "completed"])
         ).all()
 
         for tx in attributed_txs:
