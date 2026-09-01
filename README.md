@@ -23,6 +23,15 @@
 
 ---
 
+> [!IMPORTANT]
+> **Official Buildathon Submission Notice**  
+> **Author & Creator**: Prem Patel ([@prempatel-ai](https://github.com/prempatel-ai))  
+> **Buildathon Track**: Track 01: AI Growth & Agentic Commerce (Razorpay AI Buildathon 2026)  
+> **Copyright & Priority**: Copyright (c) 2026 Prem Patel. All Rights Reserved. Initial Git Commit Timestamp Verified.  
+> *Any unauthorized copying, cloning, or submission of this codebase by third parties will be reported immediately to Razorpay AI Buildathon organizers and Devfolio for automated plagiarism disqualification.*
+
+---
+
 ## Table of Contents
 
 - [Executive Summary](#executive-summary)

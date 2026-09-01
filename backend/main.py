@@ -1,4 +1,8 @@
 """
+AGENTPAY PROTOCOL — Copyright (c) 2026 Prem Patel. All Rights Reserved.
+Official Submission for Razorpay AI Buildathon 2026 (Track 01: AI Growth & Agentic Commerce)
+Unauthorized copying, cloning, or third-party re-submission is strictly prohibited.
+
 Agentpay Backend Core Application Entrypoint.
 
 Architected to Unicorn-Grade Enterprise Standards:
