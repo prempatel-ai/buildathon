@@ -28,6 +28,24 @@ try:
         conn.execute(text("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS source_recommendation_id UUID REFERENCES recommendations(id) ON DELETE SET NULL;"))
         conn.execute(text("ALTER TABLE catalog_items ADD COLUMN IF NOT EXISTS description TEXT;"))
         conn.execute(text("ALTER TABLE catalog_items ADD COLUMN IF NOT EXISTS specifications JSONB DEFAULT '{}'::jsonb;"))
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS campaign_offers (
+                id UUID PRIMARY KEY,
+                customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
+                merchant_id UUID REFERENCES merchants(id) ON DELETE CASCADE,
+                source_item_id UUID REFERENCES catalog_items(id) ON DELETE CASCADE,
+                source_event_id UUID REFERENCES audit_events(id) ON DELETE SET NULL,
+                discount_type VARCHAR(20) NOT NULL DEFAULT 'percentage',
+                discount_value NUMERIC(10, 2) NOT NULL,
+                original_price NUMERIC(10, 2) NOT NULL,
+                discounted_price NUMERIC(10, 2) NOT NULL,
+                reason TEXT NOT NULL,
+                status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+            );
+        """))
+        conn.execute(text("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS source_campaign_offer_id UUID REFERENCES campaign_offers(id) ON DELETE SET NULL;"))
         conn.commit()
 except Exception as e:
     print(f"Database initialization info: {e}")
@@ -88,6 +106,9 @@ app.include_router(customer.router)
 app.include_router(customer_chat.router)
 app.include_router(address.router)
 app.include_router(admin.router)
+
+from app.routers import merchant_campaigns
+app.include_router(merchant_campaigns.router)
 
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration

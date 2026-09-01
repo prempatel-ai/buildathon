@@ -803,5 +803,57 @@ export async function fetchAdminAuditEvents(params?: {
   return res.json();
 }
 
+export interface CampaignOfferItem {
+  id: string;
+  customer_id: string;
+  merchant_id: string;
+  merchant_name: string;
+  source_item_id: string;
+  item_name: string;
+  category: string;
+  discount_type: string;
+  discount_value: number;
+  original_price: number;
+  discounted_price: number;
+  reason: string;
+  status: string;
+  created_at: string;
+  expires_at: string;
+}
+
+export interface MerchantCampaignPerformance {
+  merchant_id: string;
+  merchant_name: string;
+  offers_generated: number;
+  offers_shown: number;
+  offers_converted: number;
+  conversion_rate: number;
+  total_discount_given: number;
+  total_attributed_revenue: number;
+  offers: CampaignOfferItem[];
+}
+
+export async function fetchMerchantCampaignPerformance(): Promise<MerchantCampaignPerformance> {
+  const res = await fetch(`${API_BASE_URL}/merchants/campaigns/performance`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error('Failed to fetch campaign performance');
+  }
+  return res.json();
+}
+
+export async function triggerMerchantCampaignScan(daysStale: number = 0): Promise<{ status: string; offers_generated_count: number; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/merchants/campaigns/trigger-scan?days_stale=${daysStale}`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error('Failed to trigger campaign scan');
+  }
+  return res.json();
+}
+
+
 
 

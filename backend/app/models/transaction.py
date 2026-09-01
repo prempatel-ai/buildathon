@@ -18,6 +18,7 @@ class Transaction(Base):
     address_id = Column(UUID(as_uuid=True), ForeignKey("addresses.id", ondelete="SET NULL"), nullable=True)
     estimated_delivery_date = Column(DateTime(timezone=True), nullable=True)
     source_recommendation_id = Column(UUID(as_uuid=True), ForeignKey("recommendations.id", ondelete="SET NULL"), nullable=True, index=True)
+    source_campaign_offer_id = Column(UUID(as_uuid=True), ForeignKey("campaign_offers.id", ondelete="SET NULL"), nullable=True, index=True)
     idempotency_key = Column(String(255), nullable=True, unique=True, index=True)
     error_details = Column(JSONB, server_default='{}', nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=True, index=True)
@@ -27,3 +28,4 @@ class Transaction(Base):
     agent = relationship("Agent", back_populates="transactions")
     address = relationship("Address", back_populates="transactions")
     source_recommendation = relationship("Recommendation", foreign_keys=[source_recommendation_id], backref="converted_transactions")
+    source_campaign_offer = relationship("CampaignOffer", foreign_keys=[source_campaign_offer_id], backref="converted_transactions")

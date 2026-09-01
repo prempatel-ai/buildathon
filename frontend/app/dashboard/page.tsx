@@ -12,9 +12,12 @@ import {
   deleteCatalogItem,
   fetchAgentSchema,
   fetchMerchantRecommendationRevenue,
+  fetchMerchantCampaignPerformance,
+  triggerMerchantCampaignScan,
   Merchant,
   CatalogItem,
   MerchantRevenueAttribution,
+  MerchantCampaignPerformance,
 } from '@/lib/api';
 import { useAuthGuard } from '@/lib/useAuthGuard';
 
@@ -42,7 +45,9 @@ import {
   TrendingUp,
   Coins,
   RefreshCw,
-  ArrowRight
+  ArrowRight,
+  Gift,
+  Tag
 } from 'lucide-react';
 
 function DashboardContent() {
@@ -78,7 +83,10 @@ function DashboardContent() {
   });
 
   const [recRevenue, setRecRevenue] = useState<MerchantRevenueAttribution | null>(null);
-  const [activeTab, setActiveTab] = useState<'catalog' | 'schema' | 'attribution'>('catalog');
+  const [campaignPerf, setCampaignPerf] = useState<MerchantCampaignPerformance | null>(null);
+  const [activeTab, setActiveTab] = useState<'catalog' | 'schema' | 'attribution' | 'campaigns'>('catalog');
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanMsg, setScanMsg] = useState<string | null>(null);
 
   const [loading, setLoading] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -284,14 +292,16 @@ function DashboardContent() {
         localStorage.setItem('agentpay_merchant_cache', JSON.stringify(meData));
       } catch (e) {}
 
-      const [catData, schemaData, recRevData] = await Promise.all([
+      const [catData, schemaData, recRevData, campData] = await Promise.all([
         fetchCatalogItems(meData.id).catch(() => []),
         fetchAgentSchema(meData.id).catch(() => null),
         fetchMerchantRecommendationRevenue().catch(() => null),
+        fetchMerchantCampaignPerformance().catch(() => null),
       ]);
       setItems(catData);
       setAgentSchema(schemaData);
       if (recRevData) setRecRevenue(recRevData);
+      if (campData) setCampaignPerf(campData);
       try {
         localStorage.setItem('agentpay_catalog_cache', JSON.stringify(catData));
         if (schemaData) localStorage.setItem('agentpay_schema_cache', JSON.stringify(schemaData));
@@ -303,6 +313,20 @@ function DashboardContent() {
       setLoading(false);
     }
   }
+
+  const handleTriggerScan = async () => {
+    setIsScanning(true);
+    setScanMsg(null);
+    try {
+      const res = await triggerMerchantCampaignScan(0);
+      setScanMsg(res.message);
+      await loadDashboardData();
+    } catch (e: any) {
+      setScanMsg(e.message || 'Scan failed');
+    } finally {
+      setIsScanning(false);
+    }
+  };
 
   const handleOpenCreateModal = () => {
     setEditingItem(null);
@@ -533,6 +557,17 @@ function DashboardContent() {
           >
             <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
             <span>Recommendation Revenue ({recRevenue ? `₹${recRevenue.total_attributed_revenue.toLocaleString('en-IN')}` : '₹0'})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('campaigns')}
+            className={`pb-2.5 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+              activeTab === 'campaigns'
+                ? 'border-neutral-900 text-neutral-900'
+                : 'border-transparent text-neutral-500 hover:text-neutral-900'
+            }`}
+          >
+            <Gift className="w-3.5 h-3.5 text-amber-600" />
+            <span>Abandonment Campaigns ({campaignPerf ? campaignPerf.offers_generated : 0})</span>
           </button>
         </div>
 
@@ -911,6 +946,163 @@ function DashboardContent() {
                       <span>Test in AI Consumer Chat</span>
                       <ArrowRight className="w-3 h-3" />
                     </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Abandonment Re-Engagement Campaigns */}
+        {activeTab === 'campaigns' && (
+          <div className="space-y-6">
+            {/* Top Overview & Action Card */}
+            <div className="bg-gradient-to-br from-amber-500/10 via-neutral-50/50 to-white border border-amber-200/80 rounded-lg p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider font-mono">
+                    Abandoned Cart Campaign Orchestrator
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-neutral-900 tracking-tight">
+                  Rule-Based Consumer Re-Engagement & Bounded Discounts
+                </h3>
+                <p className="text-xs text-neutral-600 max-w-xl leading-relaxed">
+                  Automatically detects unconverted shopper queries from audit logs and delivers bounded, merchant-capped discount offers when customers revisit the store.
+                </p>
+                {scanMsg && (
+                  <p className="text-xs font-mono font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200 inline-block mt-2">
+                    ✓ {scanMsg}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={handleTriggerScan}
+                  disabled={isScanning}
+                  className="h-8 px-4 rounded-md bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-2xs"
+                >
+                  {isScanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                  <span>{isScanning ? 'Scanning Logs...' : 'Run Abandonment Scan'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 4 KPI Metric Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 bg-white border border-neutral-200 rounded-lg space-y-1">
+                <span className="text-[11px] font-mono text-neutral-400 uppercase">Offers Generated</span>
+                <p className="text-xl font-bold font-mono text-neutral-900">
+                  {campaignPerf ? campaignPerf.offers_generated : 0}
+                </p>
+                <span className="text-[10px] text-neutral-500">From stale unconverted interest</span>
+              </div>
+
+              <div className="p-4 bg-white border border-neutral-200 rounded-lg space-y-1">
+                <span className="text-[11px] font-mono text-neutral-400 uppercase">Delivered in Chat</span>
+                <p className="text-xl font-bold font-mono text-neutral-900">
+                  {campaignPerf ? campaignPerf.offers_shown : 0}
+                </p>
+                <span className="text-[10px] text-neutral-500">Delivered via consumer chat</span>
+              </div>
+
+              <div className="p-4 bg-white border border-neutral-200 rounded-lg space-y-1">
+                <span className="text-[11px] font-mono text-neutral-400 uppercase">Converted Orders</span>
+                <p className="text-xl font-bold font-mono text-emerald-700">
+                  {campaignPerf ? campaignPerf.offers_converted : 0}
+                </p>
+                <span className="text-[10px] font-mono font-semibold text-emerald-600">
+                  {campaignPerf ? campaignPerf.conversion_rate : 0}% Conversion Rate
+                </span>
+              </div>
+
+              <div className="p-4 bg-white border border-neutral-200 rounded-lg space-y-1">
+                <span className="text-[11px] font-mono text-neutral-400 uppercase">Attributed GMV</span>
+                <p className="text-xl font-bold font-mono text-neutral-900">
+                  ₹{campaignPerf ? campaignPerf.total_attributed_revenue.toLocaleString('en-IN') : '0'}
+                </p>
+                <span className="text-[10px] text-neutral-500">
+                  Total Discount: ₹{campaignPerf ? campaignPerf.total_discount_given.toLocaleString('en-IN') : '0'}
+                </span>
+              </div>
+            </div>
+
+            {/* Campaign Offers Table */}
+            <div className="border border-neutral-200 rounded-lg overflow-hidden bg-white">
+              <div className="px-6 py-3.5 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-700">
+                    Generated Re-Engagement Offers Ledger
+                  </h3>
+                </div>
+                <span className="text-[11px] font-mono text-neutral-400">
+                  {campaignPerf?.offers.length || 0} Total Offers
+                </span>
+              </div>
+
+              {campaignPerf && campaignPerf.offers.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[700px] text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-neutral-50 border-b border-neutral-200 text-neutral-500 font-semibold uppercase tracking-wider text-[11px]">
+                        <th className="py-3 px-6">Product / SKU</th>
+                        <th className="py-3 px-6">Discount Value</th>
+                        <th className="py-3 px-6">Price Comparison</th>
+                        <th className="py-3 px-6">Offer Status</th>
+                        <th className="py-3 px-6 text-right">Created Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-100">
+                      {campaignPerf.offers.map((off) => (
+                        <tr key={off.id} className="hover:bg-neutral-50/60 transition-colors">
+                          <td className="py-3.5 px-6 font-medium text-neutral-900">
+                            <div className="font-semibold text-neutral-900">{off.item_name}</div>
+                            <span className="text-[10px] font-mono text-neutral-400">{off.category}</span>
+                          </td>
+                          <td className="py-3.5 px-6">
+                            <span className="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded font-mono font-bold text-[10.5px]">
+                              {off.discount_value}% OFF
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-6 font-mono text-xs">
+                            <span className="line-through text-neutral-400 mr-2">₹{off.original_price.toLocaleString('en-IN')}</span>
+                            <span className="font-bold text-neutral-900">₹{off.discounted_price.toLocaleString('en-IN')}</span>
+                          </td>
+                          <td className="py-3.5 px-6">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${
+                                off.status === 'converted'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : off.status === 'shown'
+                                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                  : 'bg-neutral-100 text-neutral-600 border border-neutral-200'
+                              }`}
+                            >
+                              {off.status}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-6 font-mono text-neutral-500 text-right text-[11px]">
+                            {off.created_at ? new Date(off.created_at).toLocaleDateString('en-IN', { dateStyle: 'short' }) : 'Recent'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-16 px-6 text-center space-y-3 bg-neutral-50/30">
+                  <div className="w-10 h-10 rounded-full bg-neutral-100 border border-neutral-200 flex items-center justify-center mx-auto text-neutral-500 shadow-2xs">
+                    <Gift className="w-5 h-5 text-neutral-400" />
+                  </div>
+                  <div className="max-w-md mx-auto space-y-1">
+                    <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wide">
+                      No Abandonment Offers Generated Yet
+                    </h4>
+                    <p className="text-xs text-neutral-500 leading-relaxed">
+                      Click &quot;Run Abandonment Scan&quot; above to detect unconverted shopper interest across audit logs and generate personalized bounded discount offers.
+                    </p>
                   </div>
                 </div>
               )}

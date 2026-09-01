@@ -12,9 +12,12 @@ from app.models.merchant import Merchant
 from app.models.catalog import CatalogItem
 from app.agents.graph import run_agent_workflow, run_direct_purchase_workflow
 
+from datetime import datetime, timezone
 from app.schemas.recommendation import RecommendationItemResponse
 from app.schemas.upsell import UpsellCrossSellSuggestion
+from app.schemas.campaign_offer import CampaignOfferItemResponse
 from app.services.upsell_service import UpsellService
+from app.services.campaign_service import CampaignService
 
 router = APIRouter(prefix="/customer", tags=["Customer Chat AI"])
 
@@ -23,6 +26,7 @@ class CustomerChatRequest(BaseModel):
     thread_id: Optional[str] = Field(None, description="Optional thread/session ID for multi-turn context")
     address_id: Optional[str] = Field(None, description="Optional selected delivery address ID")
     source_recommendation_id: Optional[str] = Field(None, description="Optional source recommendation ID for revenue attribution")
+    source_campaign_offer_id: Optional[str] = Field(None, description="Optional source campaign offer ID for discount redemption")
 
 class ProductOptionCard(BaseModel):
     option_index: int
@@ -43,6 +47,7 @@ class CustomerChatResponse(BaseModel):
     search_results: Optional[List[ProductOptionCard]] = None
     recommendations: Optional[List[RecommendationItemResponse]] = None
     suggestions: Optional[List[UpsellCrossSellSuggestion]] = None
+    pending_offers: Optional[List[CampaignOfferItemResponse]] = None
     customer_auth_decision: Optional[str] = None
     policy_decision: Optional[str] = None
     transaction_id: Optional[str] = None
@@ -247,7 +252,37 @@ def customer_chat(
             except Exception as auto_rec_err:
                 print(f"[AUTO_REC_ASSOCIATE_NOTICE]: {auto_rec_err}")
 
-        # 6. If target option was successfully resolved, execute direct purchase workflow
+        # 6. Check for active Campaign Offer (Discounted Re-Engagement)
+        source_campaign_offer_to_pass = req.source_campaign_offer_id
+        if target_opt:
+            try:
+                from app.models.campaign_offer import CampaignOffer
+                now_utc = datetime.now(timezone.utc)
+                if req.source_campaign_offer_id:
+                    off_uuid = uuid.UUID(str(req.source_campaign_offer_id))
+                    active_offer = db.query(CampaignOffer).filter(
+                        CampaignOffer.id == off_uuid,
+                        CampaignOffer.status.in_(["pending", "shown"]),
+                        CampaignOffer.expires_at > now_utc
+                    ).first()
+                    if active_offer:
+                        source_campaign_offer_to_pass = str(active_offer.id)
+                        target_opt["price"] = float(active_offer.discounted_price)
+                else:
+                    item_uuid = uuid.UUID(str(target_opt["item_id"]))
+                    active_offer = db.query(CampaignOffer).filter(
+                        CampaignOffer.customer_id == customer.id,
+                        CampaignOffer.source_item_id == item_uuid,
+                        CampaignOffer.status.in_(["pending", "shown"]),
+                        CampaignOffer.expires_at > now_utc
+                    ).order_by(CampaignOffer.created_at.desc()).first()
+                    if active_offer:
+                        source_campaign_offer_to_pass = str(active_offer.id)
+                        target_opt["price"] = float(active_offer.discounted_price)
+            except Exception as auto_offer_err:
+                print(f"[AUTO_CAMPAIGN_OFFER_NOTICE]: {auto_offer_err}")
+
+        # 7. If target option was successfully resolved, execute direct purchase workflow
         if target_opt:
             final_state = run_direct_purchase_workflow(
                 merchant_id=target_opt["merchant_id"],
@@ -260,10 +295,25 @@ def customer_chat(
                 source_recommendation_id=source_rec_to_pass
             )
 
+            # Check if settlement succeeded
+            if final_state.get("status") in ["PAYMENT_SETTLED", "SETTLED"] and final_state.get("transaction_id"):
+                if source_campaign_offer_to_pass:
+                    try:
+                        CampaignService.mark_offer_converted(
+                            db=db,
+                            offer_id=uuid.UUID(str(source_campaign_offer_to_pass)),
+                            transaction_id=uuid.UUID(str(final_state["transaction_id"]))
+                        )
+                    except Exception as camp_conv_err:
+                        print(f"[CAMPAIGN_OFFER_CONV_ERR]: {camp_conv_err}")
+
             rec_results = [
                 RecommendationItemResponse(**r)
                 for r in final_state.get("recommendations", [])
             ] if final_state.get("recommendations") else None
+
+            # Pending offers for customer
+            pending_offers = CampaignService.get_pending_offers_for_customer(db=db, customer_id=customer.id)
 
             return CustomerChatResponse(
                 thread_id=thread_id,
@@ -273,6 +323,7 @@ def customer_chat(
                 response_message=final_state.get("response_message") or f"Order processed for {target_opt['item_name']}.",
                 search_results=None,
                 recommendations=rec_results,
+                pending_offers=pending_offers or None,
                 customer_auth_decision=final_state.get("customer_auth_decision"),
                 policy_decision=final_state.get("policy_decision"),
                 transaction_id=final_state.get("transaction_id"),
@@ -339,6 +390,9 @@ def customer_chat(
             max_suggestions=3
         )
 
+    # Fetch active unexpired campaign offers for this customer
+    pending_offers = CampaignService.get_pending_offers_for_customer(db=db, customer_id=customer.id)
+
     return CustomerChatResponse(
         thread_id=thread_id,
         prompt=req.prompt,
@@ -348,6 +402,7 @@ def customer_chat(
         search_results=card_results,
         recommendations=rec_results,
         suggestions=upsell_suggestions,
+        pending_offers=pending_offers or None,
         customer_auth_decision=final_state.get("customer_auth_decision"),
         policy_decision=final_state.get("policy_decision"),
         transaction_id=final_state.get("transaction_id"),

@@ -29,9 +29,13 @@ import {
   Home,
   Briefcase,
   Phone,
-  Sparkles
+  Sparkles,
+  Bell,
+  Tag,
+  Gift,
+  Percent
 } from 'lucide-react';
-import { CustomerAddress, fetchCustomerAddresses, createCustomerAddress, CreateAddressPayload, getCustomerToken, UpsellCrossSellSuggestion } from '@/lib/api';
+import { CustomerAddress, fetchCustomerAddresses, createCustomerAddress, CreateAddressPayload, getCustomerToken, UpsellCrossSellSuggestion, CampaignOfferItem } from '@/lib/api';
 
 interface ProductCard {
   option_index: number;
@@ -67,6 +71,7 @@ interface ChatMessage {
   cards?: ProductCard[];
   recommendations?: RecommendationCard[];
   suggestions?: UpsellCrossSellSuggestion[];
+  pendingOffers?: CampaignOfferItem[];
   status?: string;
   customerAuthDecision?: string;
   policyDecision?: string;
@@ -135,6 +140,31 @@ export default function ConsumerChatPage() {
     country: 'IN',
     is_default: false,
   });
+
+  // Re-Engagement Campaign Offers & Push Notification State
+  const [activeOffers, setActiveOffers] = useState<CampaignOfferItem[]>([]);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [activeToast, setActiveToast] = useState<{ title: string; message: string; offer?: CampaignOfferItem } | null>(null);
+
+  const triggerBrowserPushNotification = (offer: CampaignOfferItem) => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        new Notification(`🎉 Special ${offer.discount_value}% Discount on ${offer.item_name}!`, {
+          body: `Save ₹${(offer.original_price - offer.discounted_price).toLocaleString('en-IN')} on your previously explored item.`,
+          icon: '/icon.svg'
+        });
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then((permission) => {
+          if (permission === 'granted') {
+            new Notification(`🎉 Special ${offer.discount_value}% Discount on ${offer.item_name}!`, {
+              body: `Save ₹${(offer.original_price - offer.discounted_price).toLocaleString('en-IN')} on your previously explored item.`,
+              icon: '/icon.svg'
+            });
+          }
+        });
+      }
+    }
+  };
 
   interface RecentPurchase {
     id: string;
@@ -271,7 +301,7 @@ export default function ConsumerChatPage() {
     }
   };
 
-  const handleSendMessage = async (customPrompt?: string, sourceRecommendationId?: string) => {
+  const handleSendMessage = async (customPrompt?: string, sourceRecommendationId?: string, sourceCampaignOfferId?: string) => {
     const promptToSend = customPrompt || inputPrompt;
     if (!promptToSend.trim() || loading) return;
 
@@ -349,6 +379,7 @@ export default function ConsumerChatPage() {
           thread_id: currentThreadId,
           address_id: selectedAddressId,
           source_recommendation_id: sourceRecommendationId || undefined,
+          source_campaign_offer_id: sourceCampaignOfferId || undefined,
         }),
       });
 
@@ -361,6 +392,17 @@ export default function ConsumerChatPage() {
         setThreadId(data.thread_id);
       }
 
+      if (data.pending_offers && data.pending_offers.length > 0) {
+        setActiveOffers(data.pending_offers);
+        const topOffer = data.pending_offers[0];
+        setActiveToast({
+          title: `Special ${topOffer.discount_value}% Discount Unlocked!`,
+          message: `Save ₹${(topOffer.original_price - topOffer.discounted_price).toLocaleString('en-IN')} on ${topOffer.item_name}`,
+          offer: topOffer
+        });
+        triggerBrowserPushNotification(topOffer);
+      }
+
       const assistantMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'assistant',
@@ -368,6 +410,7 @@ export default function ConsumerChatPage() {
         cards: data.search_results || undefined,
         recommendations: data.recommendations || undefined,
         suggestions: data.suggestions || undefined,
+        pendingOffers: data.pending_offers || undefined,
         status: data.status,
         customerAuthDecision: data.customer_auth_decision,
         policyDecision: data.policy_decision,
@@ -663,6 +706,73 @@ export default function ConsumerChatPage() {
               <span className={`w-1.5 h-1.5 rounded-full ${hasActiveAuth ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
               <span>{hasActiveAuth ? `Limit: ₹${(remainingLimit || 0).toLocaleString('en-IN')}` : 'Set Spend Limit'}</span>
             </button>
+
+            {/* Notification Bell for Personalized Re-Engagement Discount Offers */}
+            <div className="relative">
+              <button
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                className="relative p-1.5 hover:bg-neutral-100 rounded-md text-neutral-600 hover:text-neutral-900 transition-colors cursor-pointer"
+                title="Notifications & Active Discounts"
+              >
+                <Bell className="w-4 h-4" />
+                {activeOffers.length > 0 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white animate-pulse" />
+                )}
+              </button>
+
+              {/* Notification Popover Dropdown */}
+              {isNotificationsOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-white border border-neutral-200 rounded-lg shadow-xl p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
+                    <div className="flex items-center gap-1.5">
+                      <Tag className="w-3.5 h-3.5 text-amber-600" />
+                      <span className="text-xs font-bold text-neutral-900 font-mono uppercase">Special Offers ({activeOffers.length})</span>
+                    </div>
+                    <button
+                      onClick={() => setIsNotificationsOpen(false)}
+                      className="text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
+                    {activeOffers.length === 0 ? (
+                      <div className="py-6 text-center text-xs text-neutral-400 font-mono">
+                        No active discount offers right now.
+                      </div>
+                    ) : (
+                      activeOffers.map((off) => (
+                        <div key={off.id} className="p-2.5 bg-amber-50/60 border border-amber-200/80 rounded-md space-y-1 text-left">
+                          <div className="flex items-center justify-between">
+                            <span className="px-1.5 py-0.2 bg-amber-500 text-white rounded text-[9.5px] font-bold font-mono">
+                              {off.discount_value}% OFF
+                            </span>
+                            <span className="text-[10px] font-mono text-neutral-400">by {off.merchant_name}</span>
+                          </div>
+                          <p className="text-xs font-bold text-neutral-900 truncate">{off.item_name}</p>
+                          <div className="flex items-center justify-between pt-1">
+                            <div className="text-xs font-mono">
+                              <span className="line-through text-neutral-400 text-[10px] mr-1.5">₹{off.original_price}</span>
+                              <span className="font-bold text-neutral-900">₹{off.discounted_price}</span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setIsNotificationsOpen(false);
+                                handleSendMessage(`buy ${off.item_name}`, undefined, off.id);
+                              }}
+                              className="h-6 px-2 bg-neutral-900 hover:bg-black text-white rounded text-[10.5px] font-medium transition cursor-pointer"
+                            >
+                              Claim Offer
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <button
               onClick={() => setIsSettingsOpen(true)}
@@ -1009,6 +1119,76 @@ export default function ConsumerChatPage() {
                       </div>
                     )}
 
+                    {/* Personalized Abandonment Re-Engagement Offers */}
+                    {msg.pendingOffers && msg.pendingOffers.length > 0 && (
+                      <div className="mt-3.5 pt-3 border-t border-amber-200/90 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <div className="flex items-center justify-between mb-2 px-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <Gift className="w-3.5 h-3.5 text-amber-600" />
+                            <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider font-mono">
+                              Exclusive Re-Engagement Discount
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-amber-700 font-mono font-semibold uppercase bg-amber-100 px-1.5 py-0.2 rounded border border-amber-200">
+                            Bounded Offer
+                          </span>
+                        </div>
+
+                        <div className="space-y-2">
+                          {msg.pendingOffers.map((off) => (
+                            <div
+                              key={off.id}
+                              className="bg-gradient-to-r from-amber-50/80 via-white to-amber-50/40 p-3.5 rounded-lg border border-amber-300/80 hover:border-amber-500 transition-all shadow-2xs group"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <div className="flex items-center gap-1.5 mb-1">
+                                    <span className="px-1.5 py-0.2 bg-amber-500 text-white rounded text-[9.5px] font-bold font-mono">
+                                      {off.discount_value}% OFF
+                                    </span>
+                                    <span className="text-[10px] text-neutral-500 font-mono">
+                                      by {off.merchant_name}
+                                    </span>
+                                  </div>
+                                  <h4 className="text-xs font-bold text-neutral-900">
+                                    {off.item_name}
+                                  </h4>
+                                  <p className="text-[10.5px] text-neutral-600 mt-1 leading-snug">
+                                    {off.reason}
+                                  </p>
+                                </div>
+
+                                <div className="text-right shrink-0">
+                                  <div className="text-[10.5px] text-neutral-400 line-through font-mono">
+                                    ₹{off.original_price.toLocaleString('en-IN')}
+                                  </div>
+                                  <div className="text-xs font-bold font-mono text-neutral-900">
+                                    ₹{off.discounted_price.toLocaleString('en-IN')}
+                                  </div>
+                                  <span className="text-[9.5px] text-emerald-700 font-mono font-semibold">
+                                    Save ₹{(off.original_price - off.discounted_price).toLocaleString('en-IN')}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="mt-3 pt-2.5 border-t border-amber-200/50 flex items-center justify-between">
+                                <span className="text-[10px] text-neutral-400 font-mono">
+                                  Full Dual-Gate Checked
+                                </span>
+                                <button
+                                  onClick={() => handleSendMessage(`buy ${off.item_name}`, undefined, off.id)}
+                                  className="h-7 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded text-[11px] font-medium transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+                                >
+                                  <span>Claim & Instant Buy</span>
+                                  <ArrowRight className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Post-Purchase Explainable Recommendations */}
                     {msg.recommendations && msg.recommendations.length > 0 && (
                       <div className="mt-3.5 pt-3 border-t border-neutral-200/80 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -1147,6 +1327,47 @@ export default function ConsumerChatPage() {
             </p>
           </div>
         </div>
+
+        {/* Floating In-App Re-Engagement Toast */}
+        {activeToast && (
+          <div className="fixed bottom-20 right-6 max-w-sm bg-neutral-900 text-white p-3.5 rounded-lg shadow-2xl border border-neutral-700 z-50 animate-in slide-in-from-bottom-5 duration-300 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+              <Gift className="w-4 h-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <h5 className="text-xs font-bold text-white font-sans">{activeToast.title}</h5>
+                <button
+                  onClick={() => setActiveToast(null)}
+                  className="text-neutral-400 hover:text-white cursor-pointer ml-2"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <p className="text-[11px] text-neutral-300 mt-0.5 leading-snug">{activeToast.message}</p>
+              {activeToast.offer && (
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const off = activeToast.offer!;
+                      setActiveToast(null);
+                      handleSendMessage(`buy ${off.item_name}`, undefined, off.id);
+                    }}
+                    className="h-6 px-2.5 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold rounded text-[10.5px] transition cursor-pointer"
+                  >
+                    Claim Discount Now
+                  </button>
+                  <button
+                    onClick={() => setActiveToast(null)}
+                    className="text-[10px] text-neutral-400 hover:text-neutral-200 cursor-pointer"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
 
       {/* 4. SETTINGS MODAL */}
