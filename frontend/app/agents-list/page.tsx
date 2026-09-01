@@ -7,6 +7,7 @@ import {
   getMerchantMe,
   createMerchantAgent,
   rotateAgentKey,
+  deleteMerchantAgent,
   getAuthToken,
   Merchant,
   MerchantAgentItem,
@@ -112,17 +113,7 @@ export default function AgentsListPage() {
     if (!confirm('Permanently revoke and delete this agent key? This cannot be undone.')) return;
     setDeletingId(agentId);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/merchants/agents/${agentId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${getAuthToken()}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: 'Failed to delete agent' }));
-        throw new Error(err.detail || 'Failed to delete agent');
-      }
+      await deleteMerchantAgent(agentId);
       setMsg({ type: 'success', text: 'Agent key permanently revoked and deleted.' });
       loadData();
     } catch (err: any) {

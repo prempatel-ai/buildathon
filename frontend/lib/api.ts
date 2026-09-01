@@ -420,6 +420,18 @@ export async function createMerchantAgent(name: string, scopes: string[]): Promi
   return res.json();
 }
 
+export async function deleteMerchantAgent(agentId: string): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/merchants/agents/${agentId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to delete agent' }));
+    throw new Error(err.detail || 'Failed to delete agent');
+  }
+  return res.json();
+}
+
 export async function getMerchantUsage(): Promise<MerchantUsageData> {
   const res = await fetch(`${API_BASE_URL}/merchants/usage`, { headers: getAuthHeaders(), cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch merchant usage metrics');
