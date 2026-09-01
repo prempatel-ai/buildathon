@@ -124,9 +124,8 @@ export default function UsagePage() {
 
   return (
     <div className="min-h-screen bg-white text-neutral-900 font-sans antialiased selection:bg-neutral-200 pb-16">
-      <Navigation />
-
-      <main className="max-w-6xl mx-auto px-6 py-8">
+      <Navigation />      {/* Main Content */}
+      <main className="max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-8 flex-1">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-8 border-b border-neutral-200">
           <div>
@@ -167,16 +166,16 @@ export default function UsagePage() {
 
         {loading ? (
           <div className="space-y-6 animate-pulse">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 border border-neutral-200 rounded-lg bg-white overflow-hidden">
+            <div className="grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 border border-neutral-200 rounded-lg bg-white overflow-hidden">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="p-4 space-y-2">
+                <div key={i} className="p-3 sm:p-4 space-y-2">
                   <div className="h-3 w-28 bg-neutral-200/70 rounded"></div>
                   <div className="h-7 w-32 bg-neutral-300/80 rounded"></div>
                   <div className="h-3 w-24 bg-neutral-200/60 rounded"></div>
                 </div>
               ))}
             </div>
-            <div className="border border-neutral-200 rounded-lg p-6 bg-white space-y-4">
+            <div className="border border-neutral-200 rounded-lg p-4 sm:p-6 bg-white space-y-4">
               <div className="h-4 w-40 bg-neutral-200 rounded"></div>
               <div className="h-48 w-full bg-neutral-100/70 rounded"></div>
             </div>
@@ -184,13 +183,13 @@ export default function UsagePage() {
         ) : (
           <div className="space-y-6">
             {/* Unified 4-Metric Bar */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 border border-neutral-200 rounded-lg bg-white overflow-hidden">
-            <div className="p-4">
-              <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Gross Settled Volume</span>
-              <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
+            <div className="grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 border border-neutral-200 rounded-lg bg-white overflow-hidden">
+            <div className="p-3 sm:p-4">
+              <span className="text-[10.5px] sm:text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Gross Settled Volume</span>
+              <div className="text-xl sm:text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
                 ₹{totalVol.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </div>
-              <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
+              <span className="text-[10px] sm:text-[11px] text-neutral-600 mt-1 block font-mono">
                 100% Captured via Razorpay
               </span>
             </div>

@@ -19,7 +19,9 @@ import {
   Check,
   User,
   MapPin,
-  ShoppingBag
+  ShoppingBag,
+  Menu,
+  X
 } from 'lucide-react';
 
 export default function Navigation() {
@@ -42,6 +44,7 @@ export default function Navigation() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [customerMenuOpen, setCustomerMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const custToken = localStorage.getItem('customer_token');
@@ -90,6 +93,7 @@ export default function Navigation() {
       setCustomerName(null);
       setCustomerEmail(null);
     }
+    setMobileMenuOpen(false);
   }, [pathname]);
 
   // Click outside to close menus
@@ -148,25 +152,25 @@ export default function Navigation() {
     <>
       <header className="sticky top-0 z-40 bg-white border-b border-neutral-200 shadow-2xs">
         {/* Tier 1: Main Global Header */}
-        <div className="max-w-7xl mx-auto px-6 h-12 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-12 flex items-center justify-between">
           {/* Brand & Store Selector */}
-          <div className="flex items-center space-x-3 min-w-0">
-            <Link href="/" className="flex items-center space-x-2 shrink-0 group">
-              <AgentpayLogo size={22} />
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+            <Link href="/" className="flex items-center space-x-1.5 sm:space-x-2 shrink-0 group">
+              <AgentpayLogo size={20} />
               <span className="font-bold text-neutral-900 tracking-tight text-sm font-sans">Agentpay</span>
             </Link>
 
-            <span className="text-neutral-300 font-mono text-xs shrink-0">/</span>
+            <span className="text-neutral-300 font-mono text-xs shrink-0 hidden xs:inline">/</span>
 
             {isMerchantContext && pathname !== '/onboarding' ? (
-              <div className="relative shrink-0">
+              <div className="relative shrink-0 dropdown-container">
                 <button
                   onClick={() => setStoreMenuOpen(!storeMenuOpen)}
-                  className="flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-neutral-100/70 hover:bg-neutral-100 border border-neutral-200/80 text-xs font-medium text-neutral-800 transition-colors select-none cursor-pointer"
+                  className="flex items-center space-x-1 sm:space-x-2 px-2 py-0.5 rounded-full bg-neutral-100/70 hover:bg-neutral-100 border border-neutral-200/80 text-xs font-medium text-neutral-800 transition-colors select-none cursor-pointer"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                  <span className="truncate max-w-[140px] font-semibold text-neutral-900 text-[11px]">{merchant?.name || 'Merchant Store'}</span>
-                  <span className="px-1 py-0.2 rounded text-[8.5px] font-mono font-bold uppercase tracking-wider bg-neutral-200/60 text-neutral-600 shrink-0">
+                  <span className="truncate max-w-[85px] sm:max-w-[140px] font-semibold text-neutral-900 text-[11px]">{merchant?.name || 'Merchant Store'}</span>
+                  <span className="px-1 py-0.2 rounded text-[8px] sm:text-[8.5px] font-mono font-bold uppercase tracking-wider bg-neutral-200/60 text-neutral-600 shrink-0">
                     {merchant?.environment === 'live' ? 'LIVE' : 'SANDBOX'}
                   </span>
                   <ChevronDown className="w-3 h-3 text-neutral-400 shrink-0" />
@@ -181,11 +185,11 @@ export default function Navigation() {
                       onClick={() => setStoreMenuOpen(false)}
                       className="w-full px-3 py-2 text-left flex items-center justify-between bg-neutral-50 text-neutral-900 font-medium cursor-pointer"
                     >
-                      <div className="flex items-center space-x-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      <div className="flex items-center space-x-2 truncate">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
                         <span className="truncate font-semibold">{merchant?.name || 'Current Store'}</span>
                       </div>
-                      <Check className="w-3.5 h-3.5 text-neutral-900" />
+                      <Check className="w-3.5 h-3.5 text-neutral-900 shrink-0" />
                     </button>
                     <div className="border-t border-neutral-100 mt-1 pt-1">
                       <Link
@@ -200,43 +204,53 @@ export default function Navigation() {
                 )}
               </div>
             ) : (
-              <span className="text-xs font-mono text-neutral-500 truncate">
+              <span className="text-xs font-mono text-neutral-500 truncate hidden sm:inline">
                 {pathname === '/onboarding' ? 'Account Setup' : (isCustomerContext ? 'Consumer Portal' : 'Razorpay AI Protocol')}
               </span>
             )}
           </div>
 
           {/* Global Action Utilities */}
-          <div className="flex items-center space-x-2 shrink-0">
+          <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
             {/* Command Search Button */}
             {pathname !== '/onboarding' && (
               <button
                 onClick={() => setSearchOpen(true)}
-                className="flex items-center space-x-2 px-2.5 py-1 bg-neutral-50 hover:bg-neutral-100 active:scale-98 border border-neutral-200 rounded-md text-neutral-400 text-xs select-none transition-all cursor-pointer h-7 shrink-0"
+                className="flex items-center space-x-1.5 sm:space-x-2 px-2 sm:px-2.5 py-1 bg-neutral-50 hover:bg-neutral-100 active:scale-98 border border-neutral-200 rounded-md text-neutral-400 text-xs select-none transition-all cursor-pointer h-7 shrink-0"
+                title="Search (⌘K)"
               >
-                <Search className="w-3 h-3 text-neutral-400 shrink-0" />
-                <span className="text-neutral-500 text-[11px] hidden sm:inline">Search...</span>
-                <kbd className="px-1 py-0.5 bg-white border border-neutral-200 rounded text-[9px] text-neutral-400 font-mono">
+                <Search className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                <span className="text-neutral-500 text-[11px] hidden md:inline">Search...</span>
+                <kbd className="px-1 py-0.5 bg-white border border-neutral-200 rounded text-[9px] text-neutral-400 font-mono hidden sm:inline">
                   ⌘K
                 </kbd>
               </button>
             )}
 
             {isMerchantContext && pathname !== '/onboarding' ? (
-              <div className="relative shrink-0 dropdown-container">
+              <div className="relative shrink-0 dropdown-container flex items-center space-x-1.5">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="w-7 h-7 min-w-[28px] aspect-square rounded-full bg-neutral-950 text-white font-mono font-bold text-[11px] flex items-center justify-center hover:bg-black transition-colors cursor-pointer shadow-2xs"
+                  title="Account Settings"
                 >
                   {merchant?.name ? merchant.name[0].toUpperCase() : 'M'}
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-1.5 w-56 bg-white border border-neutral-200 rounded-lg shadow-xl p-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
+                  <div className="absolute right-0 top-9 w-56 bg-white border border-neutral-200 rounded-lg shadow-xl p-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
                     <div className="px-3 py-2 border-b border-neutral-100 mb-1">
                       <p className="font-semibold text-neutral-900 truncate text-xs">{merchant?.name || 'Merchant Admin'}</p>
                       <p className="text-[10px] text-neutral-400 font-mono mt-0.5">Authenticated Merchant</p>
                     </div>
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center space-x-2 px-2.5 py-1.5 rounded-md text-neutral-700 hover:bg-neutral-100 font-medium transition-colors"
+                    >
+                      <LayoutDashboard className="w-3.5 h-3.5 text-neutral-400" />
+                      <span>Overview</span>
+                    </Link>
                     <Link
                       href="/settings"
                       onClick={() => setUserMenuOpen(false)}
@@ -253,6 +267,14 @@ export default function Navigation() {
                       <Key className="w-3.5 h-3.5 text-neutral-400" />
                       <span>AI Agent Keys</span>
                     </Link>
+                    <Link
+                      href="/customer/chat"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center space-x-2 px-2.5 py-1.5 rounded-md text-neutral-700 hover:bg-neutral-100 font-medium transition-colors"
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5 text-neutral-400" />
+                      <span>Consumer Shopping View</span>
+                    </Link>
                     <div className="border-t border-neutral-100 my-1" />
                     <button
                       onClick={handleLogout}
@@ -263,13 +285,22 @@ export default function Navigation() {
                     </button>
                   </div>
                 )}
+
+                {/* Mobile Menu Toggle Button */}
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="sm:hidden p-1.5 hover:bg-neutral-100 rounded-md text-neutral-600 cursor-pointer"
+                  title="Toggle Navigation Menu"
+                >
+                  {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                </button>
               </div>
             ) : customerName ? (
-              <div className="flex items-center space-x-2 shrink-0">
+              <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
                 {pathname !== '/customer/chat' && (
                   <Link
                     href="/customer/chat"
-                    className="px-2.5 py-1 rounded-md text-xs font-medium bg-neutral-900 text-white hover:bg-black transition-colors shadow-xs"
+                    className="px-2 sm:px-2.5 py-1 rounded-md text-xs font-medium bg-neutral-900 text-white hover:bg-black transition-colors shadow-xs"
                   >
                     Shopping Chat
                   </Link>
@@ -282,7 +313,7 @@ export default function Navigation() {
                     <div className="w-5 h-5 min-w-[20px] aspect-square rounded-full bg-neutral-900 text-white flex items-center justify-center text-[9px] font-bold">
                       {customerName[0].toUpperCase()}
                     </div>
-                    <span className="truncate max-w-[90px] font-semibold text-neutral-900 text-[11px]">{customerName}</span>
+                    <span className="truncate max-w-[70px] sm:max-w-[90px] font-semibold text-neutral-900 text-[11px]">{customerName}</span>
                     <ChevronDown className="w-3 h-3 text-neutral-400" />
                   </button>
 
@@ -329,16 +360,16 @@ export default function Navigation() {
                 </div>
               </div>
             ) : (
-              <nav className="flex items-center space-x-2 shrink-0">
+              <nav className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
                 <Link
                   href="/customer/chat"
-                  className="px-2.5 py-1 rounded-md text-xs font-medium bg-neutral-900 text-white hover:bg-black transition-colors"
+                  className="px-2 sm:px-2.5 py-1 rounded-md text-xs font-medium bg-neutral-900 text-white hover:bg-black transition-colors"
                 >
                   Shopping Chat
                 </Link>
                 <Link
                   href="/customer/login"
-                  className="px-2.5 py-1 rounded-md text-xs font-medium text-neutral-700 hover:bg-neutral-100 border border-neutral-200 transition-colors"
+                  className="px-2 sm:px-2.5 py-1 rounded-md text-xs font-medium text-neutral-700 hover:bg-neutral-100 border border-neutral-200 transition-colors"
                 >
                   Sign In
                 </Link>
@@ -347,10 +378,10 @@ export default function Navigation() {
           </div>
         </div>
 
-        {/* Tier 2: Horizontal Sub-Navigation Strip */}
+        {/* Tier 2: Horizontal Sub-Navigation Strip (Touch Optimized) */}
         {isMerchantContext && pathname !== '/onboarding' && (
           <div className="border-t border-neutral-100 bg-white">
-            <div className="max-w-7xl mx-auto px-6 flex items-center space-x-6 overflow-x-auto no-scrollbar -mb-px">
+            <div className="max-w-7xl mx-auto px-3 sm:px-6 flex items-center space-x-4 sm:space-x-6 overflow-x-auto scrollbar-none -mb-px">
               {merchantTabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = pathname === tab.href;
@@ -358,7 +389,7 @@ export default function Navigation() {
                   <Link
                     key={tab.href}
                     href={tab.href}
-                    className={`py-2 text-xs flex items-center space-x-1.5 border-b-2 transition-all shrink-0 select-none ${
+                    className={`py-2 text-xs flex items-center space-x-1.5 border-b-2 transition-all shrink-0 select-none whitespace-nowrap ${
                       isActive
                         ? 'border-neutral-900 text-neutral-900 font-semibold'
                         : 'border-transparent text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 font-medium'
@@ -370,6 +401,32 @@ export default function Navigation() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* Mobile Slide-Down Drawer for Merchant Navigation */}
+        {mobileMenuOpen && isMerchantContext && (
+          <div className="sm:hidden border-t border-neutral-200 bg-neutral-50 p-3 space-y-1 animate-in slide-in-from-top duration-150">
+            <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider px-2.5 py-1 font-mono">
+              Merchant Navigation
+            </div>
+            {merchantTabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = pathname === tab.href;
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center space-x-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition-colors ${
+                    isActive ? 'bg-white text-neutral-900 font-semibold shadow-2xs border border-neutral-200' : 'text-neutral-700 hover:bg-neutral-200/60'
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-neutral-900' : 'text-neutral-500'}`} />
+                  <span>{tab.label}</span>
+                </Link>
+              );
+            })}
           </div>
         )}
       </header>

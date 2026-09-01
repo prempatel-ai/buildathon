@@ -109,7 +109,14 @@ export default function ConsumerChatPage() {
     }
     return '';
   });
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+      setSidebarOpen(true);
+    }
+  }, []);
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputPrompt, setInputPrompt] = useState('');
   const [loading, setLoading] = useState(false);
@@ -524,15 +531,26 @@ export default function ConsumerChatPage() {
 
   return (
     <div className="flex h-screen bg-white text-neutral-900 font-sans antialiased overflow-hidden selection:bg-neutral-200">
+      {/* Mobile Drawer Backdrop */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-30 md:hidden transition-opacity"
+        />
+      )}
+
       {/* 1. COLLAPSIBLE LEFT SIDEBAR */}
       <aside
-        className={`bg-neutral-50/70 border-r border-neutral-200 flex flex-col transition-all duration-200 ease-in-out z-20 ${
-          sidebarOpen ? 'w-64' : 'w-0 border-none'
+        className={`fixed md:relative inset-y-0 left-0 bg-white md:bg-neutral-50/70 border-r border-neutral-200 flex flex-col transition-all duration-200 ease-in-out z-40 ${
+          sidebarOpen ? 'w-64 translate-x-0 shadow-2xl md:shadow-none' : '-translate-x-full md:translate-x-0 md:w-0 md:border-none'
         } overflow-hidden`}
       >
         <div className="p-3 flex items-center justify-between">
           <button
-            onClick={startNewChat}
+            onClick={() => {
+              startNewChat();
+              if (typeof window !== 'undefined' && window.innerWidth < 768) setSidebarOpen(false);
+            }}
             className="flex-1 flex items-center space-x-2 px-3 h-8 bg-neutral-900 hover:bg-black text-white rounded-md text-xs font-medium transition-colors shadow-xs group cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -587,7 +605,10 @@ export default function ConsumerChatPage() {
                 {recentPurchases.map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => handleSendMessage(`check order details for ${item.item_name}`)}
+                    onClick={() => {
+                      handleSendMessage(`check order details for ${item.item_name}`);
+                      if (typeof window !== 'undefined' && window.innerWidth < 768) setSidebarOpen(false);
+                    }}
                     className="w-full text-left p-2 bg-white hover:bg-neutral-100 border border-neutral-200/80 rounded-md transition-all shadow-2xs group flex items-center justify-between cursor-pointer"
                   >
                     <div className="truncate pr-2">
@@ -619,7 +640,10 @@ export default function ConsumerChatPage() {
                 {historyThreads.map((item) => (
                   <div
                     key={item.id}
-                    onClick={() => handleSelectThread(item)}
+                    onClick={() => {
+                      handleSelectThread(item);
+                      if (typeof window !== 'undefined' && window.innerWidth < 768) setSidebarOpen(false);
+                    }}
                     className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors text-left truncate cursor-pointer group ${
                       threadId === item.id ? 'bg-neutral-200/80 text-neutral-900 font-medium' : 'text-neutral-700 hover:bg-neutral-100/80'
                     }`}
@@ -708,34 +732,34 @@ export default function ConsumerChatPage() {
       {/* 2. MAIN CHAT AREA */}
       <main className="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
         {/* Top Floating Header Bar */}
-        <header className="h-12 px-4 flex items-center justify-between border-b border-neutral-200 bg-white z-10">
-          <div className="flex items-center space-x-2.5">
-            {!sidebarOpen && (
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-1.5 hover:bg-neutral-100 rounded-md text-neutral-600 transition-colors cursor-pointer"
-                title="Open sidebar"
-              >
-                <PanelLeft className="w-4 h-4" />
-              </button>
-            )}
+        <header className="h-12 px-2 sm:px-4 flex items-center justify-between border-b border-neutral-200 bg-white z-10">
+          <div className="flex items-center space-x-1.5 sm:space-x-2.5">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-1.5 hover:bg-neutral-100 rounded-md text-neutral-600 transition-colors cursor-pointer"
+              title="Toggle sidebar"
+            >
+              <PanelLeft className="w-4 h-4" />
+            </button>
 
-            <div className="flex items-center space-x-2 px-2.5 py-1 bg-neutral-50 rounded-md text-xs font-medium text-neutral-800 border border-neutral-200">
+            <div className="flex items-center space-x-1.5 sm:space-x-2 px-2 sm:px-2.5 py-1 bg-neutral-50 rounded-md text-xs font-medium text-neutral-800 border border-neutral-200">
               <AgentpayLogo size={16} />
-              <span className="font-semibold text-neutral-900">Shopping Assistant</span>
+              <span className="font-semibold text-neutral-900 hidden xs:inline">Shopping Assistant</span>
+              <span className="font-semibold text-neutral-900 xs:hidden">Chat</span>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5 sm:space-x-2">
             {/* Delivery Destination Pill */}
             <button
               onClick={() => setIsAddressModalOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-md text-xs font-medium text-neutral-700 transition-colors cursor-pointer"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-md text-xs font-medium text-neutral-700 transition-colors cursor-pointer"
               title="Change Delivery Destination"
             >
               <MapPin className="w-3 h-3 text-neutral-500 shrink-0" />
-              <span className="truncate max-w-[140px]">
-                Ship to: <strong className="text-neutral-900 font-semibold">{addresses.find((a) => a.id === selectedAddressId)?.label || (addresses.length > 0 ? addresses[0].label : 'Add Address')}</strong>
+              <span className="truncate max-w-[75px] sm:max-w-[140px]">
+                <span className="hidden sm:inline">Ship to: </span>
+                <strong className="text-neutral-900 font-semibold">{addresses.find((a) => a.id === selectedAddressId)?.label || (addresses.length > 0 ? addresses[0].label : 'Add Address')}</strong>
               </span>
               <ChevronDown className="w-3 h-3 text-neutral-400 shrink-0" />
             </button>
@@ -743,10 +767,13 @@ export default function ConsumerChatPage() {
             {/* Live Spend Limit Badge */}
             <button
               onClick={() => router.push('/customer/dashboard')}
-              className="inline-flex items-center space-x-1.5 px-2.5 py-1 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-neutral-800 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer"
+              className="inline-flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-2.5 py-1 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-neutral-800 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer"
             >
               <span className={`w-1.5 h-1.5 rounded-full ${hasActiveAuth ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
-              <span>{hasActiveAuth ? `Limit: ₹${(remainingLimit || 0).toLocaleString('en-IN')}` : 'Set Spend Limit'}</span>
+              <span>
+                <span className="hidden sm:inline">{hasActiveAuth ? 'Limit: ' : ''}</span>
+                {hasActiveAuth ? `₹${(remainingLimit || 0).toLocaleString('en-IN')}` : 'Set Limit'}
+              </span>
             </button>
 
             {/* Notification Bell for Personalized Re-Engagement Discount Offers */}
@@ -764,7 +791,7 @@ export default function ConsumerChatPage() {
 
               {/* Notification Popover Dropdown */}
               {isNotificationsOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white border border-neutral-200 rounded-lg shadow-xl p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="absolute right-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-24px)] bg-white border border-neutral-200 rounded-lg shadow-xl p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                   <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
                     <div className="flex items-center gap-1.5">
                       <Tag className="w-3.5 h-3.5 text-amber-600" />
@@ -790,7 +817,7 @@ export default function ConsumerChatPage() {
                             <span className="px-1.5 py-0.2 bg-amber-500 text-white rounded text-[9.5px] font-bold font-mono">
                               {off.discount_value}% OFF
                             </span>
-                            <span className="text-[10px] font-mono text-neutral-400">by {off.merchant_name}</span>
+                            <span className="text-[10px] font-mono text-neutral-400 truncate max-w-[110px]">by {off.merchant_name}</span>
                           </div>
                           <p className="text-xs font-bold text-neutral-900 truncate">{off.item_name}</p>
                           <div className="flex items-center justify-between pt-1">
@@ -827,7 +854,7 @@ export default function ConsumerChatPage() {
         </header>
 
         {/* Chat Stream / Hero Greeting Container */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-8 pb-32 space-y-6">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-6 sm:py-8 pb-32 space-y-6">
           {messages.length === 0 ? (
             /* HERO GREETING & SUGGESTION CARDS */
             <div className="max-w-xl mx-auto mt-10 sm:mt-16 text-center space-y-6">
@@ -1320,7 +1347,7 @@ export default function ConsumerChatPage() {
         </div>
 
         {/* 3. FLOATING BOTTOM INPUT DOCK (ChatGPT / Claude Standard) */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10">
+        <div className="absolute bottom-0 left-0 right-0 p-2.5 sm:p-4 bg-gradient-to-t from-white via-white to-transparent pt-4 sm:pt-6 z-10">
           <div className="max-w-2xl mx-auto">
             <form
               onSubmit={(e) => {
