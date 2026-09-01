@@ -8,6 +8,7 @@ from app.models.customer import Customer
 from app.models.spend_authorization import SpendAuthorization
 from app.models.address import Address
 from app.models.recommendation import Recommendation
+from app.models.campaign_offer import CampaignOffer
 
 __all__ = [
     "Merchant",
@@ -20,4 +21,5 @@ __all__ = [
     "SpendAuthorization",
     "Address",
     "Recommendation",
+    "CampaignOffer",
 ]
