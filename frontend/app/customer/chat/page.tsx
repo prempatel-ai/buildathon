@@ -530,7 +530,7 @@ export default function ConsumerChatPage() {
   };
 
   return (
-    <div className="flex h-screen bg-white text-neutral-900 font-sans antialiased overflow-hidden selection:bg-neutral-200">
+    <div className="flex h-[100dvh] bg-white text-neutral-900 font-sans antialiased overflow-hidden selection:bg-neutral-200">
       {/* Mobile Drawer Backdrop */}
       {sidebarOpen && (
         <div
@@ -543,9 +543,9 @@ export default function ConsumerChatPage() {
       <aside
         className={`fixed md:relative inset-y-0 left-0 bg-white md:bg-neutral-50/70 border-r border-neutral-200 flex flex-col transition-all duration-200 ease-in-out z-40 ${
           sidebarOpen ? 'w-64 translate-x-0 shadow-2xl md:shadow-none' : '-translate-x-full md:translate-x-0 md:w-0 md:border-none'
-        } overflow-hidden`}
+        } overflow-hidden h-full`}
       >
-        <div className="p-3 flex items-center justify-between">
+        <div className="p-3 flex items-center justify-between shrink-0">
           <button
             onClick={() => {
               startNewChat();
@@ -566,7 +566,7 @@ export default function ConsumerChatPage() {
         </div>
 
         {/* Sidebar Nav Shortcuts */}
-        <div className="px-2 py-1 space-y-0.5 border-b border-neutral-200 text-xs font-medium text-neutral-600">
+        <div className="px-2 py-1 space-y-0.5 border-b border-neutral-200 text-xs font-medium text-neutral-600 shrink-0">
           <button
             onClick={() => router.push('/customer/addresses')}
             className="w-full flex items-center space-x-2 px-2.5 py-1.5 hover:bg-neutral-100/80 rounded-md transition-colors text-left cursor-pointer"
@@ -667,7 +667,7 @@ export default function ConsumerChatPage() {
         </div>
 
         {/* Bottom Profile Pill */}
-        <div className="p-2 border-t border-neutral-200 relative">
+        <div className="p-2 border-t border-neutral-200 relative shrink-0">
           {isProfileMenuOpen && (
             <div className="absolute bottom-14 left-2 right-2 bg-white rounded-lg border border-neutral-200 shadow-xl p-1 text-xs z-50 animate-in fade-in zoom-in-95 duration-100">
               <div className="px-3 py-2 border-b border-neutral-100 mb-1">
@@ -732,7 +732,7 @@ export default function ConsumerChatPage() {
       {/* 2. MAIN CHAT AREA */}
       <main className="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
         {/* Top Floating Header Bar */}
-        <header className="h-12 px-2 sm:px-4 flex items-center justify-between border-b border-neutral-200 bg-white z-10">
+        <header className="h-12 px-2 sm:px-4 flex items-center justify-between border-b border-neutral-200 bg-white z-20 shrink-0">
           <div className="flex items-center space-x-1.5 sm:space-x-2.5">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -757,7 +757,7 @@ export default function ConsumerChatPage() {
               title="Change Delivery Destination"
             >
               <MapPin className="w-3 h-3 text-neutral-500 shrink-0" />
-              <span className="truncate max-w-[75px] sm:max-w-[140px]">
+              <span className="truncate max-w-[70px] sm:max-w-[140px]">
                 <span className="hidden sm:inline">Ship to: </span>
                 <strong className="text-neutral-900 font-semibold">{addresses.find((a) => a.id === selectedAddressId)?.label || (addresses.length > 0 ? addresses[0].label : 'Add Address')}</strong>
               </span>
@@ -854,10 +854,10 @@ export default function ConsumerChatPage() {
         </header>
 
         {/* Chat Stream / Hero Greeting Container */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-6 sm:py-8 pb-32 space-y-6">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4">
           {messages.length === 0 ? (
             /* HERO GREETING & SUGGESTION CARDS */
-            <div className="max-w-xl mx-auto mt-10 sm:mt-16 text-center space-y-6">
+            <div className="max-w-xl mx-auto mt-6 sm:mt-12 text-center space-y-5">
               <div className="w-11 h-11 rounded-lg bg-neutral-950 text-white flex items-center justify-center mx-auto shadow-xs">
                 <ShoppingBag className="w-5 h-5" />
               </div>
@@ -872,12 +872,12 @@ export default function ConsumerChatPage() {
               </div>
 
               {/* Quick Prompts */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-left">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 text-left">
                 <button
                   onClick={() => handleSendMessage('Search for wireless noise cancelling headphones under ₹3000')}
                   className="p-3.5 rounded-lg bg-white border border-neutral-200 hover:border-neutral-900 transition-all text-left group cursor-pointer hover:shadow-xs"
                 >
-                  <Headphones className="w-4 h-4 text-neutral-700 mb-2.5 group-hover:scale-105 transition-transform" />
+                  <Headphones className="w-4 h-4 text-neutral-700 mb-2 group-hover:scale-105 transition-transform" />
                   <div>
                     <p className="text-xs font-semibold text-neutral-900">ANC Headphones</p>
                     <p className="text-[10.5px] text-neutral-400 mt-0.5">Budget under ₹3,000</p>
@@ -888,7 +888,7 @@ export default function ConsumerChatPage() {
                   onClick={() => handleSendMessage('Find boAt Bluetooth speakers under ₹2000')}
                   className="p-3.5 rounded-lg bg-white border border-neutral-200 hover:border-neutral-900 transition-all text-left group cursor-pointer hover:shadow-xs"
                 >
-                  <ShoppingBag className="w-4 h-4 text-neutral-700 mb-2.5 group-hover:scale-105 transition-transform" />
+                  <ShoppingBag className="w-4 h-4 text-neutral-700 mb-2 group-hover:scale-105 transition-transform" />
                   <div>
                     <p className="text-xs font-semibold text-neutral-900">boAt Speakers</p>
                     <p className="text-[10.5px] text-neutral-400 mt-0.5">Speakers under ₹2,000</p>
@@ -899,7 +899,7 @@ export default function ConsumerChatPage() {
                   onClick={() => handleSendMessage('Show top smartwatch options with health monitoring')}
                   className="p-3.5 rounded-lg bg-white border border-neutral-200 hover:border-neutral-900 transition-all text-left group cursor-pointer hover:shadow-xs"
                 >
-                  <Watch className="w-4 h-4 text-neutral-700 mb-2.5 group-hover:scale-105 transition-transform" />
+                  <Watch className="w-4 h-4 text-neutral-700 mb-2 group-hover:scale-105 transition-transform" />
                   <div>
                     <p className="text-xs font-semibold text-neutral-900">Smartwatches</p>
                     <p className="text-[10.5px] text-neutral-400 mt-0.5">Auto-settle with limit</p>
@@ -909,11 +909,11 @@ export default function ConsumerChatPage() {
             </div>
           ) : (
             /* CHAT MESSAGE STREAM */
-            <div className="max-w-2xl mx-auto space-y-6 pb-28">
+            <div className="max-w-2xl mx-auto space-y-4 pb-4">
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex items-start space-x-3 ${
+                  className={`flex items-start space-x-2.5 sm:space-x-3 ${
                     msg.sender === 'user' ? 'justify-end' : 'justify-start'
                   }`}
                 >
@@ -923,11 +923,11 @@ export default function ConsumerChatPage() {
                     </div>
                   )}
 
-                  <div className={`flex flex-col max-w-[85%] ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                  <div className={`flex flex-col w-full sm:max-w-[85%] ${msg.sender === 'user' ? 'items-end max-w-[85%]' : 'items-start'}`}>
                     {msg.status === 'PAYMENT_SETTLED' || msg.status === 'SETTLED' || msg.status === 'ORDER_DETAILS' ? (
-                      <div className="bg-white rounded-lg border border-neutral-200 p-5 space-y-4 w-full text-xs animate-in fade-in zoom-in-95 duration-100 shadow-xs">
+                      <div className="bg-white rounded-lg border border-neutral-200 p-4 sm:p-5 space-y-3.5 w-full text-xs animate-in fade-in zoom-in-95 duration-100 shadow-xs">
                         {/* Header */}
-                        <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+                        <div className="flex items-center justify-between pb-2.5 border-b border-neutral-100">
                           <div className="flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                             <span className="font-semibold text-neutral-900 text-xs tracking-tight">
@@ -960,7 +960,7 @@ export default function ConsumerChatPage() {
 
                         {/* Razorpay Order & Payment ID */}
                         {msg.razorpayOrderId && (
-                          <div className="bg-neutral-50 rounded-md p-3 border border-neutral-200 space-y-1 font-mono text-[11px]">
+                          <div className="bg-neutral-50 rounded-md p-2.5 sm:p-3 border border-neutral-200 space-y-1 font-mono text-[10.5px] sm:text-[11px]">
                             <div className="flex items-center justify-between text-neutral-600">
                               <span className="text-neutral-500 font-sans">Razorpay Order</span>
                               <span className="font-semibold text-neutral-900">{msg.razorpayOrderId}</span>
@@ -976,14 +976,14 @@ export default function ConsumerChatPage() {
 
                         {/* Shipping & Delivery */}
                         {msg.estimatedDeliveryDate && (
-                          <div className="bg-neutral-50 rounded-md p-3 border border-neutral-200 space-y-1">
+                          <div className="bg-neutral-50 rounded-md p-2.5 sm:p-3 border border-neutral-200 space-y-1">
                             <div className="flex items-center gap-2 text-neutral-900 font-semibold text-xs">
                               <Truck className="w-3.5 h-3.5 text-neutral-700 shrink-0" />
                               <span>
                                 Expected Delivery:{' '}
                                 <strong className="text-neutral-900 font-bold">
                                   {new Date(msg.estimatedDeliveryDate).toLocaleDateString('en-IN', {
-                                    weekday: 'long',
+                                    weekday: 'short',
                                     day: 'numeric',
                                     month: 'short',
                                     year: 'numeric'
@@ -992,7 +992,7 @@ export default function ConsumerChatPage() {
                               </span>
                             </div>
                             {msg.deliveryAddress && (
-                              <div className="flex items-start gap-2 text-[11px] text-neutral-600">
+                              <div className="flex items-start gap-1.5 text-[11px] text-neutral-600">
                                 <MapPin className="w-3 h-3 text-neutral-400 shrink-0 mt-0.5" />
                                 <span className="leading-tight">{msg.deliveryAddress}</span>
                               </div>
@@ -1001,18 +1001,18 @@ export default function ConsumerChatPage() {
                         )}
 
                         {/* Structured Gate Verification Grid */}
-                        <div className="pt-3 border-t border-neutral-100 grid grid-cols-3 gap-2 text-center text-[11px]">
-                          <div className="bg-neutral-50 border border-neutral-200 rounded py-1.5 px-2">
-                            <span className="text-neutral-400 block text-[9px] uppercase font-bold tracking-wider font-mono">Customer Auth</span>
-                            <span className="font-semibold text-emerald-700 font-mono text-[10px]">{msg.customerAuthDecision || 'ALLOW'}</span>
+                        <div className="pt-2.5 border-t border-neutral-100 grid grid-cols-3 gap-1.5 text-center text-[10.5px]">
+                          <div className="bg-neutral-50 border border-neutral-200 rounded py-1 px-1.5">
+                            <span className="text-neutral-400 block text-[8.5px] uppercase font-bold tracking-wider font-mono">Customer Auth</span>
+                            <span className="font-semibold text-emerald-700 font-mono text-[9.5px]">{msg.customerAuthDecision || 'ALLOW'}</span>
                           </div>
-                          <div className="bg-neutral-50 border border-neutral-200 rounded py-1.5 px-2">
-                            <span className="text-neutral-400 block text-[9px] uppercase font-bold tracking-wider font-mono">Policy Gate</span>
-                            <span className="font-semibold text-emerald-700 font-mono text-[10px]">{msg.policyDecision || 'ALLOW'}</span>
+                          <div className="bg-neutral-50 border border-neutral-200 rounded py-1 px-1.5">
+                            <span className="text-neutral-400 block text-[8.5px] uppercase font-bold tracking-wider font-mono">Policy Gate</span>
+                            <span className="font-semibold text-emerald-700 font-mono text-[9.5px]">{msg.policyDecision || 'ALLOW'}</span>
                           </div>
-                          <div className="bg-neutral-50 border border-neutral-200 rounded py-1.5 px-2">
-                            <span className="text-neutral-400 block text-[9px] uppercase font-bold tracking-wider font-mono">Settlement</span>
-                            <span className="font-semibold text-neutral-900 font-mono text-[10px]">AUTONOMOUS</span>
+                          <div className="bg-neutral-50 border border-neutral-200 rounded py-1 px-1.5">
+                            <span className="text-neutral-400 block text-[8.5px] uppercase font-bold tracking-wider font-mono">Settlement</span>
+                            <span className="font-semibold text-neutral-900 font-mono text-[9.5px]">AUTONOMOUS</span>
                           </div>
                         </div>
 
@@ -1030,7 +1030,7 @@ export default function ConsumerChatPage() {
                       </div>
                     ) : (
                       <div
-                        className={`rounded-lg px-4 py-2.5 text-xs leading-relaxed ${
+                        className={`rounded-2xl px-4 py-2.5 text-xs leading-relaxed ${
                           msg.sender === 'user'
                             ? 'bg-neutral-900 text-white font-normal'
                             : 'bg-neutral-100 text-neutral-800 border border-neutral-200'
@@ -1042,11 +1042,11 @@ export default function ConsumerChatPage() {
 
                     {/* Product Options Grid */}
                     {msg.cards && msg.cards.length > 0 && (
-                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                      <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full">
                         {msg.cards.map((card) => (
                           <div
                             key={card.item_id}
-                            className="bg-white p-3.5 rounded-lg border border-neutral-200 hover:border-neutral-400 transition-all flex flex-col justify-between group"
+                            className="bg-white p-3 sm:p-3.5 rounded-lg border border-neutral-200 hover:border-neutral-400 transition-all flex flex-col justify-between group shadow-2xs"
                           >
                             <div>
                               <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 mb-1">
@@ -1058,10 +1058,10 @@ export default function ConsumerChatPage() {
                               <h4 className="text-xs font-bold text-neutral-900 line-clamp-1">
                                 {card.item_name}
                               </h4>
-                              <p className="text-[11px] text-neutral-500 mt-0.5">by {card.merchant_name}</p>
+                              <p className="text-[10.5px] text-neutral-500 mt-0.5">by {card.merchant_name}</p>
                             </div>
 
-                            <div className="mt-3 pt-2.5 border-t border-neutral-100 flex items-center justify-between">
+                            <div className="mt-3 pt-2 border-t border-neutral-100 flex items-center justify-between">
                               <span className="text-xs font-bold font-mono text-neutral-900">
                                 ₹{card.price.toLocaleString('en-IN')}
                               </span>
@@ -1080,58 +1080,57 @@ export default function ConsumerChatPage() {
 
                     {/* Pre-Settlement Upsell & Cross-Sell Product Comparison Engine */}
                     {msg.suggestions && msg.suggestions.length > 0 && (
-                      <div className="mt-3.5 pt-3 border-t border-neutral-200/80 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
-                        <div className="flex items-center justify-between mb-2.5 px-0.5">
+                      <div className="mt-3 pt-3 border-t border-neutral-200/80 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <div className="flex items-center justify-between mb-2 px-0.5">
                           <div className="flex items-center gap-1.5">
                             <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
                             <span className="text-[11px] font-bold text-neutral-900 uppercase tracking-wider font-mono">
                               Compare Alternatives & Upgrades
                             </span>
                           </div>
-                          <span className="text-[10px] text-neutral-400 font-mono uppercase">
-                            Feature-by-Feature Tradeoff
+                          <span className="text-[9.5px] text-neutral-400 font-mono uppercase hidden xs:inline">
+                            Tradeoff Matrix
                           </span>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2.5">
                           {msg.suggestions.map((sugg) => (
                             <div
                               key={sugg.item_id}
-                              className="bg-white p-3.5 rounded-lg border border-neutral-200 hover:border-neutral-900 transition-all shadow-2xs"
+                              className="bg-white p-3 sm:p-3.5 rounded-lg border border-neutral-200 hover:border-neutral-900 transition-all shadow-2xs"
                             >
                               {/* Header: Type Badge, Title, Price Delta */}
-                              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 pb-2.5 border-b border-neutral-100">
-                                <div>
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span
-                                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${
-                                        sugg.suggestion_type === 'upsell'
-                                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                      }`}
-                                    >
-                                      {sugg.suggestion_type === 'upsell' ? '⚡ Premium Upgrade' : '🔗 Complementary Pairing'}
-                                    </span>
-                                    <span className="text-[10.5px] text-neutral-500 font-mono">
-                                      by {sugg.merchant_name}
-                                    </span>
-                                  </div>
+                              <div className="flex flex-col gap-1.5 pb-2.5 border-b border-neutral-100">
+                                <div className="flex flex-wrap items-center justify-between gap-1">
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-[9.5px] font-mono font-bold uppercase tracking-wider ${
+                                      sugg.suggestion_type === 'upsell'
+                                        ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    }`}
+                                  >
+                                    {sugg.suggestion_type === 'upsell' ? '⚡ Premium Upgrade' : '🔗 Complementary Pairing'}
+                                  </span>
+                                  <span className="text-[10px] text-neutral-500 font-mono">
+                                    by {sugg.merchant_name}
+                                  </span>
+                                </div>
+                                <div className="flex items-start justify-between gap-2">
                                   <h4 className="text-xs font-bold text-neutral-900">
                                     {sugg.item_name}
                                   </h4>
-                                </div>
-
-                                <div className="text-left sm:text-right shrink-0">
-                                  <div className="text-xs font-bold font-mono text-neutral-900">
-                                    ₹{sugg.price.toLocaleString('en-IN')}
+                                  <div className="text-right shrink-0">
+                                    <div className="text-xs font-bold font-mono text-neutral-900">
+                                      ₹{sugg.price.toLocaleString('en-IN')}
+                                    </div>
+                                    <span
+                                      className={`text-[10px] font-mono font-semibold block ${
+                                        sugg.comparison.price_delta >= 0 ? 'text-amber-700' : 'text-emerald-700'
+                                      }`}
+                                    >
+                                      {sugg.comparison.price_delta >= 0 ? `+₹${sugg.comparison.price_delta.toLocaleString('en-IN')}` : `-₹${Math.abs(sugg.comparison.price_delta).toLocaleString('en-IN')}`} ({sugg.comparison.price_delta_percentage >= 0 ? '+' : ''}{sugg.comparison.price_delta_percentage}%)
+                                    </span>
                                   </div>
-                                  <span
-                                    className={`text-[10.5px] font-mono font-semibold block ${
-                                      sugg.comparison.price_delta >= 0 ? 'text-amber-700' : 'text-emerald-700'
-                                    }`}
-                                  >
-                                    {sugg.comparison.price_delta >= 0 ? `+₹${sugg.comparison.price_delta.toLocaleString('en-IN')}` : `-₹${Math.abs(sugg.comparison.price_delta).toLocaleString('en-IN')}`} ({sugg.comparison.price_delta_percentage >= 0 ? '+' : ''}{sugg.comparison.price_delta_percentage}%)
-                                  </span>
                                 </div>
                               </div>
 
@@ -1142,25 +1141,25 @@ export default function ConsumerChatPage() {
 
                               {/* Spec Difference Matrix */}
                               {sugg.comparison.spec_differences && sugg.comparison.spec_differences.length > 0 && (
-                                <div className="mt-2.5 bg-neutral-50 rounded-md p-2.5 border border-neutral-200/70 space-y-1.5">
-                                  <div className="text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-500 mb-1">
+                                <div className="mt-2.5 bg-neutral-50 rounded-md p-2 sm:p-2.5 border border-neutral-200/70 space-y-1.5">
+                                  <div className="text-[9.5px] font-mono font-semibold uppercase tracking-wider text-neutral-500 mb-1">
                                     Spec & Feature Breakdown
                                   </div>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px]">
                                     {sugg.comparison.spec_differences.map((spec, idx) => (
                                       <div key={idx} className="bg-white p-2 rounded border border-neutral-200/60 shadow-2xs">
-                                        <div className="text-[10px] text-neutral-400 font-mono font-medium">
+                                        <div className="text-[9.5px] text-neutral-400 font-mono font-medium">
                                           {spec.feature_name}
                                         </div>
-                                        <div className="text-neutral-900 font-semibold mt-0.5 flex items-center justify-between gap-1">
+                                        <div className="text-neutral-900 font-semibold mt-0.5 flex flex-wrap items-center justify-between gap-1 text-[11px]">
                                           <span>{spec.suggested_value}</span>
                                           {spec.advantage && (
-                                            <span className="text-[9.5px] text-emerald-700 font-mono bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200 shrink-0">
+                                            <span className="text-[9px] text-emerald-700 font-mono bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200 shrink-0">
                                               {spec.advantage}
                                             </span>
                                           )}
                                         </div>
-                                        <div className="text-[10px] text-neutral-400 mt-0.5 line-through">
+                                        <div className="text-[9.5px] text-neutral-400 mt-0.5 line-through">
                                           Base: {spec.original_value}
                                         </div>
                                       </div>
@@ -1170,13 +1169,13 @@ export default function ConsumerChatPage() {
                               )}
 
                               {/* Action: Switch to Upgrade / Explore */}
-                              <div className="mt-3 pt-2.5 border-t border-neutral-100 flex items-center justify-between">
-                                <span className="text-[10.5px] text-neutral-400 font-mono">
-                                  Goes through Dual-Gate Verification
+                              <div className="mt-3 pt-2.5 border-t border-neutral-100 flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2">
+                                <span className="text-[10px] text-neutral-400 font-mono">
+                                  Dual-Gate Verification Gated
                                 </span>
                                 <button
                                   onClick={() => handleSendMessage(`buy ${sugg.item_name}`)}
-                                  className="h-7 px-3 bg-neutral-900 hover:bg-black text-white rounded text-[11px] font-medium transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+                                  className="w-full xs:w-auto h-7 px-3 bg-neutral-900 hover:bg-black text-white rounded text-[11px] font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
                                 >
                                   <span>{sugg.suggestion_type === 'upsell' ? 'Switch to Upgrade' : 'Explore Pairing'}</span>
                                   <ArrowRight className="w-3 h-3" />
@@ -1190,7 +1189,7 @@ export default function ConsumerChatPage() {
 
                     {/* Personalized Abandonment Re-Engagement Offers */}
                     {msg.pendingOffers && msg.pendingOffers.length > 0 && (
-                      <div className="mt-3.5 pt-3 border-t border-amber-200/90 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      <div className="mt-3 pt-3 border-t border-amber-200/90 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <div className="flex items-center justify-between mb-2 px-0.5">
                           <div className="flex items-center gap-1.5">
                             <Gift className="w-3.5 h-3.5 text-amber-600" />
@@ -1198,7 +1197,7 @@ export default function ConsumerChatPage() {
                               Exclusive Re-Engagement Discount
                             </span>
                           </div>
-                          <span className="text-[10px] text-amber-700 font-mono font-semibold uppercase bg-amber-100 px-1.5 py-0.2 rounded border border-amber-200">
+                          <span className="text-[9.5px] text-amber-700 font-mono font-semibold uppercase bg-amber-100 px-1.5 py-0.2 rounded border border-amber-200">
                             Bounded Offer
                           </span>
                         </div>
@@ -1207,7 +1206,7 @@ export default function ConsumerChatPage() {
                           {msg.pendingOffers.map((off) => (
                             <div
                               key={off.id}
-                              className="bg-gradient-to-r from-amber-50/80 via-white to-amber-50/40 p-3.5 rounded-lg border border-amber-300/80 hover:border-amber-500 transition-all shadow-2xs group"
+                              className="bg-gradient-to-r from-amber-50/80 via-white to-amber-50/40 p-3 sm:p-3.5 rounded-lg border border-amber-300/80 hover:border-amber-500 transition-all shadow-2xs group"
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <div>
@@ -1240,13 +1239,13 @@ export default function ConsumerChatPage() {
                                 </div>
                               </div>
 
-                              <div className="mt-3 pt-2.5 border-t border-amber-200/50 flex items-center justify-between">
+                              <div className="mt-3 pt-2.5 border-t border-amber-200/50 flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2">
                                 <span className="text-[10px] text-neutral-400 font-mono">
                                   Full Dual-Gate Checked
                                 </span>
                                 <button
                                   onClick={() => handleSendMessage(`buy ${off.item_name}`, undefined, off.id)}
-                                  className="h-7 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded text-[11px] font-medium transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+                                  className="w-full xs:w-auto h-7 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded text-[11px] font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
                                 >
                                   <span>Claim & Instant Buy</span>
                                   <ArrowRight className="w-3 h-3" />
@@ -1260,24 +1259,24 @@ export default function ConsumerChatPage() {
 
                     {/* Post-Purchase Explainable Recommendations */}
                     {msg.recommendations && msg.recommendations.length > 0 && (
-                      <div className="mt-3.5 pt-3 border-t border-neutral-200/80 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
-                        <div className="flex items-center justify-between mb-2.5 px-0.5">
+                      <div className="mt-3 pt-3 border-t border-neutral-200/80 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <div className="flex items-center justify-between mb-2 px-0.5">
                           <div className="flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                             <span className="text-[11px] font-bold text-neutral-900 uppercase tracking-wider font-mono">
                               Recommended For You
                             </span>
                           </div>
-                          <span className="text-[10px] text-neutral-400 font-mono uppercase">
+                          <span className="text-[9.5px] text-neutral-400 font-mono uppercase hidden xs:inline">
                             AI Cross-Store Discovery
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {msg.recommendations.map((rec) => (
                             <div
                               key={rec.id}
-                              className="bg-white p-3.5 rounded-lg border border-neutral-200/90 hover:border-neutral-900 transition-all flex flex-col justify-between group shadow-2xs"
+                              className="bg-white p-3 sm:p-3.5 rounded-lg border border-neutral-200/90 hover:border-neutral-900 transition-all flex flex-col justify-between group shadow-2xs"
                             >
                               <div>
                                 <div className="flex items-center justify-between text-[10px] font-mono text-neutral-500 mb-1">
@@ -1325,18 +1324,18 @@ export default function ConsumerChatPage() {
               ))}
 
               {loading && (
-                <div className="flex items-start space-x-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                <div className="flex items-start space-x-2.5 sm:space-x-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
                   <div className="w-7 h-7 min-w-[28px] max-w-[28px] aspect-square rounded-md bg-neutral-950 text-white flex items-center justify-center shrink-0 shadow-2xs">
                     <ShoppingBag className="w-3.5 h-3.5 text-neutral-200" />
                   </div>
-                  <div className="bg-neutral-50 border border-neutral-200/80 rounded-xl px-4 py-2.5 text-xs text-neutral-600 flex items-center space-x-3 shadow-2xs">
+                  <div className="bg-neutral-50 border border-neutral-200/80 rounded-xl px-3.5 py-2 text-xs text-neutral-600 flex items-center space-x-2.5 shadow-2xs">
                     <div className="flex items-center space-x-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-neutral-900 animate-bounce" style={{ animationDelay: '0ms' }} />
                       <span className="w-1.5 h-1.5 rounded-full bg-neutral-900 animate-bounce" style={{ animationDelay: '150ms' }} />
                       <span className="w-1.5 h-1.5 rounded-full bg-neutral-900 animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
-                    <span className="text-[11.5px] font-medium text-neutral-600">
-                      Searching catalog across merchants & evaluating policy gates...
+                    <span className="text-[11px] font-medium text-neutral-600">
+                      Searching catalog & evaluating policy gates...
                     </span>
                   </div>
                 </div>
@@ -1346,15 +1345,15 @@ export default function ConsumerChatPage() {
           )}
         </div>
 
-        {/* 3. FLOATING BOTTOM INPUT DOCK (ChatGPT / Claude Standard) */}
-        <div className="absolute bottom-0 left-0 right-0 p-2.5 sm:p-4 bg-gradient-to-t from-white via-white to-transparent pt-4 sm:pt-6 z-10">
+        {/* 3. FLOATING BOTTOM INPUT DOCK (Seamless flex-bottom dock) */}
+        <div className="shrink-0 bg-white border-t border-neutral-200/80 p-2 sm:p-3 z-10">
           <div className="max-w-2xl mx-auto">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="bg-white rounded-2xl border border-neutral-200/90 shadow-sm hover:border-neutral-300 focus-within:border-neutral-900 focus-within:ring-1 focus-within:ring-neutral-900 transition-all p-1.5 px-2 flex items-center space-x-2"
+              className="bg-neutral-50 hover:bg-white focus-within:bg-white rounded-2xl border border-neutral-200/90 shadow-2xs hover:border-neutral-300 focus-within:border-neutral-900 focus-within:ring-1 focus-within:ring-neutral-900 transition-all p-1.5 px-2 flex items-center space-x-2"
             >
               <button
                 type="button"
@@ -1383,7 +1382,7 @@ export default function ConsumerChatPage() {
                       ? 'bg-neutral-900 text-white animate-pulse'
                       : inputPrompt.trim()
                         ? 'bg-neutral-900 hover:bg-black text-white active:scale-95 shadow-xs'
-                        : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
+                        : 'bg-neutral-200/60 text-neutral-400 cursor-not-allowed'
                   }`}
                   title={loading ? 'Processing...' : 'Send Message'}
                 >
@@ -1391,7 +1390,7 @@ export default function ConsumerChatPage() {
                 </button>
               </div>
             </form>
-            <p className="text-[10.5px] font-mono text-center text-neutral-400 mt-2">
+            <p className="text-[10px] font-mono text-center text-neutral-400 mt-1.5">
               Agentpay AI evaluates spend rules & settles transactions directly via Razorpay.
             </p>
           </div>
