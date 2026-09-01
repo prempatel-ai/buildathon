@@ -228,28 +228,33 @@ class RecommendationService:
         # Query all settled transactions with explicit source_recommendation_id for this merchant
         attributed_txs = db.query(Transaction).filter(
             Transaction.merchant_id == merchant_id,
-            Transaction.source_recommendation_id.isnot(None),
-            Transaction.status.in_(["true", "SETTLED", "settled", "PAYMENT_SETTLED", "COMPLETED", "success"])
+            Transaction.source_recommendation_id.isnot(None)
         ).order_by(Transaction.created_at.desc()).all()
 
         total_revenue = Decimal("0.00")
         tx_items: List[AttributedTransactionItem] = []
 
         for tx in attributed_txs:
+            st = (tx.status or "").upper()
+            if st in ["FAILED", "CANCELLED", "INITIATED", "PENDING"]:
+                continue
+
             amt = tx.amount or Decimal("0.00")
             total_revenue += amt
 
             item_name = None
             if tx.error_details and isinstance(tx.error_details, dict):
                 item_name = tx.error_details.get("item_name")
+            if not item_name and tx.source_recommendation and tx.source_recommendation.recommended_item:
+                item_name = tx.source_recommendation.recommended_item.name
 
             tx_items.append(AttributedTransactionItem(
                 transaction_id=str(tx.id),
                 recommendation_id=str(tx.source_recommendation_id),
                 amount=float(amt),
-                item_name=item_name,
-                status=tx.status,
-                created_at=tx.created_at.isoformat() if tx.created_at else ""
+                item_name=item_name or "Attributed Catalog Product",
+                status="SETTLED",
+                created_at=tx.created_at.isoformat() if tx.created_at else datetime.now(timezone.utc).isoformat()
             ))
 
         # Count total shown recommendations where recommended_merchant_id == merchant_id

@@ -898,16 +898,16 @@ export default function ConsumerChatPage() {
 
                     {/* Post-Purchase Explainable Recommendations */}
                     {msg.recommendations && msg.recommendations.length > 0 && (
-                      <div className="mt-3.5 pt-3 border-t border-dashed border-neutral-200 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-1.5">
+                      <div className="mt-3.5 pt-3 border-t border-neutral-200/80 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <div className="flex items-center justify-between mb-2.5 px-0.5">
+                          <div className="flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                             <span className="text-[11px] font-bold text-neutral-900 uppercase tracking-wider font-mono">
-                              Recommended for You
+                              Recommended For You
                             </span>
                           </div>
-                          <span className="text-[10px] text-neutral-400 font-mono">
-                            Attributed Engine
+                          <span className="text-[10px] text-neutral-400 font-mono uppercase">
+                            AI Cross-Store Discovery
                           </span>
                         </div>
 
@@ -915,33 +915,34 @@ export default function ConsumerChatPage() {
                           {msg.recommendations.map((rec) => (
                             <div
                               key={rec.id}
-                              className="bg-neutral-50/80 hover:bg-white p-3 rounded-lg border border-neutral-200 hover:border-neutral-900 transition-all flex flex-col justify-between group shadow-2xs"
+                              className="bg-white p-3.5 rounded-lg border border-neutral-200/90 hover:border-neutral-900 transition-all flex flex-col justify-between group shadow-2xs"
                             >
                               <div>
-                                <div className="flex items-center justify-between text-[9.5px] font-mono text-neutral-500 mb-1">
-                                  <span className="px-1.5 py-0.5 bg-neutral-200/60 rounded text-neutral-700 font-medium">
+                                <div className="flex items-center justify-between text-[10px] font-mono text-neutral-500 mb-1">
+                                  <span className="px-1.5 py-0.5 bg-neutral-100 rounded text-neutral-700 font-medium">
                                     {rec.category}
                                   </span>
-                                  <span className="text-neutral-400 truncate max-w-[100px]">{rec.merchant_name}</span>
+                                  <span className="text-neutral-400 truncate max-w-[110px]">by {rec.merchant_name}</span>
                                 </div>
                                 <h4 className="text-xs font-bold text-neutral-900 line-clamp-1 group-hover:text-black">
                                   {rec.item_name}
                                 </h4>
-                                <p className="text-[10.5px] text-emerald-800 font-medium bg-emerald-50/70 border border-emerald-200/50 rounded px-1.5 py-0.5 mt-1.5 line-clamp-2">
-                                  💡 {rec.reason}
-                                </p>
+                                <div className="mt-1.5 flex items-start gap-1 text-[10.5px] text-neutral-600 bg-neutral-50 border border-neutral-200/60 rounded px-2 py-1">
+                                  <span className="text-emerald-600 font-bold shrink-0">💡</span>
+                                  <span className="line-clamp-2 leading-tight">{rec.reason}</span>
+                                </div>
                               </div>
 
-                              <div className="mt-2.5 pt-2 border-t border-neutral-200/60 flex items-center justify-between">
+                              <div className="mt-3 pt-2.5 border-t border-neutral-100 flex items-center justify-between">
                                 <span className="text-xs font-bold font-mono text-neutral-900">
                                   ₹{rec.price.toLocaleString('en-IN')}
                                 </span>
                                 <button
                                   onClick={() => handleSendMessage(`buy ${rec.item_name}`, rec.id)}
-                                  className="h-6.5 px-2.5 bg-neutral-900 hover:bg-black text-white rounded text-[10.5px] font-medium transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+                                  className="h-7 px-3 bg-neutral-900 hover:bg-black text-white rounded text-[11px] font-medium transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-2xs"
                                 >
-                                  <span>Buy Item</span>
-                                  <ArrowRight className="w-2.5 h-2.5" />
+                                  <span>Instant Buy</span>
+                                  <ArrowRight className="w-3 h-3" />
                                 </button>
                               </div>
                             </div>

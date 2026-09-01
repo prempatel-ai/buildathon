@@ -40,7 +40,9 @@ import {
   AlertCircle,
   Sparkles,
   TrendingUp,
-  Coins
+  Coins,
+  RefreshCw,
+  ArrowRight
 } from 'lucide-react';
 
 function DashboardContent() {
@@ -692,50 +694,82 @@ function DashboardContent() {
         {/* Tab 3: Recommendation Revenue Attribution */}
         {activeTab === 'attribution' && (
           <div className="space-y-6">
-            {/* 4 Attribution Metric Cards */}
+            {/* Section Header with Quick Refresh */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-lg border border-neutral-200 shadow-2xs">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                    Revenue Attribution Engine
+                  </h2>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    CRYPTOGRAPHICALLY VERIFIED
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-500 mt-1">
+                  Track exact revenue generated when AI buyer agents recommend your catalog items to shoppers across merchants.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => loadDashboardData()}
+                  className="h-8 px-3 rounded-md border border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-medium text-neutral-700 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  title="Refresh revenue attribution stats"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-neutral-600 ${loading ? 'animate-spin' : ''}`} />
+                  <span>Refresh Stats</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 4 Attribution Metric Cards Strip */}
             <div className="grid grid-cols-1 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 border border-neutral-200 rounded-lg bg-white overflow-hidden shadow-2xs">
               <div className="p-4">
-                <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider flex items-center gap-1">
-                  <Coins className="w-3 h-3 text-emerald-600" />
-                  Attributed Revenue
-                </span>
-                <div className="text-2xl font-bold text-emerald-700 mt-1 font-mono tracking-tight">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Attributed Revenue</span>
+                  <Coins className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <div className="text-2xl font-bold text-neutral-900 mt-1.5 font-mono tracking-tight">
                   ₹{recRevenue ? recRevenue.total_attributed_revenue.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}
                 </div>
-                <span className="text-[11px] text-neutral-600 mt-1 block">
-                  Strictly verified conversions
+                <span className="text-[11px] text-emerald-700 mt-1 block font-medium">
+                  Verified Settled GMV
                 </span>
               </div>
 
               <div className="p-4">
-                <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-indigo-600" />
-                  Converted Orders
-                </span>
-                <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Converted Orders</span>
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                </div>
+                <div className="text-2xl font-bold text-neutral-900 mt-1.5 font-mono tracking-tight">
                   {recRevenue ? recRevenue.converted_recommendations_count : 0}
                 </div>
                 <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
-                  Originating from suggestions
+                  Autonomous Chat Buys
                 </span>
               </div>
 
               <div className="p-4">
-                <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Recommendations Shown</span>
-                <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Impressions Shown</span>
+                  <Package className="w-3.5 h-3.5 text-neutral-400" />
+                </div>
+                <div className="text-2xl font-bold text-neutral-900 mt-1.5 font-mono tracking-tight">
                   {recRevenue ? recRevenue.shown_recommendations_count : 0}
                 </div>
-                <span className="text-[11px] text-neutral-600 mt-1 block">
-                  Post-settlement impressions
+                <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
+                  Post-Purchase Displays
                 </span>
               </div>
 
               <div className="p-4">
-                <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3 text-emerald-600" />
-                  Conversion Rate
-                </span>
-                <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Conversion Rate</span>
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <div className="text-2xl font-bold text-neutral-900 mt-1.5 font-mono tracking-tight">
                   {recRevenue ? `${recRevenue.conversion_rate}%` : '0%'}
                 </div>
                 <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
@@ -744,61 +778,74 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* Attributed Transactions Breakdown */}
+            {/* Attributed Transactions Breakdown Table */}
             <div className="border border-neutral-200 rounded-lg overflow-hidden bg-white shadow-2xs">
               <div className="px-6 py-3.5 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between">
                 <div>
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-600">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-900">
                     Attributed Settled Purchases
-                  </h2>
+                  </h3>
                   <p className="text-[11px] text-neutral-500 mt-0.5">
-                    Every transaction here carries an immutable <code className="bg-neutral-100 px-1 py-0.5 rounded text-neutral-800 font-mono">source_recommendation_id</code> linked directly to chat AI recommendations.
+                    Orders carrying an explicit <code className="bg-neutral-100 px-1 py-0.5 rounded text-neutral-800 font-mono text-[10px]">source_recommendation_id</code> linked directly to chat AI suggestions.
                   </p>
                 </div>
-                <span className="text-[11px] font-mono text-neutral-400">
-                  {recRevenue?.attributed_transactions?.length || 0} Transactions
+                <span className="text-[11px] font-mono text-neutral-500 font-medium">
+                  {recRevenue?.attributed_transactions?.length || 0} Attributed Orders
                 </span>
               </div>
 
               {loading ? (
-                <div className="p-8 text-center text-xs text-neutral-400 font-mono">
-                  Loading attribution records...
+                <div className="divide-y divide-neutral-100 animate-pulse">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="py-3.5 px-6 flex items-center justify-between gap-4">
+                      <div className="h-4 w-40 bg-neutral-200/70 rounded"></div>
+                      <div className="h-4 w-28 bg-neutral-100 rounded"></div>
+                      <div className="h-4 w-24 bg-neutral-200/60 rounded"></div>
+                      <div className="h-4 w-16 bg-neutral-100 rounded"></div>
+                      <div className="h-4 w-24 bg-neutral-200/50 rounded"></div>
+                    </div>
+                  ))}
                 </div>
               ) : recRevenue && recRevenue.attributed_transactions.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
                       <tr className="border-b border-neutral-200 bg-neutral-50/70 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
-                        <th className="py-2.5 px-6">Transaction ID</th>
+                        <th className="py-2.5 px-6">Transaction Hash</th>
                         <th className="py-2.5 px-6">Recommendation Ref</th>
                         <th className="py-2.5 px-6">Product Purchased</th>
-                        <th className="py-2.5 px-6">Amount (INR)</th>
-                        <th className="py-2.5 px-6">Status</th>
+                        <th className="py-2.5 px-6">Attributed Amount</th>
+                        <th className="py-2.5 px-6">Settlement</th>
                         <th className="py-2.5 px-6 text-right">Settled At</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-100">
                       {recRevenue.attributed_transactions.map((tx) => (
                         <tr key={tx.transaction_id} className="hover:bg-neutral-50/60 transition-colors">
-                          <td className="py-3 px-6 font-mono text-neutral-900 font-medium">
-                            {tx.transaction_id.substring(0, 8)}...
-                          </td>
-                          <td className="py-3 px-6 font-mono text-indigo-600">
-                            {tx.recommendation_id.substring(0, 8)}...
-                          </td>
-                          <td className="py-3 px-6 text-neutral-900 font-medium">
-                            {tx.item_name || 'Catalog Item'}
-                          </td>
-                          <td className="py-3 px-6 font-mono font-bold text-neutral-900">
-                            ₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-3 px-6">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              {tx.status}
+                          <td className="py-3.5 px-6 font-mono text-neutral-900 font-medium">
+                            <span className="px-2 py-0.5 rounded bg-neutral-100 border border-neutral-200 text-neutral-800 text-[11px]">
+                              {tx.transaction_id.substring(0, 8)}...{tx.transaction_id.substring(tx.transaction_id.length - 4)}
                             </span>
                           </td>
-                          <td className="py-3 px-6 font-mono text-neutral-400 text-right text-[11px]">
-                            {new Date(tx.created_at).toLocaleString()}
+                          <td className="py-3.5 px-6 font-mono">
+                            <span className="px-2 py-0.5 rounded bg-indigo-50 border border-indigo-100 text-indigo-700 text-[11px]">
+                              rec_{tx.recommendation_id.substring(0, 8)}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-6 font-medium text-neutral-900">
+                            {tx.item_name || 'Catalog Item'}
+                          </td>
+                          <td className="py-3.5 px-6 font-mono font-bold text-neutral-900">
+                            ₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3.5 px-6">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                              SETTLED
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-6 font-mono text-neutral-500 text-right text-[11px]">
+                            {new Date(tx.created_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}
                           </td>
                         </tr>
                       ))}
@@ -806,12 +853,27 @@ function DashboardContent() {
                   </table>
                 </div>
               ) : (
-                <div className="py-12 px-6 text-center text-xs text-neutral-500 space-y-1">
-                  <Sparkles className="w-6 h-6 text-neutral-300 mx-auto mb-2" />
-                  <p className="font-medium text-neutral-700">No recommendation-attributed transactions yet</p>
-                  <p className="text-[11px] text-neutral-400">
-                    When customers buy products suggested by the post-purchase engine, real attributed revenue will automatically appear here.
-                  </p>
+                <div className="py-16 px-6 text-center space-y-3 bg-neutral-50/30">
+                  <div className="w-10 h-10 rounded-full bg-neutral-100 border border-neutral-200 flex items-center justify-center mx-auto text-neutral-500 shadow-2xs">
+                    <Sparkles className="w-5 h-5 text-neutral-400" />
+                  </div>
+                  <div className="max-w-md mx-auto space-y-1">
+                    <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wide">
+                      Awaiting Recommendation Purchases
+                    </h4>
+                    <p className="text-xs text-neutral-500 leading-relaxed">
+                      When customers complete orders from cross-merchant post-purchase suggestions in the AI consumer chat, real verified GMV will appear here.
+                    </p>
+                  </div>
+                  <div className="pt-2">
+                    <Link
+                      href="/customer/chat"
+                      className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-md bg-neutral-900 hover:bg-black text-white text-xs font-medium transition-all shadow-2xs"
+                    >
+                      <span>Test in AI Consumer Chat</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>

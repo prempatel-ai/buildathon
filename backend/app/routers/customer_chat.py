@@ -153,39 +153,10 @@ def customer_chat(
 
     if is_buy_confirm:
         target_opt = None
+        source_rec_to_pass = req.source_recommendation_id
 
-        # 1. Try resolving by explicit option index (e.g., "option 1", "opt 2", "#1", "1st option")
-        opt_match = (
-            re.search(r'(?:option|opt|#)\s*(\d+)', prompt_lower) or
-            re.search(r'\b(\d+)(?:st|nd|rd|th)?\s+option\b', prompt_lower) or
-            re.search(r'\bbuy\s+(\d+)\b', prompt_lower)
-        )
-        if opt_match and cached_options:
-            idx = int(opt_match.group(1)) - 1
-            if 0 <= idx < len(cached_options):
-                target_opt = cached_options[idx]
-
-        # 2. Try matching keywords against cached search results (e.g., "buy boAt", "buy sony", "buy the cheaper one")
-        if not target_opt and cached_options:
-            if "cheaper" in prompt_lower or "cheapest" in prompt_lower or "first" in prompt_lower or "1st" in prompt_lower:
-                target_opt = cached_options[0]
-            else:
-                # Match against words in item_name or merchant_name
-                prompt_words = [w for w in re.findall(r'\w+', prompt_lower) if w not in buy_keywords and len(w) > 1]
-                best_score = 0
-                for opt in cached_options:
-                    opt_text = f"{opt['item_name']} {opt['merchant_name']} {opt.get('category', '')}".lower()
-                    score = sum(1 for pw in prompt_words if pw in opt_text)
-                    if score > best_score:
-                        best_score = score
-                        target_opt = opt
-                
-                # If still unresolved, default to option 1 from cache
-                if not target_opt:
-                    target_opt = cached_options[0]
-
-        # 3. If source_recommendation_id was provided, resolve the target option directly from DB
-        if req.source_recommendation_id and not target_opt:
+        # 1. If source_recommendation_id was explicitly provided, resolve the target option directly from DB FIRST
+        if req.source_recommendation_id:
             from app.models.recommendation import Recommendation
             try:
                 rec_uuid = uuid.UUID(str(req.source_recommendation_id))
@@ -205,8 +176,34 @@ def customer_chat(
             except Exception as rec_lookup_err:
                 print(f"[REC_LOOKUP_ERR]: {rec_lookup_err}")
 
-        # 4. If no search cache exists (e.g. user directly asks "buy boAt Rockerz" as first message),
-        # query the Database Catalog directly to find the exact item and price
+        # 2. Try resolving by explicit option index (e.g., "option 1", "opt 2", "#1", "1st option")
+        if not target_opt:
+            opt_match = (
+                re.search(r'(?:option|opt|#)\s*(\d+)', prompt_lower) or
+                re.search(r'\b(\d+)(?:st|nd|rd|th)?\s+option\b', prompt_lower) or
+                re.search(r'\bbuy\s+(\d+)\b', prompt_lower)
+            )
+            if opt_match and cached_options:
+                idx = int(opt_match.group(1)) - 1
+                if 0 <= idx < len(cached_options):
+                    target_opt = cached_options[idx]
+
+        # 3. Try matching keywords against cached search results (e.g., "buy boAt", "buy sony", "buy the cheaper one")
+        if not target_opt and cached_options:
+            if "cheaper" in prompt_lower or "cheapest" in prompt_lower or "first" in prompt_lower or "1st" in prompt_lower:
+                target_opt = cached_options[0]
+            else:
+                # Match against words in item_name or merchant_name
+                prompt_words = [w for w in re.findall(r'\w+', prompt_lower) if w not in buy_keywords and len(w) > 1]
+                best_score = 0
+                for opt in cached_options:
+                    opt_text = f"{opt['item_name']} {opt['merchant_name']} {opt.get('category', '')}".lower()
+                    score = sum(1 for pw in prompt_words if pw in opt_text)
+                    if score > best_score:
+                        best_score = score
+                        target_opt = opt
+
+        # 4. If no target option matched yet, query the Database Catalog directly
         if not target_opt:
             clean_search = re.sub(r'^(?:buy|order|purchase|confirm|checkout|pay\s+for)\s*', '', prompt_raw, flags=re.IGNORECASE).strip()
             if clean_search:
@@ -232,18 +229,32 @@ def customer_chat(
                         "category": db_item.category
                     }
 
-        # 5. If target option was successfully resolved, execute direct purchase workflow
-        # This bypasses LLM re-lookup and guarantees the EXACT catalog price is charged
+        # 5. Auto-associate with recent recommendation if customer was shown this item
+        if target_opt and not source_rec_to_pass:
+            try:
+                from app.models.recommendation import Recommendation
+                item_uuid = uuid.UUID(str(target_opt["item_id"]))
+                recent_rec = db.query(Recommendation).filter(
+                    Recommendation.customer_id == customer.id,
+                    Recommendation.recommended_item_id == item_uuid,
+                    Recommendation.status == "shown"
+                ).order_by(Recommendation.shown_at.desc()).first()
+                if recent_rec:
+                    source_rec_to_pass = str(recent_rec.id)
+            except Exception as auto_rec_err:
+                print(f"[AUTO_REC_ASSOCIATE_NOTICE]: {auto_rec_err}")
+
+        # 6. If target option was successfully resolved, execute direct purchase workflow
         if target_opt:
             final_state = run_direct_purchase_workflow(
                 merchant_id=target_opt["merchant_id"],
                 item_name=target_opt["item_name"],
-                amount=float(target_opt["price"]),          # <-- EXACT price from DB
+                amount=float(target_opt["price"]),
                 category=target_opt.get("category", "General"),
                 customer_id=str(customer.id),
                 thread_id=thread_id,
                 address_id=req.address_id,
-                source_recommendation_id=req.source_recommendation_id
+                source_recommendation_id=source_rec_to_pass
             )
 
             rec_results = [
