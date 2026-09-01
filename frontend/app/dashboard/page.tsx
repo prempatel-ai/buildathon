@@ -14,6 +14,7 @@ import {
   fetchMerchantRecommendationRevenue,
   fetchMerchantCampaignPerformance,
   triggerMerchantCampaignScan,
+  API_BASE_URL,
   Merchant,
   CatalogItem,
   MerchantRevenueAttribution,
@@ -247,8 +248,8 @@ function DashboardContent() {
             const parts = line.split(',').map((p) => p.trim());
             return {
               name: parts[0] || 'Imported Product',
-              price: parseFloat(parts[1]) || 999,
-              stock: parseInt(parts[2]) || 50,
+              price: parseFloat(parts[1]) || 0,
+              stock: parseInt(parts[2], 10) || 0,
               category: parts[3] || 'General',
             };
           });
@@ -774,7 +775,7 @@ function DashboardContent() {
               </div>
               {merchant?.id && (
                 <a
-                  href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/catalog/agent-schema?merchant_id=${merchant.id}`}
+                  href={`${API_BASE_URL}/catalog/agent-schema?merchant_id=${merchant.id}`}
                   target="_blank"
                   rel="noreferrer"
                   className="h-8 px-3 rounded-md bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-mono font-medium transition-colors inline-flex items-center gap-1.5 border border-neutral-200"
