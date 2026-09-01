@@ -371,7 +371,7 @@ export default function ConsumerAddressesPage() {
                     required
                     value={formData.recipient_name}
                     onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })}
-                    placeholder="Rahul Sharma"
+                    placeholder="e.g. Recipient Full Name"
                     className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-sans"
                   />
                 </div>
