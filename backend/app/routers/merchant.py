@@ -559,19 +559,23 @@ def get_merchant_agent_distribution(
 
     counts = {}
     for ev in events:
-        actor = ev.actor_type or "ChatGPT Consumer AI"
-        if actor == "customer":
-            actor = "ChatGPT Consumer AI"
-        elif actor == "agent":
-            actor = "Merchant Buyer Agent"
-        elif actor == "system":
-            actor = "Automated Engine"
-        counts[actor] = counts.get(actor, 0) + 1
+        actor = (ev.actor_type or "").lower()
+        if actor in ["customer", "consumer"]:
+            actor_label = "ChatGPT Consumer AI"
+        elif actor in ["agent", "buyer_agent"]:
+            actor_label = "Merchant Buyer Agent"
+        elif actor in ["system", "engine"]:
+            actor_label = "Automated Engine"
+        elif actor in ["merchant", "admin"]:
+            actor_label = "Merchant Admin Portal"
+        else:
+            actor_label = "Autonomous Agent"
+        counts[actor_label] = counts.get(actor_label, 0) + 1
 
     if not counts:
         counts = {"ChatGPT Consumer AI": max(1, len(txs))}
 
-    colors = ["#6366f1", "#10b981", "#f59e0b", "#8b5cf6"]
+    colors = ["#6366f1", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"]
     res = []
     for idx, (name, count) in enumerate(counts.items()):
         res.append({

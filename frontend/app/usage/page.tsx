@@ -338,50 +338,69 @@ export default function UsagePage() {
                   <p className="text-xs">Loading agent distribution...</p>
                 </div>
               ) : agentPieData.length > 0 ? (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-2">
-                  <div className="w-40 h-40 relative flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={agentPieData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={46}
-                          outerRadius={68}
-                          paddingAngle={3}
-                          dataKey="value"
-                        >
-                          {agentPieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color || '#262626'} />
-                          ))}
-                        </Pie>
-                        <RechartsTooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      <span className="text-base font-bold font-mono text-neutral-900">{settledCount}</span>
-                      <span className="text-[9px] text-neutral-500 uppercase font-mono">Orders</span>
-                    </div>
-                  </div>
-
-                  <div className="flex-1 w-full space-y-2">
-                    {agentPieData.map((agent) => {
-                      const pct = settledCount > 0 ? Math.round((agent.value / settledCount) * 100) : 0;
-                      return (
-                        <div key={agent.name} className="flex items-center justify-between p-2 rounded bg-neutral-50 border border-neutral-100 text-xs">
-                          <div className="flex items-center space-x-2">
-                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: agent.color || '#262626' }} />
-                            <span className="font-medium text-neutral-800">{agent.name}</span>
-                          </div>
-                          <div className="flex items-center space-x-2 font-mono text-neutral-700">
-                            <span className="font-semibold">{agent.value} txs</span>
-                            <span className="text-neutral-400">({pct}%)</span>
-                          </div>
+                (() => {
+                  const totalAgentOps = agentPieData.reduce((acc, a) => acc + (a.value || 0), 0);
+                  return (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-2">
+                      <div className="w-44 h-44 relative flex items-center justify-center shrink-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={agentPieData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={50}
+                              outerRadius={72}
+                              paddingAngle={3}
+                              dataKey="value"
+                            >
+                              {agentPieData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color || '#262626'} />
+                              ))}
+                            </Pie>
+                            <RechartsTooltip
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0];
+                                  const pct = totalAgentOps > 0 ? Math.round(((Number(data.value) || 0) / totalAgentOps) * 100) : 0;
+                                  return (
+                                    <div className="bg-neutral-900 text-white text-[11px] font-mono px-3 py-1.5 rounded-md shadow-xl border border-neutral-800 z-50">
+                                      <div className="font-semibold text-neutral-200">{data.name}</div>
+                                      <div className="text-neutral-400 mt-0.5">{data.value} events ({pct}%)</div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                          <span className="text-lg font-bold font-mono text-neutral-900">{totalAgentOps}</span>
+                          <span className="text-[9px] text-neutral-400 uppercase font-mono tracking-wider">Events</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                      </div>
+
+                      <div className="flex-1 w-full space-y-2 min-w-0">
+                        {agentPieData.map((agent) => {
+                          const pct = totalAgentOps > 0 ? Math.round((agent.value / totalAgentOps) * 100) : 0;
+                          return (
+                            <div key={agent.name} className="flex items-center justify-between p-2 rounded-md bg-neutral-50/80 border border-neutral-100 text-xs gap-3">
+                              <div className="flex items-center space-x-2 min-w-0">
+                                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: agent.color || '#262626' }} />
+                                <span className="font-medium text-neutral-800 truncate" title={agent.name}>{agent.name}</span>
+                              </div>
+                              <div className="flex items-center space-x-1.5 font-mono text-neutral-700 shrink-0">
+                                <span className="font-semibold">{agent.value} txs</span>
+                                <span className="text-neutral-400 text-[11px]">({pct}%)</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()
               ) : (
                 <div className="py-10 text-center text-xs text-neutral-400">
                   No agent transactions recorded yet.
@@ -409,7 +428,20 @@ export default function UsagePage() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#737373' }} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#737373' }} />
-                      <RechartsTooltip />
+                      <RechartsTooltip
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="bg-neutral-900 text-white text-[11px] font-mono px-3 py-1.5 rounded-md shadow-xl border border-neutral-800 z-50">
+                                <div className="font-semibold text-neutral-200">{data.name}</div>
+                                <div className="text-neutral-400 mt-0.5">{data.count} decisions</div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
                       <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                         {decisionBarData.map((entry, index) => (
                           <Cell key={`bar-${index}`} fill={entry.fill || '#171717'} />
