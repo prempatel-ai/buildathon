@@ -97,8 +97,18 @@ interface ChatThreadHistory {
 
 export default function ConsumerChatPage() {
   const router = useRouter();
-  const [customerName, setCustomerName] = useState<string>('Rahul Sharma');
-  const [customerEmail, setCustomerEmail] = useState<string>('rahul@example.com');
+  const [customerName, setCustomerName] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('customer_name') || 'Customer';
+    }
+    return 'Customer';
+  });
+  const [customerEmail, setCustomerEmail] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('customer_email') || '';
+    }
+    return '';
+  });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputPrompt, setInputPrompt] = useState('');
@@ -180,15 +190,13 @@ export default function ConsumerChatPage() {
   // Load Initial User & Restores Chat History from localStorage
   useEffect(() => {
     const token = getCustomerToken();
-    const name = (typeof window !== 'undefined' && localStorage.getItem('customer_name')) || 'Rahul Sharma';
-    const email = (typeof window !== 'undefined' && localStorage.getItem('customer_email')) || 'rahul@example.com';
+    const name = (typeof window !== 'undefined' && localStorage.getItem('customer_name')) || 'Customer';
+    const email = (typeof window !== 'undefined' && localStorage.getItem('customer_email')) || '';
 
     if (!token) {
       router.push('/customer/login');
       return;
     }
-    setCustomerName(name);
-    setCustomerEmail(email);
 
     // Restore persistent threads from localStorage
     try {
@@ -203,40 +211,64 @@ export default function ConsumerChatPage() {
 
       if (activeThreadId && parsedThreads.length > 0) {
         const found = parsedThreads.find((t) => t.id === activeThreadId);
-        if (found && found.messages && found.messages.length > 0) {
+        if (found) {
           setThreadId(found.id);
-          setMessages(found.messages);
+          setMessages(found.messages || []);
         }
       }
-    } catch (err) {
-      console.log('Error restoring stored chat threads:', err);
+    } catch (e) {
+      console.log('Error parsing threads:', e);
     }
 
+    fetchAddresses();
     fetchAuthLimit(token);
-    loadAddresses();
-  }, [router]);
+    fetchCampaignOffers(token);
+  }, []);
 
-  const saveThreadsToStorage = (threads: ChatThreadHistory[], activeId: string | null) => {
-    const email = (typeof window !== 'undefined' && localStorage.getItem('customer_email')) || 'rahul@example.com';
+  const fetchCampaignOffers = async (token: string) => {
     try {
-      localStorage.setItem(`agentpay_threads_${email}`, JSON.stringify(threads));
-      if (activeId) {
-        localStorage.setItem(`agentpay_active_thread_${email}`, activeId);
-      } else {
-        localStorage.removeItem(`agentpay_active_thread_${email}`);
+      const res = await fetch(`${API_BASE_URL}/campaigns/my-offers`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const pendingOffers = (data.offers || []).filter((o: CampaignOfferItem) => o.status === 'pending');
+        setActiveOffers(pendingOffers);
+
+        if (pendingOffers.length > 0) {
+          const topOffer = pendingOffers[0];
+          setActiveToast({
+            title: `Exclusive ${topOffer.discount_value}% Off Available!`,
+            message: `Special discount waiting on ${topOffer.item_name}. Valid until ${new Date(topOffer.expires_at).toLocaleDateString('en-IN')}.`,
+            offer: topOffer,
+          });
+          triggerBrowserPushNotification(topOffer);
+        }
       }
     } catch (e) {
-      console.log('Error saving threads to localStorage:', e);
+      console.log('Error fetching campaign offers:', e);
     }
   };
 
-  const loadAddresses = async () => {
+  const saveThreadsToStorage = (threads: ChatThreadHistory[], currentThreadId: string | null) => {
+    const email = (typeof window !== 'undefined' && localStorage.getItem('customer_email')) || customerEmail || 'guest';
     try {
-      const data = await fetchCustomerAddresses();
-      setAddresses(data);
-      if (data.length > 0) {
-        const def = data.find((a) => a.is_default) || data[0];
-        setSelectedAddressId(def.id);
+      localStorage.setItem(`agentpay_threads_${email}`, JSON.stringify(threads));
+      if (currentThreadId) {
+        localStorage.setItem(`agentpay_active_thread_${email}`, currentThreadId);
+      } else {
+        localStorage.removeItem(`agentpay_active_thread_${email}`);
+      }
+    } catch (e) {}
+  };
+
+  const fetchAddresses = async () => {
+    try {
+      const addrList = await fetchCustomerAddresses();
+      setAddresses(addrList);
+      const defaultAddr = addrList.find((a) => a.is_default) || addrList[0];
+      if (defaultAddr) {
+        setSelectedAddressId(defaultAddr.id);
       }
     } catch (e) {
       console.log('Error loading customer addresses:', e);
@@ -250,6 +282,16 @@ export default function ConsumerChatPage() {
       });
       if (res.ok) {
         const data = await res.json();
+        if (data.customer) {
+          if (data.customer.name) {
+            setCustomerName(data.customer.name);
+            localStorage.setItem('customer_name', data.customer.name);
+          }
+          if (data.customer.email) {
+            setCustomerEmail(data.customer.email);
+            localStorage.setItem('customer_email', data.customer.email);
+          }
+        }
         const activeAuth = data.active_authorization;
         if (activeAuth) {
           setHasActiveAuth(true);
@@ -279,14 +321,14 @@ export default function ConsumerChatPage() {
     setMessages([]);
     setThreadId(null);
     setInputPrompt('');
-    const email = (typeof window !== 'undefined' && localStorage.getItem('customer_email')) || 'rahul@example.com';
+    const email = (typeof window !== 'undefined' && localStorage.getItem('customer_email')) || customerEmail || 'default';
     localStorage.removeItem(`agentpay_active_thread_${email}`);
   };
 
   const handleSelectThread = (thread: ChatThreadHistory) => {
     setThreadId(thread.id);
     setMessages(thread.messages || []);
-    const email = (typeof window !== 'undefined' && localStorage.getItem('customer_email')) || 'rahul@example.com';
+    const email = (typeof window !== 'undefined' && localStorage.getItem('customer_email')) || customerEmail || 'default';
     localStorage.setItem(`agentpay_active_thread_${email}`, thread.id);
   };
 

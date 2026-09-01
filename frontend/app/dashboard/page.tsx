@@ -531,7 +531,7 @@ function DashboardContent() {
           <div className="p-4">
             <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Max Order Cap</span>
             <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
-              ₹{limitsConfig.max_transaction_amount ? Number(limitsConfig.max_transaction_amount).toLocaleString('en-IN') : '10,000'}
+              {limitsConfig.max_transaction_amount != null ? `₹${Number(limitsConfig.max_transaction_amount).toLocaleString('en-IN')}` : 'Uncapped'}
             </div>
             <span className="text-[11px] text-neutral-600 mt-1 block">
               Policy Engine Gated
@@ -541,7 +541,7 @@ function DashboardContent() {
           <div className="p-4">
             <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Daily Spend Cap</span>
             <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
-              ₹{limitsConfig.daily_spend_limit ? Number(limitsConfig.daily_spend_limit).toLocaleString('en-IN') : '50,000'}
+              {limitsConfig.daily_spend_limit != null ? `₹${Number(limitsConfig.daily_spend_limit).toLocaleString('en-IN')}` : 'Uncapped'}
             </div>
             <span className="text-[11px] text-neutral-600 mt-1 block">
               24-Hour Rolling Window

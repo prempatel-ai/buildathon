@@ -318,7 +318,7 @@ export default function PlatformAdminPage() {
                   : 'text-neutral-500 hover:text-neutral-800'
               }`}
             >
-              Merchants ({merchants.length || overview?.total_merchants || 26})
+              Merchants ({merchants.length || overview?.total_merchants || 0})
               {activeTab === 'merchants' && (
                 <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-neutral-900 rounded-full"></span>
               )}
@@ -332,7 +332,7 @@ export default function PlatformAdminPage() {
                   : 'text-neutral-500 hover:text-neutral-800'
               }`}
             >
-              Audit Stream ({totalAudit || overview?.total_audit_events || 410})
+              Audit Stream ({totalAudit || overview?.total_audit_events || 0})
               {activeTab === 'audit' && (
                 <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-neutral-900 rounded-full"></span>
               )}
@@ -382,27 +382,27 @@ export default function PlatformAdminPage() {
                   <div className="p-4">
                     <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Settled Protocol Volume</span>
                     <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
-                      ₹{(overview.total_settled_volume_inr || 48250.00).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      ₹{(overview.total_settled_volume_inr ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </div>
                     <span className="text-[11px] text-neutral-600 mt-1 block">
-                      {overview.total_settled_transactions || 14} autonomous settlements
+                      {overview.total_settled_transactions ?? 0} autonomous settlements
                     </span>
                   </div>
 
                   <div className="p-4">
                     <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Registered Merchants</span>
                     <div className="text-2xl font-bold text-neutral-900 mt-1 tracking-tight">
-                      {overview.total_merchants || 26}
+                      {overview.total_merchants ?? 0}
                     </div>
                     <span className="text-[11px] text-neutral-600 mt-1 block">
-                      {overview.verified_merchants || 22} KYC verified stores
+                      {overview.verified_merchants ?? 0} KYC verified stores
                     </span>
                   </div>
 
                   <div className="p-4">
                     <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Active Catalog SKUs</span>
                     <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
-                      {overview.total_catalog_items || 130}
+                      {overview.total_catalog_items ?? 0}
                     </div>
                     <span className="text-[11px] text-neutral-600 mt-1 block">
                       Across merchant catalogs
@@ -412,10 +412,10 @@ export default function PlatformAdminPage() {
                   <div className="p-4">
                     <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Audit Events</span>
                     <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
-                      {overview.total_audit_events || 410}
+                      {overview.total_audit_events ?? 0}
                     </div>
                     <span className="text-[11px] text-neutral-600 mt-1 block">
-                      {overview.total_policies_enforced || 38} active guardrails
+                      {overview.total_policies_enforced ?? 0} active guardrails
                     </span>
                   </div>
                 </div>
