@@ -37,9 +37,9 @@ export default function CustomerDashboardPage() {
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
 
   // Card & Limit Form State
-  const [spendLimit, setSpendLimit] = useState('5000');
+  const [spendLimit, setSpendLimit] = useState('');
   const [cardBrand, setCardBrand] = useState('Visa');
-  const [cardLast4, setCardLast4] = useState('4242');
+  const [cardLast4, setCardLast4] = useState('');
   const [cardholderName, setCardholderName] = useState('');
   const [vpa, setVpa] = useState('');
   const [savingLimit, setSavingLimit] = useState(false);
@@ -76,9 +76,9 @@ export default function CustomerDashboardPage() {
         setCardholderName(data.customer.name);
       }
       if (data.active_authorization) {
-        setSpendLimit(String(data.active_authorization.spend_limit));
+        setSpendLimit(String(data.active_authorization.spend_limit ?? ''));
         setCardBrand(data.active_authorization.card_brand || 'Visa');
-        setCardLast4(data.active_authorization.card_last4 || '4242');
+        setCardLast4(data.active_authorization.card_last4 || '');
         if (data.active_authorization.cardholder_name) setCardholderName(data.active_authorization.cardholder_name);
         if (data.active_authorization.vpa) setVpa(data.active_authorization.vpa);
       }
@@ -240,17 +240,17 @@ export default function CustomerDashboardPage() {
 
                 <div>
                   <div className="text-lg font-mono tracking-widest text-neutral-100 mb-1">
-                    •••• •••• •••• {authorization?.card_last4 || '4242'}
+                    •••• •••• •••• {authorization?.card_last4 || '••••'}
                   </div>
                   <div className="text-[10.5px] text-neutral-400 font-mono truncate">
-                    ID: {authorization?.razorpay_customer_id || 'cust_token_active'}
+                    ID: {authorization?.razorpay_customer_id || customer?.id || '—'}
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-3 border-t border-neutral-800/80 text-xs">
                   <div>
                     <div className="text-[9.5px] text-neutral-400 uppercase font-mono tracking-wider">Cardholder</div>
-                    <div className="font-medium text-neutral-200 text-xs">{authorization?.cardholder_name || customer?.name || 'Rahul Sharma'}</div>
+                    <div className="font-medium text-neutral-200 text-xs">{authorization?.cardholder_name || customer?.name || 'Customer'}</div>
                   </div>
                   <div className="text-right">
                     <div className="text-[9.5px] text-neutral-400 uppercase font-mono tracking-wider">Status</div>
@@ -327,7 +327,7 @@ export default function CustomerDashboardPage() {
                       required
                       value={cardholderName}
                       onChange={(e) => setCardholderName(e.target.value)}
-                      placeholder="Rahul Sharma"
+                      placeholder="e.g. Cardholder Name"
                       className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all font-sans"
                     />
                   </div>
@@ -360,7 +360,7 @@ export default function CustomerDashboardPage() {
                       required
                       value={cardLast4}
                       onChange={(e) => setCardLast4(e.target.value)}
-                      placeholder="4242"
+                      placeholder="e.g. 1234"
                       className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs font-mono text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all"
                     />
                   </div>
@@ -373,7 +373,7 @@ export default function CustomerDashboardPage() {
                       type="text"
                       value={vpa}
                       onChange={(e) => setVpa(e.target.value)}
-                      placeholder="rahul@upi"
+                      placeholder="e.g. username@okhdfcbank"
                       className="w-full h-9 px-3 rounded-md border border-neutral-200 text-xs font-mono text-neutral-900 bg-neutral-50/40 focus:bg-white focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all"
                     />
                   </div>
