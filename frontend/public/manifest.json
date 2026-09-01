@@ -2,11 +2,12 @@
   "name": "Agentpay - Autonomous Commerce & Spend Protocol",
   "short_name": "Agentpay",
   "description": "Agent-Ready Autonomous Merchant Commerce Platform with Razorpay AI Protocol",
-  "start_url": "/",
-  "id": "/",
+  "start_url": "/customer/chat",
+  "scope": "/",
+  "id": "/customer/chat",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0a0a0a",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "orientation": "portrait",
   "icons": [
     {
@@ -30,7 +31,7 @@
   ],
   "shortcuts": [
     {
-      "name": "Shopping Chat",
+      "name": "Shopping Assistant",
       "short_name": "Chat",
       "description": "Open autonomous consumer shopping assistant",
       "url": "/customer/chat",
