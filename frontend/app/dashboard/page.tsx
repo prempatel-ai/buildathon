@@ -797,18 +797,28 @@ function DashboardContent() {
             </div>
 
             {/* 4 Attribution Metric Cards Strip */}
+            {/* 4 Performance Metric Cards with Skeleton Loading */}
             <div className="grid grid-cols-1 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 border border-neutral-200 rounded-lg bg-white overflow-hidden shadow-2xs">
               <div className="p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Attributed Revenue</span>
                   <Coins className="w-3.5 h-3.5 text-emerald-600" />
                 </div>
-                <div className="text-2xl font-bold text-neutral-900 mt-1.5 font-mono tracking-tight">
-                  ₹{recRevenue ? recRevenue.total_attributed_revenue.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}
-                </div>
-                <span className="text-[11px] text-emerald-700 mt-1 block font-medium">
-                  Verified Settled GMV
-                </span>
+                {loading ? (
+                  <div className="mt-2 space-y-1.5 animate-pulse">
+                    <div className="h-7 w-28 bg-neutral-200/80 rounded"></div>
+                    <div className="h-3 w-20 bg-neutral-100 rounded"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold text-neutral-900 mt-1.5 font-mono tracking-tight">
+                      ₹{recRevenue ? recRevenue.total_attributed_revenue.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}
+                    </div>
+                    <span className="text-[11px] text-emerald-700 mt-1 block font-medium">
+                      Verified Settled GMV
+                    </span>
+                  </>
+                )}
               </div>
 
               <div className="p-4">
@@ -816,12 +826,21 @@ function DashboardContent() {
                   <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Converted Orders</span>
                   <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
                 </div>
-                <div className="text-2xl font-bold text-neutral-900 mt-1.5 font-mono tracking-tight">
-                  {recRevenue ? recRevenue.converted_recommendations_count : 0}
-                </div>
-                <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
-                  Autonomous Chat Buys
-                </span>
+                {loading ? (
+                  <div className="mt-2 space-y-1.5 animate-pulse">
+                    <div className="h-7 w-16 bg-neutral-200/80 rounded"></div>
+                    <div className="h-3 w-24 bg-neutral-100 rounded"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold text-neutral-900 mt-1.5 font-mono tracking-tight">
+                      {recRevenue ? recRevenue.converted_recommendations_count : 0}
+                    </div>
+                    <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
+                      Autonomous Chat Buys
+                    </span>
+                  </>
+                )}
               </div>
 
               <div className="p-4">
@@ -829,12 +848,21 @@ function DashboardContent() {
                   <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Impressions Shown</span>
                   <Package className="w-3.5 h-3.5 text-neutral-400" />
                 </div>
-                <div className="text-2xl font-bold text-neutral-900 mt-1.5 font-mono tracking-tight">
-                  {recRevenue ? recRevenue.shown_recommendations_count : 0}
-                </div>
-                <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
-                  Post-Purchase Displays
-                </span>
+                {loading ? (
+                  <div className="mt-2 space-y-1.5 animate-pulse">
+                    <div className="h-7 w-16 bg-neutral-200/80 rounded"></div>
+                    <div className="h-3 w-24 bg-neutral-100 rounded"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold text-neutral-900 mt-1.5 font-mono tracking-tight">
+                      {recRevenue ? recRevenue.shown_recommendations_count : 0}
+                    </div>
+                    <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
+                      Post-Purchase Displays
+                    </span>
+                  </>
+                )}
               </div>
 
               <div className="p-4">
@@ -842,12 +870,21 @@ function DashboardContent() {
                   <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Conversion Rate</span>
                   <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
                 </div>
-                <div className="text-2xl font-bold text-neutral-900 mt-1.5 font-mono tracking-tight">
-                  {recRevenue ? `${recRevenue.conversion_rate}%` : '0%'}
-                </div>
-                <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
-                  Converted / Shown
-                </span>
+                {loading ? (
+                  <div className="mt-2 space-y-1.5 animate-pulse">
+                    <div className="h-7 w-20 bg-neutral-200/80 rounded"></div>
+                    <div className="h-3 w-24 bg-neutral-100 rounded"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold text-neutral-900 mt-1.5 font-mono tracking-tight">
+                      {recRevenue ? `${recRevenue.conversion_rate}%` : '0%'}
+                    </div>
+                    <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
+                      Converted / Shown
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 
@@ -863,19 +900,20 @@ function DashboardContent() {
                   </p>
                 </div>
                 <span className="text-[11px] font-mono text-neutral-500 font-medium">
-                  {recRevenue?.attributed_transactions?.length || 0} Attributed Orders
+                  {loading ? 'Loading...' : `${recRevenue?.attributed_transactions?.length || 0} Attributed Orders`}
                 </span>
               </div>
 
               {loading ? (
                 <div className="divide-y divide-neutral-100 animate-pulse">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="py-3.5 px-6 flex items-center justify-between gap-4">
-                      <div className="h-4 w-40 bg-neutral-200/70 rounded"></div>
-                      <div className="h-4 w-28 bg-neutral-100 rounded"></div>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="py-4 px-6 flex items-center justify-between gap-4">
+                      <div className="h-4 w-32 bg-neutral-200/80 rounded"></div>
                       <div className="h-4 w-24 bg-neutral-200/60 rounded"></div>
-                      <div className="h-4 w-16 bg-neutral-100 rounded"></div>
-                      <div className="h-4 w-24 bg-neutral-200/50 rounded"></div>
+                      <div className="h-4 w-36 bg-neutral-200/70 rounded"></div>
+                      <div className="h-4 w-20 bg-neutral-200/80 rounded"></div>
+                      <div className="h-5 w-16 bg-emerald-100/60 rounded"></div>
+                      <div className="h-4 w-28 bg-neutral-100 rounded"></div>
                     </div>
                   ))}
                 </div>
@@ -990,46 +1028,82 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* 4 KPI Metric Cards */}
+            {/* 4 KPI Metric Cards with Skeleton Loading */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 bg-white border border-neutral-200 rounded-lg space-y-1">
                 <span className="text-[11px] font-mono text-neutral-400 uppercase">Offers Generated</span>
-                <p className="text-xl font-bold font-mono text-neutral-900">
-                  {campaignPerf ? campaignPerf.offers_generated : 0}
-                </p>
-                <span className="text-[10px] text-neutral-500">From stale unconverted interest</span>
+                {loading ? (
+                  <div className="mt-1 space-y-1.5 animate-pulse">
+                    <div className="h-7 w-16 bg-neutral-200/80 rounded"></div>
+                    <div className="h-3 w-28 bg-neutral-100 rounded"></div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xl font-bold font-mono text-neutral-900">
+                      {campaignPerf ? campaignPerf.offers_generated : 0}
+                    </p>
+                    <span className="text-[10px] text-neutral-500 block">From stale unconverted interest</span>
+                  </>
+                )}
               </div>
 
               <div className="p-4 bg-white border border-neutral-200 rounded-lg space-y-1">
                 <span className="text-[11px] font-mono text-neutral-400 uppercase">Delivered in Chat</span>
-                <p className="text-xl font-bold font-mono text-neutral-900">
-                  {campaignPerf ? campaignPerf.offers_shown : 0}
-                </p>
-                <span className="text-[10px] text-neutral-500">Delivered via consumer chat</span>
+                {loading ? (
+                  <div className="mt-1 space-y-1.5 animate-pulse">
+                    <div className="h-7 w-16 bg-neutral-200/80 rounded"></div>
+                    <div className="h-3 w-28 bg-neutral-100 rounded"></div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xl font-bold font-mono text-neutral-900">
+                      {campaignPerf ? campaignPerf.offers_shown : 0}
+                    </p>
+                    <span className="text-[10px] text-neutral-500 block">Delivered via consumer chat</span>
+                  </>
+                )}
               </div>
 
               <div className="p-4 bg-white border border-neutral-200 rounded-lg space-y-1">
                 <span className="text-[11px] font-mono text-neutral-400 uppercase">Converted Orders</span>
-                <p className="text-xl font-bold font-mono text-emerald-700">
-                  {campaignPerf ? campaignPerf.offers_converted : 0}
-                </p>
-                <span className="text-[10px] font-mono font-semibold text-emerald-600">
-                  {campaignPerf ? campaignPerf.conversion_rate : 0}% Conversion Rate
-                </span>
+                {loading ? (
+                  <div className="mt-1 space-y-1.5 animate-pulse">
+                    <div className="h-7 w-16 bg-neutral-200/80 rounded"></div>
+                    <div className="h-3 w-28 bg-neutral-100 rounded"></div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xl font-bold font-mono text-emerald-700">
+                      {campaignPerf ? campaignPerf.offers_converted : 0}
+                    </p>
+                    <span className="text-[10px] font-mono font-semibold text-emerald-600 block">
+                      {campaignPerf ? campaignPerf.conversion_rate : 0}% Conversion Rate
+                    </span>
+                  </>
+                )}
               </div>
 
               <div className="p-4 bg-white border border-neutral-200 rounded-lg space-y-1">
                 <span className="text-[11px] font-mono text-neutral-400 uppercase">Attributed GMV</span>
-                <p className="text-xl font-bold font-mono text-neutral-900">
-                  ₹{campaignPerf ? campaignPerf.total_attributed_revenue.toLocaleString('en-IN') : '0'}
-                </p>
-                <span className="text-[10px] text-neutral-500">
-                  Total Discount: ₹{campaignPerf ? campaignPerf.total_discount_given.toLocaleString('en-IN') : '0'}
-                </span>
+                {loading ? (
+                  <div className="mt-1 space-y-1.5 animate-pulse">
+                    <div className="h-7 w-24 bg-neutral-200/80 rounded"></div>
+                    <div className="h-3 w-32 bg-neutral-100 rounded"></div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xl font-bold font-mono text-neutral-900">
+                      ₹{campaignPerf ? campaignPerf.total_attributed_revenue.toLocaleString('en-IN') : '0'}
+                    </p>
+                    <span className="text-[10px] text-neutral-500 block">
+                      Total Discount: ₹{campaignPerf ? campaignPerf.total_discount_given.toLocaleString('en-IN') : '0'}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 
-            {/* Campaign Offers Table */}
+            {/* Campaign Offers Table with Skeleton Loading */}
             <div className="border border-neutral-200 rounded-lg overflow-hidden bg-white">
               <div className="px-6 py-3.5 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between">
                 <div>
@@ -1038,11 +1112,26 @@ function DashboardContent() {
                   </h3>
                 </div>
                 <span className="text-[11px] font-mono text-neutral-400">
-                  {campaignPerf?.offers.length || 0} Total Offers
+                  {loading ? 'Loading...' : `${campaignPerf?.offers.length || 0} Total Offers`}
                 </span>
               </div>
 
-              {campaignPerf && campaignPerf.offers.length > 0 ? (
+              {loading ? (
+                <div className="divide-y divide-neutral-100 animate-pulse">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="py-4 px-6 flex items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="h-4 w-44 bg-neutral-200/80 rounded"></div>
+                        <div className="h-3 w-20 bg-neutral-100 rounded"></div>
+                      </div>
+                      <div className="h-5 w-20 bg-amber-100/60 rounded"></div>
+                      <div className="h-4 w-28 bg-neutral-200/70 rounded"></div>
+                      <div className="h-5 w-20 bg-neutral-200/60 rounded"></div>
+                      <div className="h-4 w-20 bg-neutral-100 rounded"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : campaignPerf && campaignPerf.offers.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[700px] text-left text-xs border-collapse">
                     <thead>
