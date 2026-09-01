@@ -103,7 +103,7 @@ export default function UsagePage() {
   const totalCount = usage ? usage.total_transactions : 0;
   const failedCount = usage ? usage.failed_transactions : 0;
   const successRate = totalCount > 0 ? Math.round((settledCount / totalCount) * 100) : 100;
-  const velocityLimit = merchant?.limits_config?.velocity_limit || 5;
+  const velocityLimit = merchant?.limits_config?.velocity_limit ?? 'Uncapped';
 
   const CustomChartTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -218,7 +218,8 @@ export default function UsagePage() {
             <div className="p-4">
               <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Velocity Guard</span>
               <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
-                {velocityLimit} <span className="text-xs font-normal text-neutral-500 font-sans">req/min</span>
+                {typeof velocityLimit === 'number' ? `${velocityLimit} ` : velocityLimit}
+                {typeof velocityLimit === 'number' && <span className="text-xs font-normal text-neutral-500 font-sans">req/min</span>}
               </div>
               <span className="text-[11px] text-neutral-600 mt-1 block">
                 Redis Rate Limiter Active
