@@ -5,14 +5,15 @@ from app.core.config import settings
 
 def create_db_engine():
     db_url = settings.sync_database_url
-    print(f"Connecting to database host: {db_url.split('@')[-1].split('/')[0] if '@' in db_url else 'local'}")
-    engine = create_engine(
-        db_url,
-        pool_pre_ping=True,
-        pool_size=5,
-        max_overflow=10,
-        echo=False
-    )
+    engine_kwargs = {"echo": False}
+    if db_url.startswith("sqlite"):
+        engine_kwargs["connect_args"] = {"check_same_thread": False}
+    else:
+        engine_kwargs["pool_pre_ping"] = True
+        engine_kwargs["pool_size"] = 5
+        engine_kwargs["max_overflow"] = 10
+    
+    engine = create_engine(db_url, **engine_kwargs)
     return engine
 
 engine = create_db_engine()
