@@ -1,12 +1,14 @@
 import uuid
 from typing import Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.core.database import get_db
-from app.models.merchant import Merchant
 from app.core.security import hash_password, verify_password, create_access_token
+from app.core.rate_limiter import check_rate_limit
+from app.models.merchant import Merchant
 from app.services.audit_service import AuditService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -72,12 +74,6 @@ def register_merchant(req: RegisterMerchantRequest, db: Session = Depends(get_db
         merchant_name=merchant.name,
         email=merchant.email
     )
-
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from sqlalchemy import func
-from app.core.rate_limiter import check_rate_limit
-from app.models.catalog import CatalogItem
-from app.models.policy import Policy
 
 @router.post("/login", response_model=AuthTokenResponse)
 def login_merchant(req: LoginRequest, request: Request, db: Session = Depends(get_db)):

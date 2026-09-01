@@ -1,13 +1,38 @@
+import hashlib
+import secrets
 from uuid import UUID
-from typing import List
+from typing import List, Optional
+from datetime import datetime, timezone, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy import func
+
 from app.core.database import get_db
-from app.schemas.merchant import MerchantCreate, MerchantRead, MerchantUpdate
+from app.core.security import get_current_merchant, verify_merchant_access, hash_password
+from app.models.merchant import Merchant
+from app.models.policy import Policy
+from app.models.agent import Agent
+from app.models.transaction import Transaction
+from app.models.catalog import CatalogItem
+from app.models.audit import AuditEvent
+from app.schemas.merchant import (
+    MerchantCreate,
+    MerchantRead,
+    MerchantUpdate,
+    MerchantSettingsUpdate,
+    MerchantUsageRead,
+    MerchantAgentRead,
+    MerchantAgentCreate,
+    MerchantEnvironmentSwitch,
+)
 from app.schemas.catalog import CatalogItemCreate
+from app.schemas.recommendation import MerchantRevenueAttributionResponse
 from app.services.merchant_service import MerchantService
 from app.services.catalog_service import CatalogService
+from app.services.audit_service import AuditService
+from app.services.recommendation_service import RecommendationService
 
 router = APIRouter(prefix="/merchants", tags=["merchants"])
 
@@ -18,15 +43,6 @@ def create_merchant(merchant_in: MerchantCreate, db: Session = Depends(get_db)):
 @router.get("", response_model=List[MerchantRead])
 def list_merchants(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return MerchantService.list_merchants(db, skip=skip, limit=limit)
-
-from app.core.security import get_current_merchant, verify_merchant_access
-from app.models.merchant import Merchant
-from sqlalchemy import func
-from app.models.policy import Policy
-from app.models.agent import Agent
-from app.models.transaction import Transaction
-from app.models.catalog import CatalogItem
-from app.models.audit import AuditEvent
 
 @router.post("/seed", response_model=MerchantRead)
 def seed_demo_merchant(db: Session = Depends(get_db)):
@@ -102,22 +118,6 @@ def seed_demo_merchant(db: Session = Depends(get_db)):
 
     db.refresh(demo_merchant)
     return demo_merchant
-
-from sqlalchemy import func
-from app.models.policy import Policy
-from app.models.agent import Agent
-from app.models.transaction import Transaction
-from app.models.catalog import CatalogItem
-from app.schemas.merchant import (
-    MerchantSettingsUpdate,
-    MerchantUsageRead,
-    MerchantAgentRead,
-    MerchantAgentCreate,
-    MerchantEnvironmentSwitch
-)
-from app.services.audit_service import AuditService
-import hashlib
-import secrets
 
 @router.get("/me", response_model=MerchantRead)
 def get_current_merchant_profile(
@@ -629,10 +629,6 @@ def get_merchant_decision_breakdown(
     }
 
     return [{"name": k, "count": v, "fill": fills.get(k, "#6366f1")} for k, v in decisions.items()]
-
-
-from app.schemas.recommendation import MerchantRevenueAttributionResponse
-from app.services.recommendation_service import RecommendationService
 
 @router.get("/recommendations/revenue", response_model=MerchantRevenueAttributionResponse)
 def get_merchant_recommendation_revenue(

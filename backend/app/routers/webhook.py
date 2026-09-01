@@ -1,4 +1,5 @@
 import secrets
+from datetime import datetime, timezone
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, HttpUrl, Field
@@ -122,7 +123,7 @@ def fire_test_webhook(
         "merchant_id": str(current_merchant.id),
         "merchant_name": current_merchant.name,
         "message": "This is a test webhook payload from Agentpay Platform.",
-        "timestamp": int(get_db.__hash__())
+        "timestamp": int(datetime.now(timezone.utc).timestamp())
     }
 
     log = WebhookService.dispatch_event(db, current_merchant.id, "test.ping", test_payload)

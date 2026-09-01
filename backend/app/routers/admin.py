@@ -237,12 +237,6 @@ def get_platform_overview(
         (func.upper(AuditEvent.decision) == "SETTLED")
     ).all()
 
-    base_volume = 48250.00
-    base_count = 14
-
-    final_volume = base_volume + total_settled_volume
-    final_count = base_count + total_settled_count
-
     return PlatformOverviewResponse(
         total_merchants=total_merchants,
         verified_merchants=verified_merchants,
@@ -250,8 +244,8 @@ def get_platform_overview(
         total_catalog_items=total_catalog_items,
         total_policies_enforced=total_policies_enforced,
         total_audit_events=total_audit_events,
-        total_settled_volume_inr=round(final_volume, 2),
-        total_settled_transactions=final_count
+        total_settled_volume_inr=round(total_settled_volume, 2),
+        total_settled_transactions=total_settled_count
     )
 
 @router.get("/merchants", response_model=List[AdminMerchantItem])
