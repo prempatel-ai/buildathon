@@ -83,7 +83,9 @@ function DashboardContent() {
   });
 
   const [recRevenue, setRecRevenue] = useState<MerchantRevenueAttribution | null>(null);
+  const [recLoading, setRecLoading] = useState<boolean>(true);
   const [campaignPerf, setCampaignPerf] = useState<MerchantCampaignPerformance | null>(null);
+  const [campaignLoading, setCampaignLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'catalog' | 'schema' | 'attribution' | 'campaigns'>('catalog');
   const [isScanning, setIsScanning] = useState(false);
   const [scanMsg, setScanMsg] = useState<string | null>(null);
@@ -292,20 +294,39 @@ function DashboardContent() {
         localStorage.setItem('agentpay_merchant_cache', JSON.stringify(meData));
       } catch (e) {}
 
-      const [catData, schemaData, recRevData, campData] = await Promise.all([
-        fetchCatalogItems(meData.id).catch(() => []),
-        fetchAgentSchema(meData.id).catch(() => null),
-        fetchMerchantRecommendationRevenue().catch(() => null),
-        fetchMerchantCampaignPerformance().catch(() => null),
-      ]);
-      setItems(catData);
-      setAgentSchema(schemaData);
-      if (recRevData) setRecRevenue(recRevData);
-      if (campData) setCampaignPerf(campData);
-      try {
-        localStorage.setItem('agentpay_catalog_cache', JSON.stringify(catData));
-        if (schemaData) localStorage.setItem('agentpay_schema_cache', JSON.stringify(schemaData));
-      } catch (e) {}
+      // Parallel fetch catalog & schema
+      fetchCatalogItems(meData.id).then((catData) => {
+        setItems(catData || []);
+        try {
+          localStorage.setItem('agentpay_catalog_cache', JSON.stringify(catData));
+        } catch (e) {}
+      }).catch(() => {});
+
+      fetchAgentSchema(meData.id).then((schemaData) => {
+        setAgentSchema(schemaData);
+        try {
+          if (schemaData) localStorage.setItem('agentpay_schema_cache', JSON.stringify(schemaData));
+        } catch (e) {}
+      }).catch(() => {});
+
+      // Dedicated recRevenue fetch
+      setRecLoading(true);
+      fetchMerchantRecommendationRevenue()
+        .then((recRevData) => {
+          setRecRevenue(recRevData);
+        })
+        .catch(() => setRecRevenue(null))
+        .finally(() => setRecLoading(false));
+
+      // Dedicated campaignPerf fetch
+      setCampaignLoading(true);
+      fetchMerchantCampaignPerformance()
+        .then((campData) => {
+          setCampaignPerf(campData);
+        })
+        .catch(() => setCampaignPerf(null))
+        .finally(() => setCampaignLoading(false));
+
     } catch (err: any) {
       router.push('/onboarding');
       return;
@@ -314,17 +335,32 @@ function DashboardContent() {
     }
   }
 
+  const handleRefreshRecRevenue = async () => {
+    setRecLoading(true);
+    try {
+      const data = await fetchMerchantRecommendationRevenue();
+      setRecRevenue(data);
+    } catch (e) {
+      setRecRevenue(null);
+    } finally {
+      setRecLoading(false);
+    }
+  };
+
   const handleTriggerScan = async () => {
     setIsScanning(true);
+    setCampaignLoading(true);
     setScanMsg(null);
     try {
       const res = await triggerMerchantCampaignScan(0);
       setScanMsg(res.message);
-      await loadDashboardData();
+      const campData = await fetchMerchantCampaignPerformance();
+      setCampaignPerf(campData);
     } catch (e: any) {
       setScanMsg(e.message || 'Scan failed');
     } finally {
       setIsScanning(false);
+      setCampaignLoading(false);
     }
   };
 
@@ -786,17 +822,17 @@ function DashboardContent() {
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => loadDashboardData()}
-                  className="h-8 px-3 rounded-md border border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-medium text-neutral-700 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  onClick={handleRefreshRecRevenue}
+                  disabled={recLoading}
+                  className="h-8 px-3 rounded-md border border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-medium text-neutral-700 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   title="Refresh revenue attribution stats"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 text-neutral-600 ${loading ? 'animate-spin' : ''}`} />
-                  <span>Refresh Stats</span>
+                  <RefreshCw className={`w-3.5 h-3.5 text-neutral-600 ${recLoading ? 'animate-spin' : ''}`} />
+                  <span>{recLoading ? 'Refreshing...' : 'Refresh Stats'}</span>
                 </button>
               </div>
             </div>
 
-            {/* 4 Attribution Metric Cards Strip */}
             {/* 4 Performance Metric Cards with Skeleton Loading */}
             <div className="grid grid-cols-1 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 border border-neutral-200 rounded-lg bg-white overflow-hidden shadow-2xs">
               <div className="p-4">
@@ -804,7 +840,7 @@ function DashboardContent() {
                   <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Attributed Revenue</span>
                   <Coins className="w-3.5 h-3.5 text-emerald-600" />
                 </div>
-                {loading ? (
+                {recLoading || recRevenue === null ? (
                   <div className="mt-2 space-y-1.5 animate-pulse">
                     <div className="h-7 w-28 bg-neutral-200/80 rounded"></div>
                     <div className="h-3 w-20 bg-neutral-100 rounded"></div>
@@ -812,7 +848,7 @@ function DashboardContent() {
                 ) : (
                   <>
                     <div className="text-2xl font-bold text-neutral-900 mt-1.5 font-mono tracking-tight">
-                      ₹{recRevenue ? recRevenue.total_attributed_revenue.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}
+                      ₹{recRevenue.total_attributed_revenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </div>
                     <span className="text-[11px] text-emerald-700 mt-1 block font-medium">
                       Verified Settled GMV
@@ -826,7 +862,7 @@ function DashboardContent() {
                   <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Converted Orders</span>
                   <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
                 </div>
-                {loading ? (
+                {recLoading || recRevenue === null ? (
                   <div className="mt-2 space-y-1.5 animate-pulse">
                     <div className="h-7 w-16 bg-neutral-200/80 rounded"></div>
                     <div className="h-3 w-24 bg-neutral-100 rounded"></div>
@@ -834,7 +870,7 @@ function DashboardContent() {
                 ) : (
                   <>
                     <div className="text-2xl font-bold text-neutral-900 mt-1.5 font-mono tracking-tight">
-                      {recRevenue ? recRevenue.converted_recommendations_count : 0}
+                      {recRevenue.converted_recommendations_count}
                     </div>
                     <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
                       Autonomous Chat Buys
@@ -848,7 +884,7 @@ function DashboardContent() {
                   <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Impressions Shown</span>
                   <Package className="w-3.5 h-3.5 text-neutral-400" />
                 </div>
-                {loading ? (
+                {recLoading || recRevenue === null ? (
                   <div className="mt-2 space-y-1.5 animate-pulse">
                     <div className="h-7 w-16 bg-neutral-200/80 rounded"></div>
                     <div className="h-3 w-24 bg-neutral-100 rounded"></div>
@@ -856,7 +892,7 @@ function DashboardContent() {
                 ) : (
                   <>
                     <div className="text-2xl font-bold text-neutral-900 mt-1.5 font-mono tracking-tight">
-                      {recRevenue ? recRevenue.shown_recommendations_count : 0}
+                      {recRevenue.shown_recommendations_count}
                     </div>
                     <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
                       Post-Purchase Displays
@@ -870,7 +906,7 @@ function DashboardContent() {
                   <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Conversion Rate</span>
                   <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
                 </div>
-                {loading ? (
+                {recLoading || recRevenue === null ? (
                   <div className="mt-2 space-y-1.5 animate-pulse">
                     <div className="h-7 w-20 bg-neutral-200/80 rounded"></div>
                     <div className="h-3 w-24 bg-neutral-100 rounded"></div>
@@ -878,7 +914,7 @@ function DashboardContent() {
                 ) : (
                   <>
                     <div className="text-2xl font-bold text-neutral-900 mt-1.5 font-mono tracking-tight">
-                      {recRevenue ? `${recRevenue.conversion_rate}%` : '0%'}
+                      {recRevenue.conversion_rate}%
                     </div>
                     <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
                       Converted / Shown
@@ -900,11 +936,11 @@ function DashboardContent() {
                   </p>
                 </div>
                 <span className="text-[11px] font-mono text-neutral-500 font-medium">
-                  {loading ? 'Loading...' : `${recRevenue?.attributed_transactions?.length || 0} Attributed Orders`}
+                  {recLoading || recRevenue === null ? 'Loading...' : `${recRevenue.attributed_transactions?.length || 0} Attributed Orders`}
                 </span>
               </div>
 
-              {loading ? (
+              {recLoading || recRevenue === null ? (
                 <div className="divide-y divide-neutral-100 animate-pulse">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <div key={i} className="py-4 px-6 flex items-center justify-between gap-4">
@@ -1032,7 +1068,7 @@ function DashboardContent() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 bg-white border border-neutral-200 rounded-lg space-y-1">
                 <span className="text-[11px] font-mono text-neutral-400 uppercase">Offers Generated</span>
-                {loading ? (
+                {campaignLoading || campaignPerf === null ? (
                   <div className="mt-1 space-y-1.5 animate-pulse">
                     <div className="h-7 w-16 bg-neutral-200/80 rounded"></div>
                     <div className="h-3 w-28 bg-neutral-100 rounded"></div>
@@ -1040,7 +1076,7 @@ function DashboardContent() {
                 ) : (
                   <>
                     <p className="text-xl font-bold font-mono text-neutral-900">
-                      {campaignPerf ? campaignPerf.offers_generated : 0}
+                      {campaignPerf.offers_generated}
                     </p>
                     <span className="text-[10px] text-neutral-500 block">From stale unconverted interest</span>
                   </>
@@ -1049,7 +1085,7 @@ function DashboardContent() {
 
               <div className="p-4 bg-white border border-neutral-200 rounded-lg space-y-1">
                 <span className="text-[11px] font-mono text-neutral-400 uppercase">Delivered in Chat</span>
-                {loading ? (
+                {campaignLoading || campaignPerf === null ? (
                   <div className="mt-1 space-y-1.5 animate-pulse">
                     <div className="h-7 w-16 bg-neutral-200/80 rounded"></div>
                     <div className="h-3 w-28 bg-neutral-100 rounded"></div>
@@ -1057,7 +1093,7 @@ function DashboardContent() {
                 ) : (
                   <>
                     <p className="text-xl font-bold font-mono text-neutral-900">
-                      {campaignPerf ? campaignPerf.offers_shown : 0}
+                      {campaignPerf.offers_shown}
                     </p>
                     <span className="text-[10px] text-neutral-500 block">Delivered via consumer chat</span>
                   </>
@@ -1066,7 +1102,7 @@ function DashboardContent() {
 
               <div className="p-4 bg-white border border-neutral-200 rounded-lg space-y-1">
                 <span className="text-[11px] font-mono text-neutral-400 uppercase">Converted Orders</span>
-                {loading ? (
+                {campaignLoading || campaignPerf === null ? (
                   <div className="mt-1 space-y-1.5 animate-pulse">
                     <div className="h-7 w-16 bg-neutral-200/80 rounded"></div>
                     <div className="h-3 w-28 bg-neutral-100 rounded"></div>
@@ -1074,10 +1110,10 @@ function DashboardContent() {
                 ) : (
                   <>
                     <p className="text-xl font-bold font-mono text-emerald-700">
-                      {campaignPerf ? campaignPerf.offers_converted : 0}
+                      {campaignPerf.offers_converted}
                     </p>
                     <span className="text-[10px] font-mono font-semibold text-emerald-600 block">
-                      {campaignPerf ? campaignPerf.conversion_rate : 0}% Conversion Rate
+                      {campaignPerf.conversion_rate}% Conversion Rate
                     </span>
                   </>
                 )}
@@ -1085,7 +1121,7 @@ function DashboardContent() {
 
               <div className="p-4 bg-white border border-neutral-200 rounded-lg space-y-1">
                 <span className="text-[11px] font-mono text-neutral-400 uppercase">Attributed GMV</span>
-                {loading ? (
+                {campaignLoading || campaignPerf === null ? (
                   <div className="mt-1 space-y-1.5 animate-pulse">
                     <div className="h-7 w-24 bg-neutral-200/80 rounded"></div>
                     <div className="h-3 w-32 bg-neutral-100 rounded"></div>
@@ -1093,10 +1129,10 @@ function DashboardContent() {
                 ) : (
                   <>
                     <p className="text-xl font-bold font-mono text-neutral-900">
-                      ₹{campaignPerf ? campaignPerf.total_attributed_revenue.toLocaleString('en-IN') : '0'}
+                      ₹{campaignPerf.total_attributed_revenue.toLocaleString('en-IN')}
                     </p>
                     <span className="text-[10px] text-neutral-500 block">
-                      Total Discount: ₹{campaignPerf ? campaignPerf.total_discount_given.toLocaleString('en-IN') : '0'}
+                      Total Discount: ₹{campaignPerf.total_discount_given.toLocaleString('en-IN')}
                     </span>
                   </>
                 )}
@@ -1112,11 +1148,11 @@ function DashboardContent() {
                   </h3>
                 </div>
                 <span className="text-[11px] font-mono text-neutral-400">
-                  {loading ? 'Loading...' : `${campaignPerf?.offers.length || 0} Total Offers`}
+                  {campaignLoading || campaignPerf === null ? 'Loading...' : `${campaignPerf.offers?.length || 0} Total Offers`}
                 </span>
               </div>
 
-              {loading ? (
+              {campaignLoading || campaignPerf === null ? (
                 <div className="divide-y divide-neutral-100 animate-pulse">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <div key={i} className="py-4 px-6 flex items-center justify-between gap-4">
