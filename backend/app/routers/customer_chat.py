@@ -12,12 +12,15 @@ from app.models.merchant import Merchant
 from app.models.catalog import CatalogItem
 from app.agents.graph import run_agent_workflow, run_direct_purchase_workflow
 
+from app.schemas.recommendation import RecommendationItemResponse
+
 router = APIRouter(prefix="/customer", tags=["Customer Chat AI"])
 
 class CustomerChatRequest(BaseModel):
     prompt: str = Field(..., min_length=1, description="Natural language prompt from consumer")
     thread_id: Optional[str] = Field(None, description="Optional thread/session ID for multi-turn context")
     address_id: Optional[str] = Field(None, description="Optional selected delivery address ID")
+    source_recommendation_id: Optional[str] = Field(None, description="Optional source recommendation ID for revenue attribution")
 
 class ProductOptionCard(BaseModel):
     option_index: int
@@ -36,6 +39,7 @@ class CustomerChatResponse(BaseModel):
     status: str
     response_message: str
     search_results: Optional[List[ProductOptionCard]] = None
+    recommendations: Optional[List[RecommendationItemResponse]] = None
     customer_auth_decision: Optional[str] = None
     policy_decision: Optional[str] = None
     transaction_id: Optional[str] = None
@@ -180,7 +184,28 @@ def customer_chat(
                 if not target_opt:
                     target_opt = cached_options[0]
 
-        # 3. If no search cache exists (e.g. user directly asks "buy boAt Rockerz" as first message),
+        # 3. If source_recommendation_id was provided, resolve the target option directly from DB
+        if req.source_recommendation_id and not target_opt:
+            from app.models.recommendation import Recommendation
+            try:
+                rec_uuid = uuid.UUID(str(req.source_recommendation_id))
+                rec_entry = db.query(Recommendation).filter(Recommendation.id == rec_uuid).first()
+                if rec_entry and rec_entry.recommended_item:
+                    it = rec_entry.recommended_item
+                    m = db.query(Merchant).filter(Merchant.id == it.merchant_id).first()
+                    target_opt = {
+                        "item_id": str(it.id),
+                        "item_name": it.name,
+                        "merchant_id": str(it.merchant_id),
+                        "merchant_name": m.name if m else "Merchant",
+                        "price": float(it.price),
+                        "stock": it.stock,
+                        "category": it.category
+                    }
+            except Exception as rec_lookup_err:
+                print(f"[REC_LOOKUP_ERR]: {rec_lookup_err}")
+
+        # 4. If no search cache exists (e.g. user directly asks "buy boAt Rockerz" as first message),
         # query the Database Catalog directly to find the exact item and price
         if not target_opt:
             clean_search = re.sub(r'^(?:buy|order|purchase|confirm|checkout|pay\s+for)\s*', '', prompt_raw, flags=re.IGNORECASE).strip()
@@ -207,7 +232,7 @@ def customer_chat(
                         "category": db_item.category
                     }
 
-        # 4. If target option was successfully resolved, execute direct purchase workflow
+        # 5. If target option was successfully resolved, execute direct purchase workflow
         # This bypasses LLM re-lookup and guarantees the EXACT catalog price is charged
         if target_opt:
             final_state = run_direct_purchase_workflow(
@@ -218,7 +243,13 @@ def customer_chat(
                 customer_id=str(customer.id),
                 thread_id=thread_id,
                 address_id=req.address_id,
+                source_recommendation_id=req.source_recommendation_id
             )
+
+            rec_results = [
+                RecommendationItemResponse(**r)
+                for r in final_state.get("recommendations", [])
+            ] if final_state.get("recommendations") else None
 
             return CustomerChatResponse(
                 thread_id=thread_id,
@@ -227,6 +258,7 @@ def customer_chat(
                 status=final_state.get("status", "COMPLETED"),
                 response_message=final_state.get("response_message") or f"Order processed for {target_opt['item_name']}.",
                 search_results=None,
+                recommendations=rec_results,
                 customer_auth_decision=final_state.get("customer_auth_decision"),
                 policy_decision=final_state.get("policy_decision"),
                 transaction_id=final_state.get("transaction_id"),
@@ -251,7 +283,8 @@ def customer_chat(
         prompt=req.prompt,
         customer_id=str(customer.id),
         thread_id=thread_id,
-        address_id=req.address_id
+        address_id=req.address_id,
+        source_recommendation_id=req.source_recommendation_id
     )
 
     search_res = final_state.get("search_results") or []
@@ -272,6 +305,11 @@ def customer_chat(
         for idx, opt in enumerate(search_res)
     ] if search_res else None
 
+    rec_results = [
+        RecommendationItemResponse(**r)
+        for r in final_state.get("recommendations", [])
+    ] if final_state.get("recommendations") else None
+
     return CustomerChatResponse(
         thread_id=thread_id,
         prompt=req.prompt,
@@ -279,6 +317,7 @@ def customer_chat(
         status=final_state.get("status", "COMPLETED"),
         response_message=final_state.get("response_message") or "Executed search.",
         search_results=card_results,
+        recommendations=rec_results,
         customer_auth_decision=final_state.get("customer_auth_decision"),
         policy_decision=final_state.get("policy_decision"),
         transaction_id=final_state.get("transaction_id"),

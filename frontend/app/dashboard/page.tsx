@@ -11,8 +11,10 @@ import {
   updateCatalogItem,
   deleteCatalogItem,
   fetchAgentSchema,
+  fetchMerchantRecommendationRevenue,
   Merchant,
   CatalogItem,
+  MerchantRevenueAttribution,
 } from '@/lib/api';
 import { useAuthGuard } from '@/lib/useAuthGuard';
 
@@ -35,7 +37,10 @@ import {
   Download,
   FileText,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Sparkles,
+  TrendingUp,
+  Coins
 } from 'lucide-react';
 
 function DashboardContent() {
@@ -70,7 +75,8 @@ function DashboardContent() {
     return null;
   });
 
-  const [activeTab, setActiveTab] = useState<'catalog' | 'schema'>('catalog');
+  const [recRevenue, setRecRevenue] = useState<MerchantRevenueAttribution | null>(null);
+  const [activeTab, setActiveTab] = useState<'catalog' | 'schema' | 'attribution'>('catalog');
 
   const [loading, setLoading] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -274,12 +280,14 @@ function DashboardContent() {
         localStorage.setItem('agentpay_merchant_cache', JSON.stringify(meData));
       } catch (e) {}
 
-      const [catData, schemaData] = await Promise.all([
+      const [catData, schemaData, recRevData] = await Promise.all([
         fetchCatalogItems(meData.id).catch(() => []),
         fetchAgentSchema(meData.id).catch(() => null),
+        fetchMerchantRecommendationRevenue().catch(() => null),
       ]);
       setItems(catData);
       setAgentSchema(schemaData);
+      if (recRevData) setRecRevenue(recRevData);
       try {
         localStorage.setItem('agentpay_catalog_cache', JSON.stringify(catData));
         if (schemaData) localStorage.setItem('agentpay_schema_cache', JSON.stringify(schemaData));
@@ -465,7 +473,7 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* Navigation Underline Tabs for Catalog vs Schema */}
+        {/* Navigation Underline Tabs for Catalog vs Schema vs Attribution */}
         <div className="flex items-center gap-6 border-b border-neutral-200 mb-6">
           <button
             onClick={() => setActiveTab('catalog')}
@@ -488,6 +496,17 @@ function DashboardContent() {
           >
             <Code className="w-3.5 h-3.5" />
             <span>Agent JSON-LD Schema</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('attribution')}
+            className={`pb-2.5 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+              activeTab === 'attribution'
+                ? 'border-neutral-900 text-neutral-900'
+                : 'border-transparent text-neutral-500 hover:text-neutral-900'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Recommendation Revenue ({recRevenue ? `₹${recRevenue.total_attributed_revenue.toLocaleString('en-IN')}` : '₹0'})</span>
           </button>
         </div>
 
@@ -667,6 +686,135 @@ function DashboardContent() {
             ) : (
               <div className="p-8 text-center text-xs text-neutral-400 font-mono">No schema available.</div>
             )}
+          </div>
+        )}
+
+        {/* Tab 3: Recommendation Revenue Attribution */}
+        {activeTab === 'attribution' && (
+          <div className="space-y-6">
+            {/* 4 Attribution Metric Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 border border-neutral-200 rounded-lg bg-white overflow-hidden shadow-2xs">
+              <div className="p-4">
+                <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider flex items-center gap-1">
+                  <Coins className="w-3 h-3 text-emerald-600" />
+                  Attributed Revenue
+                </span>
+                <div className="text-2xl font-bold text-emerald-700 mt-1 font-mono tracking-tight">
+                  ₹{recRevenue ? recRevenue.total_attributed_revenue.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}
+                </div>
+                <span className="text-[11px] text-neutral-600 mt-1 block">
+                  Strictly verified conversions
+                </span>
+              </div>
+
+              <div className="p-4">
+                <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-indigo-600" />
+                  Converted Orders
+                </span>
+                <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
+                  {recRevenue ? recRevenue.converted_recommendations_count : 0}
+                </div>
+                <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
+                  Originating from suggestions
+                </span>
+              </div>
+
+              <div className="p-4">
+                <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">Recommendations Shown</span>
+                <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
+                  {recRevenue ? recRevenue.shown_recommendations_count : 0}
+                </div>
+                <span className="text-[11px] text-neutral-600 mt-1 block">
+                  Post-settlement impressions
+                </span>
+              </div>
+
+              <div className="p-4">
+                <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3 text-emerald-600" />
+                  Conversion Rate
+                </span>
+                <div className="text-2xl font-bold text-neutral-900 mt-1 font-mono tracking-tight">
+                  {recRevenue ? `${recRevenue.conversion_rate}%` : '0%'}
+                </div>
+                <span className="text-[11px] text-neutral-600 mt-1 block font-mono">
+                  Converted / Shown
+                </span>
+              </div>
+            </div>
+
+            {/* Attributed Transactions Breakdown */}
+            <div className="border border-neutral-200 rounded-lg overflow-hidden bg-white shadow-2xs">
+              <div className="px-6 py-3.5 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-600">
+                    Attributed Settled Purchases
+                  </h2>
+                  <p className="text-[11px] text-neutral-500 mt-0.5">
+                    Every transaction here carries an immutable <code className="bg-neutral-100 px-1 py-0.5 rounded text-neutral-800 font-mono">source_recommendation_id</code> linked directly to chat AI recommendations.
+                  </p>
+                </div>
+                <span className="text-[11px] font-mono text-neutral-400">
+                  {recRevenue?.attributed_transactions?.length || 0} Transactions
+                </span>
+              </div>
+
+              {loading ? (
+                <div className="p-8 text-center text-xs text-neutral-400 font-mono">
+                  Loading attribution records...
+                </div>
+              ) : recRevenue && recRevenue.attributed_transactions.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-neutral-200 bg-neutral-50/70 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
+                        <th className="py-2.5 px-6">Transaction ID</th>
+                        <th className="py-2.5 px-6">Recommendation Ref</th>
+                        <th className="py-2.5 px-6">Product Purchased</th>
+                        <th className="py-2.5 px-6">Amount (INR)</th>
+                        <th className="py-2.5 px-6">Status</th>
+                        <th className="py-2.5 px-6 text-right">Settled At</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-100">
+                      {recRevenue.attributed_transactions.map((tx) => (
+                        <tr key={tx.transaction_id} className="hover:bg-neutral-50/60 transition-colors">
+                          <td className="py-3 px-6 font-mono text-neutral-900 font-medium">
+                            {tx.transaction_id.substring(0, 8)}...
+                          </td>
+                          <td className="py-3 px-6 font-mono text-indigo-600">
+                            {tx.recommendation_id.substring(0, 8)}...
+                          </td>
+                          <td className="py-3 px-6 text-neutral-900 font-medium">
+                            {tx.item_name || 'Catalog Item'}
+                          </td>
+                          <td className="py-3 px-6 font-mono font-bold text-neutral-900">
+                            ₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-6">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              {tx.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-6 font-mono text-neutral-400 text-right text-[11px]">
+                            {new Date(tx.created_at).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-12 px-6 text-center text-xs text-neutral-500 space-y-1">
+                  <Sparkles className="w-6 h-6 text-neutral-300 mx-auto mb-2" />
+                  <p className="font-medium text-neutral-700">No recommendation-attributed transactions yet</p>
+                  <p className="text-[11px] text-neutral-400">
+                    When customers buy products suggested by the post-purchase engine, real attributed revenue will automatically appear here.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </main>

@@ -585,6 +585,55 @@ export async function deleteCustomerAddress(addressId: string): Promise<void> {
   }
 }
 
+// ── Recommendation & Revenue Attribution API ───────────────────────────────────
+
+export interface RecommendationItem {
+  id: string;
+  customer_id: string;
+  source_transaction_id: string;
+  recommended_item_id: string;
+  recommended_merchant_id: string;
+  item_name: string;
+  merchant_name: string;
+  price: number;
+  category: string;
+  stock: number;
+  reason: string;
+  status: string;
+  shown_at: string;
+}
+
+export interface AttributedTransaction {
+  transaction_id: string;
+  recommendation_id: string;
+  amount: number;
+  item_name?: string;
+  status: string;
+  created_at: string;
+}
+
+export interface MerchantRevenueAttribution {
+  merchant_id: string;
+  merchant_name: string;
+  total_attributed_revenue: number;
+  converted_recommendations_count: number;
+  shown_recommendations_count: number;
+  conversion_rate: number;
+  attributed_transactions: AttributedTransaction[];
+}
+
+export async function fetchMerchantRecommendationRevenue(): Promise<MerchantRevenueAttribution> {
+  const res = await fetch(`${API_BASE_URL}/merchants/recommendations/revenue`, {
+    headers: getAuthHeaders(),
+    cache: 'no-store'
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to fetch recommendation revenue' }));
+    throw new Error(err.detail || 'Failed to fetch recommendation revenue');
+  }
+  return res.json();
+}
+
 // ── Admin Governance API ──────────────────────────────────────────────────────
 
 export interface AdminOverview {

@@ -7,6 +7,7 @@ from app.models.audit import AuditEvent
 from app.models.customer import Customer
 from app.models.spend_authorization import SpendAuthorization
 from app.models.address import Address
+from app.models.recommendation import Recommendation
 
 __all__ = [
     "Merchant",
@@ -18,4 +19,5 @@ __all__ = [
     "Customer",
     "SpendAuthorization",
     "Address",
+    "Recommendation",
 ]

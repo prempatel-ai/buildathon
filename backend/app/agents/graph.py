@@ -16,6 +16,8 @@ class AgentGraphState(TypedDict, total=False):
     policy_decision: Optional[str]
     reasoning: Optional[str]
     transaction_id: Optional[str]
+    source_recommendation_id: Optional[str]
+    recommendations: Optional[List[Dict[str, Any]]]
     razorpay_order_id: Optional[str]
     razorpay_payment_id: Optional[str]
     payment_link_url: Optional[str]
@@ -82,7 +84,8 @@ def run_agent_workflow(
     prompt: str,
     customer_id: Optional[str] = None,
     thread_id: Optional[str] = None,
-    address_id: Optional[str] = None
+    address_id: Optional[str] = None,
+    source_recommendation_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Executes the full agent graph workflow for a user/agent prompt with state checkpointing.
@@ -103,6 +106,8 @@ def run_agent_workflow(
         "policy_decision": None,
         "reasoning": None,
         "transaction_id": None,
+        "source_recommendation_id": source_recommendation_id,
+        "recommendations": None,
         "razorpay_order_id": None,
         "razorpay_payment_id": None,
         "payment_link_url": None,
@@ -132,7 +137,8 @@ def run_direct_purchase_workflow(
     customer_id: Optional[str] = None,
     thread_id: Optional[str] = None,
     agent_id: str = "consumer_shopping_agent",
-    address_id: Optional[str] = None
+    address_id: Optional[str] = None,
+    source_recommendation_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     DIRECT Purchase Workflow: Bypasses llm_node entirely.
@@ -161,12 +167,15 @@ def run_direct_purchase_workflow(
             "item_name": item_name,
             "category": category,
             "quantity": 1,
-            "address_id": address_id
+            "address_id": address_id,
+            "source_recommendation_id": source_recommendation_id
         },
         "customer_auth_decision": None,
         "policy_decision": None,
         "reasoning": None,
         "transaction_id": None,
+        "source_recommendation_id": source_recommendation_id,
+        "recommendations": None,
         "razorpay_order_id": None,
         "razorpay_payment_id": None,
         "payment_link_url": None,

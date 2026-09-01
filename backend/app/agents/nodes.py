@@ -721,13 +721,32 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
             est_date = DeliveryService.calculate_delivery_date(shipping_cfg, category=category)
             state["estimated_delivery_date"] = est_date.isoformat()
 
-            # Attach address_id and estimated_delivery_date to transaction
+            # Attach address_id, estimated_delivery_date, and metadata to transaction
             tx.estimated_delivery_date = est_date
             if state.get("address_id"):
                 try:
                     tx.address_id = uuid.UUID(str(state["address_id"]))
                 except Exception:
                     pass
+
+            tx.error_details = {"item_name": item_name}
+
+            # Explicitly link source_recommendation_id if provided and valid for this customer
+            src_rec_id = state.get("source_recommendation_id") or tool_args.get("source_recommendation_id")
+            if src_rec_id:
+                try:
+                    from app.models.recommendation import Recommendation
+                    rec_uuid = uuid.UUID(str(src_rec_id))
+                    cust_uuid = uuid.UUID(str(state.get("customer_id"))) if state.get("customer_id") else None
+                    valid_rec = db.query(Recommendation).filter(
+                        Recommendation.id == rec_uuid,
+                        Recommendation.customer_id == cust_uuid if cust_uuid else True
+                    ).first()
+                    if valid_rec:
+                        tx.source_recommendation_id = valid_rec.id
+                except Exception as rec_err:
+                    print(f"[REC_LINK_NOTICE]: {rec_err}")
+
             db.commit()
 
             # Step 2: Autonomous AI Payment Execution on Razorpay
@@ -902,6 +921,53 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     )
 
                     print(f"[AUTONOMOUS_PAYMENT_SUCCESS]: INR {amount} for '{item_name}' | Order='{tx.razorpay_order_id}' | Payment='{real_pay_id}' | Delivery='{est_date.isoformat()}'")
+
+                    # Step 3: Convert source recommendation if present
+                    if tx.source_recommendation_id:
+                        try:
+                            from app.services.recommendation_service import RecommendationService
+                            RecommendationService.mark_recommendation_converted(
+                                db=db,
+                                recommendation_id=tx.source_recommendation_id,
+                                new_transaction_id=settled_tx.id
+                            )
+                        except Exception as conv_err:
+                            print(f"[REC_CONV_ERR]: {conv_err}")
+
+                    # Step 4: Generate 2-4 explainable post-purchase recommendations
+                    if customer_id:
+                        try:
+                            from app.services.recommendation_service import RecommendationService
+                            recs = RecommendationService.generate_post_purchase_recommendations(
+                                db=db,
+                                customer_id=uuid.UUID(str(customer_id)),
+                                transaction_id=settled_tx.id,
+                                purchased_item_name=item_name,
+                                purchased_category=category,
+                                purchased_amount=float(amount),
+                                purchased_merchant_id=merchant_id,
+                                limit=3
+                            )
+                            state["recommendations"] = [
+                                {
+                                    "id": str(r.id),
+                                    "customer_id": str(r.customer_id),
+                                    "source_transaction_id": str(r.source_transaction_id),
+                                    "recommended_item_id": str(r.recommended_item_id),
+                                    "recommended_merchant_id": str(r.recommended_merchant_id),
+                                    "item_name": r.recommended_item.name if r.recommended_item else "Recommended Item",
+                                    "merchant_name": r.recommended_merchant.name if r.recommended_merchant else "Store",
+                                    "price": float(r.recommended_item.price) if r.recommended_item else 0.0,
+                                    "category": r.recommended_item.category if r.recommended_item else "General",
+                                    "stock": r.recommended_item.stock if r.recommended_item else 0,
+                                    "reason": r.reason,
+                                    "status": r.status,
+                                    "shown_at": r.shown_at.isoformat() if r.shown_at else ""
+                                }
+                                for r in recs
+                            ]
+                        except Exception as rec_gen_err:
+                            print(f"[REC_GEN_ERR]: {rec_gen_err}")
 
                     state["transaction_id"] = str(settled_tx.id)
                     state["razorpay_order_id"] = settled_tx.razorpay_order_id

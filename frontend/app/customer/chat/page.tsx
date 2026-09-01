@@ -43,11 +43,28 @@ interface ProductCard {
   category: string;
 }
 
+interface RecommendationCard {
+  id: string;
+  customer_id: string;
+  source_transaction_id: string;
+  recommended_item_id: string;
+  recommended_merchant_id: string;
+  item_name: string;
+  merchant_name: string;
+  price: number;
+  category: string;
+  stock: number;
+  reason: string;
+  status: string;
+  shown_at: string;
+}
+
 interface ChatMessage {
   id: string;
   sender: 'user' | 'assistant';
   text: string;
   cards?: ProductCard[];
+  recommendations?: RecommendationCard[];
   status?: string;
   customerAuthDecision?: string;
   policyDecision?: string;
@@ -252,7 +269,7 @@ export default function ConsumerChatPage() {
     }
   };
 
-  const handleSendMessage = async (customPrompt?: string) => {
+  const handleSendMessage = async (customPrompt?: string, sourceRecommendationId?: string) => {
     const promptToSend = customPrompt || inputPrompt;
     if (!promptToSend.trim() || loading) return;
 
@@ -329,6 +346,7 @@ export default function ConsumerChatPage() {
           prompt: promptToSend,
           thread_id: currentThreadId,
           address_id: selectedAddressId,
+          source_recommendation_id: sourceRecommendationId || undefined,
         }),
       });
 
@@ -346,6 +364,7 @@ export default function ConsumerChatPage() {
         sender: 'assistant',
         text: data.response_message || 'Search completed.',
         cards: data.search_results || undefined,
+        recommendations: data.recommendations || undefined,
         status: data.status,
         customerAuthDecision: data.customer_auth_decision,
         policyDecision: data.policy_decision,
@@ -874,6 +893,60 @@ export default function ConsumerChatPage() {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    )}
+
+                    {/* Post-Purchase Explainable Recommendations */}
+                    {msg.recommendations && msg.recommendations.length > 0 && (
+                      <div className="mt-3.5 pt-3 border-t border-dashed border-neutral-200 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[11px] font-bold text-neutral-900 uppercase tracking-wider font-mono">
+                              Recommended for You
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-neutral-400 font-mono">
+                            Attributed Engine
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {msg.recommendations.map((rec) => (
+                            <div
+                              key={rec.id}
+                              className="bg-neutral-50/80 hover:bg-white p-3 rounded-lg border border-neutral-200 hover:border-neutral-900 transition-all flex flex-col justify-between group shadow-2xs"
+                            >
+                              <div>
+                                <div className="flex items-center justify-between text-[9.5px] font-mono text-neutral-500 mb-1">
+                                  <span className="px-1.5 py-0.5 bg-neutral-200/60 rounded text-neutral-700 font-medium">
+                                    {rec.category}
+                                  </span>
+                                  <span className="text-neutral-400 truncate max-w-[100px]">{rec.merchant_name}</span>
+                                </div>
+                                <h4 className="text-xs font-bold text-neutral-900 line-clamp-1 group-hover:text-black">
+                                  {rec.item_name}
+                                </h4>
+                                <p className="text-[10.5px] text-emerald-800 font-medium bg-emerald-50/70 border border-emerald-200/50 rounded px-1.5 py-0.5 mt-1.5 line-clamp-2">
+                                  💡 {rec.reason}
+                                </p>
+                              </div>
+
+                              <div className="mt-2.5 pt-2 border-t border-neutral-200/60 flex items-center justify-between">
+                                <span className="text-xs font-bold font-mono text-neutral-900">
+                                  ₹{rec.price.toLocaleString('en-IN')}
+                                </span>
+                                <button
+                                  onClick={() => handleSendMessage(`buy ${rec.item_name}`, rec.id)}
+                                  className="h-6.5 px-2.5 bg-neutral-900 hover:bg-black text-white rounded text-[10.5px] font-medium transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+                                >
+                                  <span>Buy Item</span>
+                                  <ArrowRight className="w-2.5 h-2.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
 
